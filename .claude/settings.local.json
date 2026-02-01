@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find:*)",
+      "Bash(./gradlew tasks:*)",
+      "Bash(./gradlew help:*)",
+      "WebFetch(domain:www.odoo.com)",
+      "WebSearch"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
