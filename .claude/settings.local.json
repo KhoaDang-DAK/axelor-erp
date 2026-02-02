@@ -5,7 +5,14 @@
       "Bash(./gradlew tasks:*)",
       "Bash(./gradlew help:*)",
       "WebFetch(domain:www.odoo.com)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(xargs:*)",
+      "Bash(/tmp/step8_part1.md)",
+      "Bash(/tmp/step8_part2.md)",
+      "Bash(cat:*)",
+      "Bash(/Volumes/works/code/java/axelor/axelor-erp/RESEARCH_STEP8_DEVELOPMENT.md)",
+      "Bash(/tmp/step8_before_b7.md)",
+      "Bash(/tmp/step8_after_b6.md)"
     ],
     "deny": [],
     "ask": []

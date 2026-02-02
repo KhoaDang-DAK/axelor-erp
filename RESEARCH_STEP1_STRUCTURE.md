@@ -1,42 +1,42 @@
-# BƯỚC 1: KHÁM PHÁ CẤU TRÚC TỔNG QUAN - Phân Tích Từ Source Code
+# BƯỚC 1: KHÁM PHÁ CẤU TRÚC TỔNG QUAN - Phân Tích Từ Mã Nguồn
 
 ## Phương pháp phân tích
 
-Quá trình nghiên cứu được thực hiện bằng cách đọc trực tiếp các file cấu hình và mã nguồn tại thư mục `/Volumes/works/code/java/axelor/axelor-erp`. Phạm vi phân tích bao gồm các files và thư mục quan trọng sau:
+Quá trình nghiên cứu được thực hiện bằng cách đọc trực tiếp các tệp cấu hình và mã nguồn tại thư mục `/Volumes/works/code/java/axelor/axelor-erp`. Phạm vi phân tích bao gồm các tệp và thư mục quan trọng sau:
 
-**Files cấu hình chính:**
-- `/settings.gradle` - File cấu hình cơ chế tải modules động của Gradle
-- `/build.gradle` - File build gốc chứa thông tin project và cấu hình Java toolchain
-- `/gradle.properties` - Thiết lập JVM và các tham số build
-- `/src/main/resources/axelor-config.properties` - File cấu hình ứng dụng chính (518 dòng)
+**Tệp cấu hình chính:**
+- `/settings.gradle` - Tệp cấu hình cơ chế tải module động của Gradle
+- `/build.gradle` - Tệp xây dựng gốc chứa thông tin dự án và cấu hình Java
+- `/gradle.properties` - Thiết lập máy ảo Java (JVM) và các tham số xây dựng
+- `/src/main/resources/axelor-config.properties` - Tệp cấu hình ứng dụng chính (518 dòng)
 
-**Dependencies và versions:**
+**Phụ thuộc và phiên bản:**
 - `/modules/axelor-open-suite/libs.gradle` - Khai báo các thư viện bên ngoài
 - `/modules/axelor-open-suite/version.gradle` - Quản lý phiên bản
 - `/modules/axelor-open-suite/version.txt` - Số phiên bản cụ thể
 
-**Module build configs:**
+**Cấu hình xây dựng module:**
 - `/modules/axelor-open-suite/axelor-base/build.gradle`
 - `/modules/axelor-open-suite/axelor-sale/build.gradle`
 - `/modules/axelor-open-suite/axelor-account/build.gradle`
 
-**Sample source code:**
-- Domain XML files mẫu: `Address.xml`, `Company.xml` để hiểu cách định nghĩa entity
-- View XML files mẫu: `Address.xml` (views) để hiểu cách xây dựng giao diện
+**Mã nguồn mẫu:**
+- Tệp XML miền (domain): `Address.xml`, `Company.xml` để hiểu cách định nghĩa thực thể (entity)
+- Tệp XML giao diện (view): `Address.xml` để hiểu cách xây dựng giao diện người dùng
 
 ---
 
 ## Kết quả chi tiết
 
-### 1. CƠ CHẾ TẢI MODULES ĐỘNG
+### 1. CƠ CHẾ TẢI MODULE ĐỘNG
 
-**File nguồn:** `/settings.gradle` [Từ source code]
+**Nguồn:** `/settings.gradle` [Từ source code]
 
-Axelor ERP sử dụng một cơ chế đặc biệt để quản lý modules - thay vì liệt kê cứng (hardcode) từng module trong file cấu hình, hệ thống tự động quét và phát hiện tất cả các modules có trong thư mục `modules/`. Cơ chế này được thực hiện thông qua Gradle plugin tùy chỉnh `com.axelor.app` phiên bản 7.4.7. Khi Gradle chạy, nó sẽ duyệt qua tất cả các thư mục con cấp một (maxDepth: 1) bên trong thư mục `modules/`, và nếu thư mục nào chứa file `build.gradle`, nó sẽ được nhận diện là một module hợp lệ và được thêm vào danh sách build.
+Axelor ERP sử dụng một cơ chế đặc biệt để quản lý các module - thay vì liệt kê cứng từng module trong tệp cấu hình, hệ thống tự động quét và phát hiện tất cả các module có trong thư mục `modules/`. Cơ chế này được thực hiện thông qua plugin tùy chỉnh của Gradle có tên `com.axelor.app` phiên bản 7.4.7. Khi Gradle chạy, nó sẽ duyệt qua tất cả các thư mục con cấp một bên trong thư mục `modules/`, và nếu thư mục nào chứa tệp `build.gradle`, nó sẽ được nhận diện là một module hợp lệ và được thêm vào danh sách xây dựng.
 
-Cách tiếp cận này mang lại lợi ích lớn về mặt khả năng mở rộng (scalability) - khi developer muốn thêm một module mới, họ chỉ cần tạo thư mục mới với file `build.gradle` bên trong thư mục `modules/`, không cần phải sửa đổi file cấu hình gốc. Tuy nhiên, đây cũng là một con dao hai lưỡi: nếu một thư mục có file `build.gradle` nhưng chưa sẵn sàng để build (ví dụ: đang trong quá trình phát triển), nó vẫn sẽ được tự động include và có thể gây lỗi build. Hệ thống cũng cấu hình hai repository chính: Maven Central (với điều kiện loại trừ group 'com.axelor' để tránh xung đột) và Axelor Nexus repository tại `https://repository.axelor.com/nexus/repository/maven-public/` để tải các thư viện chuyên biệt của Axelor.
+Cách tiếp cận này mang lại lợi ích lớn về mặt khả năng mở rộng - khi lập trình viên muốn thêm một module mới, họ chỉ cần tạo thư mục mới với tệp `build.gradle` bên trong thư mục `modules/`, không cần phải sửa đổi tệp cấu hình gốc. Hệ thống cũng cấu hình hai kho lưu trữ (repository) chính: Maven Central với điều kiện loại trừ nhóm `com.axelor` để tránh xung đột, và kho lưu trữ Axelor Nexus tại địa chỉ `https://repository.axelor.com/nexus/repository/maven-public/` để tải các thư viện chuyên biệt của Axelor.
 
-**Bằng chứng từ code:**
+**Bằng chứng từ mã:**
 ```groovy
 def modules = []
 file("modules").traverse(type: groovy.io.FileType.DIRECTORIES, maxDepth: 1) { it ->
@@ -53,21 +53,21 @@ modules.each { dir ->
 }
 ```
 
-**Giải thích code:** Đoạn code trên sử dụng phương thức `traverse()` của Groovy để duyệt qua các thư mục. Tham số `maxDepth: 1` đảm bảo chỉ quét cấp một, không đệ quy xuống các thư mục con. Biến `modules` thu thập danh sách các thư mục hợp lệ, sau đó được lưu vào `gradle.ext.appModules` để các phần khác của build script có thể truy cập. Vòng lặp `each` cuối cùng thực hiện việc include từng module vào project với pattern naming `modules:tên_thư_mục` và map vị trí thực tế của module qua thuộc tính `projectDir`.
+**Giải thích mã:** Đoạn mã trên sử dụng phương thức `traverse()` của Groovy để duyệt qua các thư mục. Tham số `maxDepth: 1` đảm bảo chỉ quét cấp một, không đệ quy xuống các thư mục con. Biến `modules` thu thập danh sách các thư mục hợp lệ, sau đó được lưu vào `gradle.ext.appModules` để các phần khác của tập lệnh xây dựng có thể truy cập. Vòng lặp `each` cuối cùng thực hiện việc thêm từng module vào dự án với mẫu đặt tên `modules:tên_thư_mục` và ánh xạ vị trí thực tế của module qua thuộc tính `projectDir`.
 
 ---
 
-### 2. THÔNG TIN PROJECT GỐC VÀ JAVA TOOLCHAIN
+### 2. THÔNG TIN DỰ ÁN GỐC VÀ JAVA
 
-**File nguồn:** `/build.gradle` [Từ source code]
+**Nguồn:** `/build.gradle` [Từ source code]
 
-File build gốc tiết lộ những thông tin quan trọng về project: tên chính thức là "Axelor ERP", đang ở phiên bản 8.5.10, và thuộc group `com.axelor.apps`. Một điểm đáng chú ý là có sự chênh lệch phiên bản giữa project gốc (8.5.10) và submodule axelor-open-suite bên trong (8.5.9 theo file version.txt), điều này cho thấy project gốc đang ở một phiên bản phát triển mới hơn submodule.
+Tệp xây dựng gốc tiết lộ những thông tin quan trọng về dự án: tên chính thức là "Axelor ERP", đang ở phiên bản 8.5.10, và thuộc nhóm `com.axelor.apps`. Một điểm đáng chú ý là có sự chênh lệch phiên bản giữa dự án gốc (8.5.10) và module con axelor-open-suite bên trong (8.5.9 theo tệp version.txt), cho thấy dự án gốc đang ở một phiên bản phát triển mới hơn module con.
 
-Quyết định công nghệ quan trọng nhất được thể hiện qua Java toolchain: project sử dụng Java 21, phiên bản Long-Term Support (LTS) mới nhất của Java tại thời điểm này. Việc sử dụng Java 21 mang lại nhiều lợi thế: hiệu năng (performance) được cải thiện đáng kể nhờ các tối ưu hóa trong JVM, hỗ trợ pattern matching và record classes giúp code ngắn gọn hơn, và đặc biệt là virtual threads (Project Loom) cho phép xử lý hàng triệu luồng (threads) đồng thời mà không tiêu tốn quá nhiều tài nguyên hệ thống. Tuy nhiên, điều này cũng đặt ra yêu cầu về môi trường: mọi server triển khai (deployment) phải có JDK 21 hoặc cao hơn, điều có thể gây khó khăn cho các tổ chức vẫn đang dùng Java 8 hoặc 11.
+Quyết định công nghệ quan trọng nhất được thể hiện qua chuỗi công cụ Java (Java toolchain): dự án sử dụng Java 21, phiên bản hỗ trợ dài hạn (Long-Term Support - LTS) mới nhất của Java tại thời điểm này. Việc sử dụng Java 21 mang lại nhiều lợi thế: hiệu năng (performance) được cải thiện đáng kể nhờ các tối ưu hóa trong máy ảo Java, hỗ trợ so khớp mẫu (pattern matching) và lớp bản ghi (record classes) giúp mã nguồn ngắn gọn hơn, và đặc biệt là các luồng ảo (virtual threads) cho phép xử lý hàng triệu luồng đồng thời mà không tiêu tốn quá nhiều tài nguyên hệ thống.
 
-Project cũng định nghĩa nhiều Gradle tasks tùy chỉnh phục vụ cho quy trình đảm bảo chất lượng (quality assurance): `checkCsvEOL` kiểm tra ký tự cuối dòng trong file CSV (quan trọng khi import/export dữ liệu giữa các hệ điều hành khác nhau), `checkBirtCredentials` đảm bảo không có thông tin đăng nhập nhạy cảm bị lưu trực tiếp trong file báo cáo BIRT, và các tasks validate XML (`checkXmlDomainsAttributes`, `checkXmlViewsAttributes`, `checkXmlImportsAttributes`) để phát hiện lỗi cú pháp hoặc thuộc tính không hợp lệ trước khi chạy ứng dụng.
+Dự án cũng định nghĩa nhiều nhiệm vụ Gradle tùy chỉnh phục vụ cho quy trình đảm bảo chất lượng: `checkCsvEOL` kiểm tra ký tự cuối dòng trong tệp CSV, `checkBirtCredentials` đảm bảo không có thông tin đăng nhập nhạy cảm bị lưu trực tiếp trong tệp báo cáo BIRT, và các nhiệm vụ kiểm tra XML để phát hiện lỗi cú pháp hoặc thuộc tính không hợp lệ trước khi chạy ứng dụng.
 
-**Bằng chứng từ code:**
+**Bằng chứng từ mã:**
 ```groovy
 allprojects {
   group = 'com.axelor.apps'
@@ -81,119 +81,85 @@ allprojects {
 }
 ```
 
-**Giải thích code:** Block `allprojects` áp dụng cấu hình cho tất cả các projects (bao gồm cả root project và subprojects/modules). Việc khai báo `toolchain` thay vì chỉ đơn giản set `sourceCompatibility` có ý nghĩa quan trọng: Gradle sẽ tự động tải xuống (download) JDK 21 nếu máy build chưa có, đảm bảo môi trường build nhất quán (consistent) trên mọi máy developer. Thuộc tính `languageVersion` xác định version Java mà source code sử dụng, ảnh hưởng đến cả quá trình biên dịch (compilation) và kiểm tra lỗi (error checking) của IDE.
+**Giải thích mã:** Khối `allprojects` áp dụng cấu hình cho tất cả các dự án, bao gồm cả dự án gốc và các dự án con. Việc khai báo `toolchain` thay vì chỉ đơn giản đặt `sourceCompatibility` có ý nghĩa quan trọng: Gradle sẽ tự động tải xuống JDK 21 nếu máy xây dựng chưa có, đảm bảo môi trường xây dựng nhất quán trên mọi máy lập trình viên. Thuộc tính `languageVersion` xác định phiên bản Java mà mã nguồn sử dụng, ảnh hưởng đến cả quá trình biên dịch và kiểm tra lỗi của môi trường phát triển tích hợp (IDE).
 
 ---
 
-### 3. CẤU HÌNH JVM VÀ BUILD PERFORMANCE
+### 3. CẤU HÌNH MÁY ẢO JAVA VÀ HIỆU NĂNG XÂY DỰNG
 
-**File nguồn:** `/gradle.properties` [Từ source code]
+**Nguồn:** `/gradle.properties` [Từ source code]
 
-File `gradle.properties` chứa các thiết lập quan trọng cho quá trình build và hiệu năng. Đầu tiên, `org.gradle.parallel=true` cho phép Gradle build nhiều modules đồng thời (parallel builds), thay vì xử lý tuần tự. Điều này quan trọng với một project có 27 modules như Axelor - thời gian build có thể giảm từ vài phút xuống còn dưới một phút trên máy đủ mạnh với CPU nhiều lõi (multi-core). Tuy nhiên, parallel builds đòi hỏi nhiều bộ nhớ RAM hơn vì mỗi module đang build cùng lúc đều cần không gian riêng.
+Tệp `gradle.properties` chứa các thiết lập quan trọng cho quá trình xây dựng và hiệu năng. Đầu tiên, `org.gradle.parallel=true` cho phép Gradle xây dựng nhiều module đồng thời, thay vì xử lý tuần tự. Điều này quan trọng với một dự án có 27 module như Axelor - thời gian xây dựng có thể giảm từ vài phút xuống còn dưới một phút trên máy đủ mạnh với bộ xử lý nhiều lõi.
 
-Thiết lập `org.gradle.jvmargs=-Xmx2g` cấp phát 2GB heap memory cho JVM chạy Gradle daemon. Con số 2GB là một lựa chọn cân bằng: đủ lớn để xử lý việc biên dịch (compilation) và sinh mã tự động (code generation) của Axelor mà không bị OutOfMemoryError, nhưng không quá lớn đến mức chiếm dụng quá nhiều RAM của máy developer. Trong thực tế, nếu project còn phát triển thêm nhiều modules hoặc có domain XML phức tạp hơn, có thể cần tăng lên 3-4GB. Đường dẫn Java home được hard-code trỏ đến `/usr/local/Cellar/openjdk@21/21.0.9/` - đây là convention của Homebrew trên macOS, cho thấy môi trường phát triển (development environment) đang được thiết lập trên macOS.
+Thiết lập `org.gradle.jvmargs=-Xmx2g` cấp phát 2GB bộ nhớ heap cho máy ảo Java chạy daemon của Gradle. Con số 2GB là một lựa chọn cân bằng: đủ lớn để xử lý việc biên dịch và sinh mã tự động của Axelor mà không bị lỗi hết bộ nhớ, nhưng không quá lớn đến mức chiếm dụng quá nhiều bộ nhớ RAM của máy lập trình viên. Đường dẫn thư mục chính của Java được trỏ tới `/usr/local/Cellar/openjdk@21/21.0.9/` - đây là quy ước của Homebrew trên macOS, cho thấy môi trường phát triển đang được thiết lập trên macOS.
 
-**Bằng chứng từ code:**
+**Bằng chứng từ mã:**
 ```properties
 org.gradle.parallel=true
 org.gradle.jvmargs=-Xmx2g
 org.gradle.java.home=/usr/local/Cellar/openjdk@21/21.0.9/libexec/openjdk.jdk/Contents/Home
 ```
 
-**Giải thích code:** Ba dòng cấu hình này làm việc cùng nhau để tối ưu hóa quá trình build. Dòng đầu tiên bật chế độ song song, hai dòng sau đảm bảo có đủ tài nguyên và đúng JDK version. Đường dẫn `java.home` ghi đè (override) biến môi trường `JAVA_HOME` của hệ thống, đảm bảo Gradle luôn dùng đúng JDK 21 ngay cả khi developer có nhiều version Java cài đặt.
+**Giải thích mã:** Ba dòng cấu hình này làm việc cùng nhau để tối ưu hóa quá trình xây dựng. Dòng đầu tiên bật chế độ song song, hai dòng sau đảm bảo có đủ tài nguyên và đúng phiên bản JDK. Đường dẫn `java.home` ghi đè biến môi trường `JAVA_HOME` của hệ thống, đảm bảo Gradle luôn dùng đúng JDK 21 ngay cả khi lập trình viên có nhiều phiên bản Java được cài đặt.
 
 ---
 
-### 4. DANH SÁCH MODULES TRONG AXELOR OPEN SUITE
+### 4. DANH SÁCH MODULE TRONG AXELOR OPEN SUITE
 
-**File nguồn:** Directory listing `/modules/axelor-open-suite/` [Từ source code]
+**Nguồn:** Danh sách thư mục `/modules/axelor-open-suite/` [Từ source code]
 
-Cấu trúc project sử dụng mô hình git submodule: project gốc `axelor-erp` (phiên bản 8.5.10) chứa một submodule tên `axelor-open-suite` (phiên bản 8.5.9) ở bên trong thư mục `modules/`. Pattern này cho phép quản lý vòng đời (lifecycle) của business modules độc lập với project wrapper bên ngoài - ví dụ, một công ty có thể fork axelor-open-suite để tùy chỉnh business logic nhưng vẫn giữ nguyên project gốc để dễ dàng upgrade.
+Cấu trúc dự án sử dụng mô hình git submodule: dự án gốc `axelor-erp` (phiên bản 8.5.10) chứa một submodule tên `axelor-open-suite` (phiên bản 8.5.9) ở bên trong thư mục `modules/`. Mẫu này cho phép quản lý vòng đời của các module nghiệp vụ độc lập với dự án bao bọc bên ngoài - ví dụ, một công ty có thể tạo nhánh riêng (fork) axelor-open-suite để tùy chỉnh logic nghiệp vụ nhưng vẫn giữ nguyên dự án gốc để dễ dàng nâng cấp.
 
-Bên trong axelor-open-suite có tổng cộng **27 business modules**, mỗi module phụ trách một mảng nghiệp vụ cụ thể. Danh sách đầy đủ bao gồm:
+Bên trong axelor-open-suite có tổng cộng **27 module nghiệp vụ**, mỗi module phụ trách một mảng nghiệp vụ cụ thể:
 
-1. **axelor-base** - Module nền tảng (foundation module) quan trọng nhất, chứa các entities cơ bản như Partner (đối tác), Product (sản phẩm), Company (công ty), User (người dùng). Hầu hết các modules khác đều phụ thuộc vào base.
+1. **axelor-base** - Module nền tảng quan trọng nhất, chứa các thực thể cơ bản như đối tác (Partner), sản phẩm (Product), công ty (Company), người dùng (User). Hầu hết các module khác đều phụ thuộc vào base.
 
-2. **axelor-account** - Module kế toán (accounting), quản lý Invoice (hóa đơn), Account (tài khoản kế toán), Tax (thuế), Payment (thanh toán). Đây là module lớn thứ hai với 122 domain entities.
+2. **axelor-account** - Module kế toán, quản lý hóa đơn (Invoice), tài khoản kế toán (Account), thuế (Tax), thanh toán (Payment). Đây là module lớn thứ hai với 122 thực thể miền.
 
-3. **axelor-sale** - Module bán hàng, quản lý SaleOrder (đơn hàng), Quotation (báo giá). Phụ thuộc vào axelor-crm.
+3. **axelor-sale** - Module bán hàng, quản lý đơn hàng (SaleOrder), báo giá (Quotation). Phụ thuộc vào axelor-crm.
 
-4. **axelor-crm** - Quản lý quan hệ khách hàng, bao gồm Lead (khách hàng tiềm năng), Opportunity (cơ hội bán hàng), Contact (liên hệ).
+4. **axelor-crm** - Quản lý quan hệ khách hàng, bao gồm khách hàng tiềm năng (Lead), cơ hội bán hàng (Opportunity), liên hệ (Contact).
 
-5. **axelor-purchase** - Quản lý mua hàng, gồm PurchaseOrder (đơn mua), Supplier (nhà cung cấp).
+5. **axelor-purchase** - Quản lý mua hàng, gồm đơn mua (PurchaseOrder), nhà cung cấp (Supplier).
 
-6. **axelor-stock** - Quản lý kho hàng (inventory), bao gồm Stock (hàng tồn), Location (vị trí kho), Movement (xuất nhập kho).
+6. **axelor-stock** - Quản lý kho hàng, bao gồm hàng tồn (Stock), vị trí kho (Location), xuất nhập kho (Movement).
 
-7. **axelor-supplychain** - Chuỗi cung ứng, tích hợp giữa sale, purchase và stock. Đây là module integration layer.
+7. **axelor-supplychain** - Chuỗi cung ứng, tích hợp giữa bán hàng, mua hàng và kho. Đây là lớp tích hợp (integration layer).
 
-8. **axelor-production** - Sản xuất, bao gồm BOM (Bill of Materials), WorkCenter (trung tâm sản xuất).
+8. **axelor-production** - Sản xuất, bao gồm bảng kê vật liệu (Bill of Materials - BOM), trung tâm sản xuất (WorkCenter).
 
-9. **axelor-human-resource** - Nhân sự, quản lý Employee (nhân viên), Leave (nghỉ phép), Expense (chi phí).
+9. **axelor-human-resource** - Nhân sự, quản lý nhân viên (Employee), nghỉ phép (Leave), chi phí (Expense).
 
-10. **axelor-project** - Quản lý dự án, gồm Task (công việc), TimeSheet (chấm công).
+10. **axelor-project** - Quản lý dự án, gồm công việc (Task), chấm công (TimeSheet).
 
-11. **axelor-contract** - Quản lý hợp đồng.
+Các module còn lại bao gồm: contract (hợp đồng), bank-payment (thanh toán ngân hàng), budget (ngân sách), cash-management (quản lý dòng tiền), fleet (quản lý đội xe), helpdesk (hỗ trợ khách hàng), intervention (can thiệp/sửa chữa), maintenance (bảo trì), marketing (tiếp thị), quality (chất lượng), talent (tuyển dụng), gdpr (tuân thủ quy định bảo vệ dữ liệu), mobile-settings (cấu hình di động), client-portal (cổng thông tin khách hàng), supplier-portal (cổng thông tin nhà cung cấp), supplier-management (quản lý nhà cung cấp), và thư mục changelogs chứa tệp nhật ký thay đổi.
 
-12. **axelor-bank-payment** - Thanh toán ngân hàng, hỗ trợ SEPA và Bank Statement.
-
-13. **axelor-budget** - Lập kế hoạch và kiểm soát ngân sách.
-
-14. **axelor-cash-management** - Quản lý dòng tiền (cash flow).
-
-15. **axelor-fleet** - Quản lý đội xe (fleet management).
-
-16. **axelor-helpdesk** - Hệ thống ticketing cho hỗ trợ khách hàng.
-
-17. **axelor-intervention** - Quản lý can thiệp/sửa chữa.
-
-18. **axelor-maintenance** - Quản lý bảo trì.
-
-19. **axelor-marketing** - Chiến dịch marketing, email marketing.
-
-20. **axelor-quality** - Quản lý chất lượng (quality management).
-
-21. **axelor-talent** - Tuyển dụng và phát triển nhân tài.
-
-22. **axelor-gdpr** - Tuân thủ quy định GDPR về bảo vệ dữ liệu cá nhân.
-
-23. **axelor-mobile-settings** - Cấu hình cho ứng dụng mobile.
-
-24. **axelor-client-portal** - Cổng thông tin cho khách hàng.
-
-25. **axelor-supplier-portal** - Cổng thông tin cho nhà cung cấp.
-
-26. **axelor-supplier-management** - Đánh giá và quản lý nhà cung cấp.
-
-27. **changelogs/** - Thư mục chứa changelog files, không phải module.
-
-**Kiến trúc phụ thuộc:** Modules được tổ chức theo dạng cây phân cấp (hierarchical dependency tree): axelor-base ở gốc, các modules domain-specific như account, crm, stock phụ thuộc trực tiếp vào base, và các modules integration như supplychain phụ thuộc vào nhiều modules khác cùng lúc. Mô hình này đảm bảo rằng business logic được tổ chức modular và có thể tái sử dụng (reusable).
+> ⚠️ **Suy luận:** Các module được tổ chức theo dạng cây phân cấp phụ thuộc: axelor-base ở gốc, các module chuyên về miền như account, crm, stock phụ thuộc trực tiếp vào base, và các module tích hợp như supplychain phụ thuộc vào nhiều module khác cùng lúc. Mô hình này đảm bảo rằng logic nghiệp vụ được tổ chức theo module và có thể tái sử dụng.
 
 ---
 
-### 5. EXTERNAL DEPENDENCIES VÀ ADDONS
+### 5. PHỤ THUỘC BÊN NGOÀI VÀ ADDON
 
-**File nguồn:** `/modules/axelor-open-suite/libs.gradle` [Từ source code]
+**Nguồn:** `/modules/axelor-open-suite/libs.gradle` [Từ source code]
 
-File này khai báo tất cả các thư viện bên ngoài mà Axelor Open Suite phụ thuộc vào. Điểm đặc biệt đáng chú ý là Axelor sử dụng một kiến trúc addon: ba thành phần quan trọng (axelor-studio, axelor-message, axelor-utils) không phải là module trong source tree mà được tải xuống như các binary dependencies từ Axelor repository.
+Tệp này khai báo tất cả các thư viện bên ngoài mà Axelor Open Suite phụ thuộc vào. Điểm đặc biệt đáng chú ý là Axelor sử dụng một kiến trúc addon: ba thành phần quan trọng (axelor-studio, axelor-message, axelor-utils) không phải là module trong cây mã nguồn mà được tải xuống như các phụ thuộc nhị phân (binary dependencies) từ kho lưu trữ Axelor.
 
-**axelor-studio:3.5.1** là addon cực kỳ quan trọng - đây là nền tảng (platform) low-code/no-code cho phép người dùng tạo models, views, và workflows qua giao diện đồ họa mà không cần viết code. Addon này bao gồm cả BPM engine (có thể là Camunda dựa trên các dấu hiệu trong config file). Việc Studio là binary addon thay vì open source có ý nghĩa thương mại: Axelor có thể kiểm soát licensing và monetization của phần no-code platform này.
+**axelor-studio:3.5.1** là addon cực kỳ quan trọng - đây là nền tảng mã thấp/không mã (low-code/no-code platform) cho phép người dùng tạo model, giao diện, và quy trình làm việc qua giao diện đồ họa mà không cần viết mã. Addon này bao gồm cả công cụ quản lý quy trình nghiệp vụ (BPM engine). **axelor-message:3.3.0** cung cấp hệ thống nhắn tin. **axelor-utils:3.5.0** chứa các hàm tiện ích dùng chung.
 
-**axelor-message:3.3.0** cung cấp messaging system - có thể là email integration, in-app messaging, hoặc notification system. **axelor-utils:3.5.0** chứa các utility functions dùng chung.
+Về thư viện bên ngoài, danh sách cho thấy Axelor là một nền tảng đầy đủ tính năng:
+- **Groovy 3.0.23** - Ngôn ngữ kịch bản cho phép viết logic nghiệp vụ động mà không cần biên dịch lại toàn bộ ứng dụng.
+- **Xử lý PDF** (pdfbox 3.0.0, openpdf 1.4.2) - Tạo và xử lý tệp PDF cho báo cáo, hóa đơn.
+- **Thư viện bảo mật** (bouncycastle 1.78.1) - Mã hóa và chữ ký số, quan trọng cho hóa đơn điện tử.
+- **Lịch** (ical4j 2.2.0) - Xử lý tệp iCalendar cho tích hợp với Google Calendar, Outlook.
+- **Kiểm tra IBAN** (iban4j) - Kiểm tra số tài khoản ngân hàng quốc tế.
+- **Mã vạch** (zxing 3.5.0) - Tạo và đọc mã vạch và mã QR.
+- **WebDAV** (jackrabbit-webdav) - Giao thức để truy cập tệp qua web.
+- **OAuth** (google-oauth-client-jetty) - Đăng nhập bằng tài khoản Google.
+- **Đăng nhập một lần** (pac4j-core 5.7.7) - Bộ khung cho đăng nhập một lần (Single Sign-On), hỗ trợ nhiều giao thức: OAuth, SAML, CAS, OpenID Connect.
+- **SOAP** (groovy-wslite) - Gọi dịch vụ web kiểu cũ.
+- **OpenAPI** (swagger-jaxrs2) - Tự động sinh tài liệu API.
 
-Về thư viện bên ngoài, danh sách cho thấy Axelor là một platform đầy đủ tính năng:
-- **Groovy 3.0.23** - Ngôn ngữ scripting cho phép viết business logic động (dynamic) mà không cần biên dịch lại toàn bộ ứng dụng. Groovy có cú pháp (syntax) gần giống Java nhưng ngắn gọn hơn và hỗ trợ closures, meta-programming.
-- **PDF processing** (pdfbox 3.0.0, openpdf 1.4.2) - Tạo và xử lý file PDF cho báo cáo, hóa đơn.
-- **Security libraries** (bouncycastle 1.78.1) - Mã hóa (encryption) và chữ ký số (digital signature), đặc biệt quan trọng cho electronic invoicing.
-- **Calendar** (ical4j 2.2.0) - Xử lý file iCalendar cho tích hợp với Google Calendar, Outlook.
-- **IBAN validation** (iban4j) - Kiểm tra số tài khoản ngân hàng quốc tế, quan trọng cho module bank-payment.
-- **Barcode** (zxing 3.5.0) - Tạo và đọc mã vạch (barcode) và QR code.
-- **WebDAV** (jackrabbit-webdav) - Giao thức (protocol) để truy cập file qua web, có thể dùng cho document management.
-- **OAuth** (google-oauth-client-jetty) - Đăng nhập bằng Google account.
-- **SSO** (pac4j-core 5.7.7) - Framework cho Single Sign-On, hỗ trợ nhiều protocols: OAuth, SAML, CAS, OpenID Connect.
-- **SOAP** (groovy-wslite) - Gọi web services kiểu cũ (legacy).
-- **OpenAPI** (swagger-jaxrs2) - Tự động generate API documentation.
-
-**Bằng chứng từ code:**
+**Bằng chứng từ mã:**
 ```groovy
 libs.axelor_studio = 'com.axelor.addons:axelor-studio:3.5.1'
 libs.axelor_message = 'com.axelor.addons:axelor-message:3.3.0'
@@ -202,21 +168,21 @@ libs.groovy = 'org.codehaus.groovy:groovy-all:3.0.23'
 libs.pac4j_core = "org.pac4j:pac4j-core:5.7.7"
 ```
 
-**Giải thích code:** Cú pháp `libs.tên_biến = 'dependency'` là Gradle 7.x+ convention, định nghĩa version catalog để quản lý tập trung (centralized) phiên bản thư viện. Dòng `axelor_studio` cho thấy group là `com.axelor.addons`, artifact là `axelor-studio`, version là `3.5.1`. Tất cả các modules khác có thể reference `libs.axelor_studio` thay vì hard-code dependency string, giúp dễ dàng nâng cấp (upgrade) version sau này.
+**Giải thích mã:** Cú pháp `libs.tên_biến = 'dependency'` là quy ước của Gradle 7.x trở lên, định nghĩa danh mục phiên bản để quản lý tập trung phiên bản thư viện. Dòng `axelor_studio` cho thấy nhóm là `com.axelor.addons`, tên sản phẩm là `axelor-studio`, phiên bản là `3.5.1`. Tất cả các module khác có thể tham chiếu `libs.axelor_studio` thay vì viết cứng chuỗi phụ thuộc, giúp dễ dàng nâng cấp phiên bản sau này.
 
 ---
 
 ### 6. CẤU TRÚC AXELOR-BASE - MODULE NỀN TẢNG
 
-**File nguồn:** `/modules/axelor-open-suite/axelor-base/build.gradle` [Từ source code]
+**Nguồn:** `/modules/axelor-open-suite/axelor-base/build.gradle` [Từ source code]
 
-axelor-base là module quan trọng và phức tạp nhất trong toàn bộ hệ thống, đóng vai trò như một lớp nền tảng (foundation layer) mà tất cả modules khác đều xây dựng dựa trên nó. File build.gradle của module này tiết lộ một điểm thú vị: bên cạnh backend Java, module còn có một frontend component riêng biệt được viết bằng **React 19.1** nằm trong thư mục `map-viewer/`.
+axelor-base là module quan trọng và phức tạp nhất trong toàn bộ hệ thống, đóng vai trò như một lớp nền tảng mà tất cả module khác đều xây dựng dựa trên nó. Tệp build.gradle của module này tiết lộ một điểm thú vị: bên cạnh phần phụ trợ Java, module còn có một thành phần giao diện riêng biệt được viết bằng **React 19.1** nằm trong thư mục `map-viewer/`.
 
-Thành phần React này sử dụng **Node.js 22.17.1** và **Yarn 1.22.19** để quản lý dependencies và build. Gradle được cấu hình để tự động tải xuống (download) đúng phiên bản Node.js (thông qua `download = true`), sau đó chạy `yarn install` để cài đặt npm packages, rồi `yarn run build` để compile React app thành static assets (JavaScript bundles, CSS). Cuối cùng, output của React build được copy vào thư mục `webapp/base/map-viewer/` và đóng gói (packaging) chung vào file JAR của module. Cách tiếp cận này có nghĩa React app được deploy như một phần của backend JAR, không cần serve riêng từ Node.js server.
+Thành phần React này sử dụng **Node.js 22.17.1** và **Yarn 1.22.19** để quản lý các phụ thuộc và xây dựng. Gradle được cấu hình để tự động tải xuống đúng phiên bản Node.js (thông qua `download = true`), sau đó chạy `yarn install` để cài đặt các gói npm, rồi `yarn run build` để biên dịch ứng dụng React thành các tài nguyên tĩnh. Cuối cùng, đầu ra của quá trình xây dựng React được sao chép vào thư mục `webapp/base/map-viewer/` và đóng gói chung vào tệp JAR của module. Cách tiếp cận này có nghĩa ứng dụng React được triển khai như một phần của tệp JAR phụ trợ, không cần phục vụ riêng từ máy chủ Node.js.
 
-Tại sao lại có React trong một dự án Java? Có thể đây là một widget đặc biệt cho chức năng xem bản đồ (map viewer) - hiển thị địa chỉ khách hàng, warehouse locations trên Google Maps hoặc OpenStreetMap. Việc dùng React cho widget phức tạp như map có ý nghĩa vì React ecosystem có nhiều thư viện map tốt (React Leaflet, React Google Maps) và performance của Virtual DOM phù hợp với việc render hàng nghìn markers.
+> ⚠️ **Suy luận:** Việc có React trong một dự án Java có thể là một widget đặc biệt cho chức năng xem bản đồ - hiển thị địa chỉ khách hàng, vị trí kho hàng trên Google Maps hoặc OpenStreetMap. Việc dùng React cho widget phức tạp như bản đồ có ý nghĩa vì hệ sinh thái React có nhiều thư viện bản đồ tốt và hiệu năng của DOM ảo phù hợp với việc hiển thị hàng nghìn điểm đánh dấu.
 
-**Bằng chứng từ code (Frontend build pipeline):**
+**Bằng chứng từ mã (đường ống xây dựng giao diện):**
 ```groovy
 node {
   version = '22.17.1'
@@ -238,40 +204,40 @@ jar {
 }
 ```
 
-**Giải thích code:** Block `node` cấu hình Gradle Node Plugin. Thuộc tính `download = true` quan trọng - nó cho phép Gradle tự động tải Node.js nếu developer chưa cài, đảm bảo môi trường build nhất quán (consistent) trên mọi máy. `nodeModulesDir` chỉ định nơi chạy `yarn install`. Task `buildFront` phụ thuộc vào `installFrontDeps` (cài dependencies trước), sau đó chạy yarn build. Task `jar` cuối cùng phụ thuộc vào `buildFront`, nghĩa là mỗi lần build JAR, React app đều được build lại và copy vào JAR.
+**Giải thích mã:** Khối `node` cấu hình plugin Node của Gradle. Thuộc tính `download = true` quan trọng - nó cho phép Gradle tự động tải Node.js nếu lập trình viên chưa cài, đảm bảo môi trường xây dựng nhất quán trên mọi máy. `nodeModulesDir` chỉ định nơi chạy `yarn install`. Nhiệm vụ `buildFront` phụ thuộc vào `installFrontDeps` (cài các phụ thuộc trước), sau đó chạy xây dựng yarn. Nhiệm vụ `jar` cuối cùng phụ thuộc vào `buildFront`, nghĩa là mỗi lần xây dựng JAR, ứng dụng React đều được xây dựng lại và sao chép vào JAR.
 
-Về cấu trúc thư mục, axelor-base chứa **189 domain XML files** (định nghĩa entities) và **192 view XML files** (định nghĩa giao diện người dùng). Đây là con số ấn tượng cho thấy độ phức tạp của module - nó không chỉ là "base" đơn giản mà là một business application hoàn chỉnh với đầy đủ entities và UI. Cấu trúc resources directory tuân theo convention rõ ràng:
+Về cấu trúc thư mục, axelor-base chứa **189 tệp XML miền** (định nghĩa thực thể) và **192 tệp XML giao diện** (định nghĩa giao diện người dùng). Đây là con số ấn tượng cho thấy độ phức tạp của module - nó không chỉ là "nền tảng" đơn giản mà là một ứng dụng nghiệp vụ hoàn chỉnh với đầy đủ thực thể và giao diện người dùng. Cấu trúc thư mục tài nguyên tuân theo quy ước rõ ràng:
 
 ```
 src/main/resources/
-├── apps/                # Application-level configs
-├── data-export/         # Export templates (CSV, Excel)
-├── data-import/         # Import configs và mapping rules
-├── data-init/           # Initial data (seed data) - CSV files
-├── domains/             # *** 189 domain XML files ***
-├── i18n/                # Translation files (properties)
-├── import-configs/      # Cấu hình cho data import
-├── reports/             # BIRT report definitions (.rptdesign)
-└── views/               # *** 192 view XML files ***
+├── apps/                # Cấu hình cấp ứng dụng
+├── data-export/         # Mẫu xuất dữ liệu (CSV, Excel)
+├── data-import/         # Cấu hình nhập và quy tắc ánh xạ
+├── data-init/           # Dữ liệu khởi tạo - tệp CSV
+├── domains/             # *** 189 tệp XML miền ***
+├── i18n/                # Tệp dịch ngôn ngữ
+├── import-configs/      # Cấu hình cho nhập dữ liệu
+├── reports/             # Định nghĩa báo cáo BIRT (.rptdesign)
+└── views/               # *** 192 tệp XML giao diện ***
 ```
 
-Thư mục `data-init/` chứa seed data - dữ liệu khởi tạo (initial data) dưới dạng CSV files được import tự động khi cài đặt lần đầu. Thư mục `i18n/` chứa translation files, cho phép ứng dụng đa ngôn ngữ (internationalization). Thư mục `reports/` chứa BIRT report templates - BIRT (Business Intelligence and Reporting Tools) là một framework Eclipse cho việc tạo báo cáo phức tạp.
+Thư mục `data-init/` chứa dữ liệu khởi tạo dưới dạng tệp CSV được nhập tự động khi cài đặt lần đầu. Thư mục `i18n/` chứa tệp dịch, cho phép ứng dụng đa ngôn ngữ. Thư mục `reports/` chứa mẫu báo cáo BIRT - BIRT (Business Intelligence and Reporting Tools) là một bộ khung Eclipse cho việc tạo báo cáo phức tạp.
 
 ---
 
 ### 7. AXELOR-SALE VÀ AXELOR-ACCOUNT - HAI MODULE NGHIỆP VỤ CHÍNH
 
-**File nguồn:** `/modules/axelor-open-suite/axelor-sale/build.gradle`, `/modules/axelor-open-suite/axelor-account/build.gradle` [Từ source code]
+**Nguồn:** `/modules/axelor-open-suite/axelor-sale/build.gradle`, `/modules/axelor-open-suite/axelor-account/build.gradle` [Từ source code]
 
-**axelor-sale** là module quản lý bán hàng, có một dependency duy nhất: `api project(":modules:axelor-crm")`. Pattern này cho thấy kiến trúc phân lớp rõ ràng - Sale không phụ thuộc trực tiếp vào base (mặc dù vẫn nhận được base thông qua transitive dependency từ CRM), mà phụ thuộc vào CRM. Điều này hợp lý vì quy trình bán hàng thường bắt đầu từ CRM: Lead → Opportunity → Quotation → Sale Order. Module này chứa 31 domain entities và 30 view files - nhỏ gọn so với base nhưng tập trung vào business logic bán hàng.
+**axelor-sale** là module quản lý bán hàng, có một phụ thuộc duy nhất: `api project(":modules:axelor-crm")`. Mẫu này cho thấy kiến trúc phân lớp rõ ràng - module bán hàng không phụ thuộc trực tiếp vào base (mặc dù vẫn nhận được base thông qua phụ thuộc bắc cầu từ CRM), mà phụ thuộc vào CRM. Điều này hợp lý vì quy trình bán hàng thường bắt đầu từ CRM: khách hàng tiềm năng → cơ hội → báo giá → đơn hàng. Module này chứa 31 thực thể miền và 30 tệp giao diện - nhỏ gọn so với base nhưng tập trung vào logic nghiệp vụ bán hàng.
 
-**axelor-account** là module kế toán, phức tạp hơn nhiều với **122 domain entities** và **120 view files**, khiến nó trở thành module lớn thứ hai sau base. Dependencies của account module tiết lộ nhiều điều thú vị về chức năng:
-- **jdom, xalan, xmlbeans** - Ba thư viện XML processing này có thể dùng cho việc generate và parse file XML của electronic invoicing (hóa đơn điện tử), đặc biệt là các chuẩn như UBL (Universal Business Language), ebXML.
-- **bouncycastle (bcprov, bcpkix)** - Provider mã hóa (cryptographic provider) mạnh mẽ, có thể dùng để ký số (digital signature) hóa đơn điện tử, yêu cầu bắt buộc ở nhiều quốc gia như Việt Nam, Italy, Brazil.
-- **ical4j** - Tích hợp calendar, có thể dùng cho việc lên lịch thanh toán, nhắc nhở đến hạn hóa đơn.
-- **iban4j** - Validate số tài khoản ngân hàng theo chuẩn IBAN (International Bank Account Number), quan trọng cho thanh toán quốc tế và SEPA trong EU.
+**axelor-account** là module kế toán, phức tạp hơn nhiều với **122 thực thể miền** và **120 tệp giao diện**, khiến nó trở thành module lớn thứ hai sau base. Các phụ thuộc của module kế toán tiết lộ nhiều điều thú vị về chức năng:
+- **jdom, xalan, xmlbeans** - Ba thư viện xử lý XML này có thể dùng cho việc sinh và phân tích tệp XML của hóa đơn điện tử, đặc biệt là các chuẩn như ngôn ngữ nghiệp vụ phổ quát (Universal Business Language - UBL), ebXML.
+- **bouncycastle (bcprov, bcpkix)** - Nhà cung cấp mã hóa mạnh mẽ, có thể dùng để ký số hóa đơn điện tử, yêu cầu bắt buộc ở nhiều quốc gia như Việt Nam, Italy, Brazil.
+- **ical4j** - Tích hợp lịch, có thể dùng cho việc lên lịch thanh toán, nhắc nhở đến hạn hóa đơn.
+- **iban4j** - Kiểm tra số tài khoản ngân hàng theo chuẩn số tài khoản ngân hàng quốc tế (International Bank Account Number - IBAN), quan trọng cho thanh toán quốc tế và SEPA trong Liên minh châu Âu.
 
-**Bằng chứng từ code:**
+**Bằng chứng từ mã:**
 ```groovy
 dependencies {
   api project(":modules:axelor-base")
@@ -288,31 +254,31 @@ dependencies {
 }
 ```
 
-**Giải thích code:** Từ khóa `api` trong `api project(":modules:axelor-base")` có ý nghĩa: dependencies của account sẽ expose base module cho các modules khác depend vào account (API dependency leaking). Ngược lại, `implementation` chỉ dùng internally - các module phụ thuộc vào account sẽ KHÔNG tự động nhận được jdom, xalan, etc. Đây là best practice để giảm coupling và tránh dependency hell.
+**Giải thích mã:** Từ khóa `api` trong `api project(":modules:axelor-base")` có ý nghĩa: các phụ thuộc của account sẽ phơi bày (expose) module base cho các module khác phụ thuộc vào account. Ngược lại, `implementation` chỉ dùng nội bộ - các module phụ thuộc vào account sẽ không tự động nhận được jdom, xalan, v.v. Đây là thực hành tốt để giảm liên kết và tránh địa ngục phụ thuộc (dependency hell).
 
-Module account cũng có thư mục đặc biệt `l10n/` (localization) chứa dữ liệu theo từng quốc gia như chart of accounts (bảng tài khoản kế toán), tax configurations, đây là requirement thiết yếu cho một accounting system quốc tế vì mỗi nước có quy định kế toán và thuế khác nhau.
+Module account cũng có thư mục đặc biệt `l10n/` (địa phương hóa - localization) chứa dữ liệu theo từng quốc gia như bảng tài khoản kế toán, cấu hình thuế, đây là yêu cầu thiết yếu cho một hệ thống kế toán quốc tế vì mỗi nước có quy định kế toán và thuế khác nhau.
 
 ---
 
-### 8. DOMAIN MODELS - CƠ CHẾ ĐỊNH NGHĨA ENTITY BẰNG XML
+### 8. MÔ HÌNH MIỀN - CƠ CHẾ ĐỊNH NGHĨA THỰC THỂ BẰNG XML
 
-**File nguồn:** `/modules/axelor-open-suite/axelor-base/src/main/resources/domains/Address.xml`, `Company.xml` [Từ source code]
+**Nguồn:** `/modules/axelor-open-suite/axelor-base/src/main/resources/domains/Address.xml`, `Company.xml` [Từ source code]
 
-Axelor sử dụng một approach độc đáo: thay vì định nghĩa JPA entities trực tiếp bằng Java annotations (như phần lớn các Java frameworks khác), Axelor dùng **Domain XML files** như source of truth. Đây là một ví dụ về Model-Driven Development (MDD) - developers định nghĩa models ở mức abstraction cao (XML schema), sau đó Axelor code generator tự động sinh ra Java entity classes với đầy đủ JPA annotations, getters/setters, equals/hashCode, toString.
+Axelor sử dụng một cách tiếp cận độc đáo: thay vì định nghĩa các thực thể JPA trực tiếp bằng chú thích Java, Axelor dùng **tệp XML miền** như nguồn chân lý. Đây là một ví dụ về phát triển hướng mô hình (Model-Driven Development - MDD) - các lập trình viên định nghĩa model ở mức trừu tượng cao (lược đồ XML), sau đó trình sinh mã của Axelor tự động sinh ra các lớp thực thể Java với đầy đủ chú thích JPA, getter/setter, equals/hashCode, toString.
 
-Domain XML tuân theo một schema chuẩn (`domain-models_7.4.xsd`) với namespace `http://axelor.com/xml/ns/domain-models`. Mỗi file XML có thể chứa nhiều entity definitions, và mỗi entity có thể có nhiều loại fields: `<string>`, `<integer>`, `<decimal>`, `<boolean>`, `<date>`, `<datetime>`, `<many-to-one>` (foreign key), `<one-to-many>` (reverse relationship), `<many-to-many>`.
+XML miền tuân theo một lược đồ chuẩn (`domain-models_7.4.xsd`) với không gian tên `http://axelor.com/xml/ns/domain-models`. Mỗi tệp XML có thể chứa nhiều định nghĩa thực thể, và mỗi thực thể có thể có nhiều loại trường: `<string>`, `<integer>`, `<decimal>`, `<boolean>`, `<date>`, `<datetime>`, `<many-to-one>` (khóa ngoại), `<one-to-many>` (quan hệ ngược), `<many-to-many>`.
 
-Điểm đặc biệt của Axelor Domain XML là các attributes bổ sung (extended attributes) cung cấp metadata phong phú hơn nhiều so với JPA thuần túy:
-- **namecolumn="true"** - Đánh dấu field này là display name của entity, dùng khi hiển thị trong dropdowns, references.
-- **search="field1,field2,field3"** - Danh sách các fields được dùng cho full-text search khi người dùng gõ vào search box.
-- **massUpdate="true"** - Cho phép bulk update field này cho nhiều records cùng lúc.
-- **cacheable="true"** - Bật entity-level caching, các instances của entity này sẽ được cache trong L2 cache (second-level cache) của Hibernate.
-- **readonly="true"** - Field chỉ đọc, không thể update sau khi tạo.
-- **track** - Audit trail feature, tự động ghi lại lịch sử thay đổi của field, quan trọng cho compliance và debugging.
-- **showIf/hideIf** - Conditional rendering, field chỉ hiện khi điều kiện được thỏa mãn.
-- **extra-code** - Cho phép nhúng Java code trực tiếp trong XML bằng CDATA section, thường dùng để định nghĩa constants.
+Điểm đặc biệt của XML miền Axelor là các thuộc tính bổ sung cung cấp siêu dữ liệu phong phú hơn nhiều so với JPA thuần túy:
+- **namecolumn="true"** - Đánh dấu trường này là tên hiển thị của thực thể, dùng khi hiển thị trong danh sách thả xuống, tham chiếu.
+- **search="field1,field2,field3"** - Danh sách các trường được dùng cho tìm kiếm toàn văn bản khi người dùng gõ vào hộp tìm kiếm.
+- **massUpdate="true"** - Cho phép cập nhật hàng loạt trường này cho nhiều bản ghi cùng lúc.
+- **cacheable="true"** - Bật bộ đệm cấp thực thể, các thể hiện của thực thể này sẽ được đệm trong bộ đệm cấp hai của Hibernate.
+- **readonly="true"** - Trường chỉ đọc, không thể cập nhật sau khi tạo.
+- **track** - Tính năng nhật ký kiểm toán, tự động ghi lại lịch sử thay đổi của trường, quan trọng cho tuân thủ và gỡ lỗi.
+- **showIf/hideIf** - Hiển thị có điều kiện, trường chỉ hiện khi điều kiện được thỏa mãn.
+- **extra-code** - Cho phép nhúng mã Java trực tiếp trong XML bằng phần CDATA, thường dùng để định nghĩa hằng số.
 
-**Bằng chứng từ code (Address entity):**
+**Bằng chứng từ mã (thực thể Address):**
 ```xml
 <entity name="Address">
   <many-to-one name="country" ref="com.axelor.apps.base.db.Country"
@@ -331,9 +297,9 @@ Domain XML tuân theo một schema chuẩn (`domain-models_7.4.xsd`) với names
 </entity>
 ```
 
-**Giải thích code:** Entity Address này minh họa nhiều concepts quan trọng. Field `country` là many-to-one relationship với `required="true"`, nghĩa là mỗi address phải thuộc về một country (địa chỉ không thể tồn tại mà không có quốc gia). Field `streetName` có attribute `help` - văn bản này sẽ hiển thị như tooltip khi user hover chuột, giúp hướng dẫn người dùng. Field `city` có `massUpdate="true"` - use case là khi merge hai cities, admin có thể chọn nhiều addresses và update city cho tất cả cùng lúc. Fields `latit` và `longit` dùng precision cao (38,18) để lưu tọa độ GPS chính xác. Field `fullName` được đánh dấu `namecolumn="true"` nên khi hiển thị Address trong dropdown (ví dụ: chọn shipping address), sẽ show fullName thay vì ID. Attribute `search` liệt kê các fields sẽ được search khi user gõ vào search box - điều này cho phép tìm địa chỉ theo nhiều trường khác nhau.
+**Giải thích mã:** Thực thể Address này minh họa nhiều khái niệm quan trọng. Trường `country` là quan hệ nhiều-một với `required="true"`, nghĩa là mỗi địa chỉ phải thuộc về một quốc gia. Trường `streetName` có thuộc tính `help` - văn bản này sẽ hiển thị như chú giải công cụ khi người dùng rê chuột, giúp hướng dẫn người dùng. Trường `city` có `massUpdate="true"` - trường hợp sử dụng là khi hợp nhất hai thành phố, quản trị viên có thể chọn nhiều địa chỉ và cập nhật thành phố cho tất cả cùng lúc. Các trường `latit` và `longit` dùng độ chính xác cao (38,18) để lưu tọa độ GPS chính xác. Trường `fullName` được đánh dấu `namecolumn="true"` nên khi hiển thị Address trong danh sách thả xuống (ví dụ: chọn địa chỉ giao hàng), sẽ hiển thị fullName thay vì ID. Thuộc tính `search` liệt kê các trường sẽ được tìm kiếm khi người dùng gõ vào hộp tìm kiếm - điều này cho phép tìm địa chỉ theo nhiều trường khác nhau.
 
-**Bằng chứng từ code (Company entity với caching và tracking):**
+**Bằng chứng từ mã (thực thể Company với bộ đệm và theo dõi):**
 ```xml
 <entity name="Company" cacheable="true">
   <string name="name" title="Name" required="true" unique="true"/>
@@ -359,52 +325,52 @@ Domain XML tuân theo một schema chuẩn (`domain-models_7.4.xsd`) với names
 </entity>
 ```
 
-**Giải thích code:** Company entity có `cacheable="true"` ở entity level - điều này có ý nghĩa lớn về performance. Vì Company records thường được reference rất nhiều (mỗi invoice, sale order, purchase order đều có company), việc cache chúng trong L2 cache giúp giảm đáng kể số lượng truy vấn database. Hai fields `name` và `code` đều có `unique="true"` - Hibernate sẽ tạo unique constraint trong database để đảm bảo không có hai companies trùng tên hoặc code. Field `bankDetailsList` là one-to-many relationship với `mappedBy="company"` - đây là reverse side của relationship, nghĩa là BankDetails entity sẽ có field `company` là foreign key.
+**Giải thích mã:** Thực thể Company có `cacheable="true"` ở cấp thực thể - điều này có ý nghĩa lớn về hiệu năng. Vì các bản ghi Company thường được tham chiếu rất nhiều (mỗi hóa đơn, đơn hàng, đơn mua đều có company), việc đệm chúng trong bộ đệm cấp hai giúp giảm đáng kể số lượng truy vấn cơ sở dữ liệu. Hai trường `name` và `code` đều có `unique="true"` - Hibernate sẽ tạo ràng buộc duy nhất trong cơ sở dữ liệu để đảm bảo không có hai công ty trùng tên hoặc mã. Trường `bankDetailsList` là quan hệ một-nhiều với `mappedBy="company"` - đây là phía ngược của quan hệ, nghĩa là thực thể BankDetails sẽ có trường `company` là khóa ngoại.
 
-Block `<extra-code>` cho phép nhúng Java constants trực tiếp vào generated entity class. Kỹ thuật này rất hữu ích để avoid magic numbers - thay vì dùng `company.setCategory(1)`, code có thể dùng `company.setCategory(Company.CATEGORY_CUSTOMER)`, dễ đọc và ít lỗi hơn.
+Khối `<extra-code>` cho phép nhúng các hằng số Java trực tiếp vào lớp thực thể được sinh. Kỹ thuật này rất hữu ích để tránh số ma thuật - thay vì dùng `company.setCategory(1)`, mã có thể dùng `company.setCategory(Company.CATEGORY_CUSTOMER)`, dễ đọc và ít lỗi hơn.
 
-Block `<track>` định nghĩa audit trail: mỗi khi UPDATE (không phải CREATE) một Company và các fields name, code, hoặc currency thay đổi, hệ thống sẽ tự động ghi lại: ai thay đổi, thay đổi lúc nào, giá trị cũ là gì, giá trị mới là gì. Feature này cực kỳ quan trọng cho compliance và forensics khi có incident.
+Khối `<track>` định nghĩa nhật ký kiểm toán: mỗi khi cập nhật một Company và các trường name, code, hoặc currency thay đổi, hệ thống sẽ tự động ghi lại: ai thay đổi, thay đổi lúc nào, giá trị cũ là gì, giá trị mới là gì. Tính năng này cực kỳ quan trọng cho tuân thủ và điều tra khi có sự cố.
 
-Tại sao Axelor chọn XML thay vì Java annotations? Có nhiều lý do: (1) XML có thể được parse và validate ở build time bằng XSD schema, phát hiện lỗi sớm hơn. (2) Code generator có thể đọc XML dễ dàng hơn parse Java annotations. (3) Business analysts không biết Java vẫn có thể đọc và review XML models. (4) XML cho phép extends và overrides dễ dàng qua XPath (sẽ thấy ở phần view extensions). Tuy nhiên, nhược điểm là XML verbose hơn và không có type safety lúc viết (IDE không autocomplete được như Java).
+> ⚠️ **Suy luận:** Tại sao Axelor chọn XML thay vì chú thích Java? Có nhiều lý do: (1) XML có thể được phân tích và kiểm tra ở thời điểm xây dựng bằng lược đồ XSD, phát hiện lỗi sớm hơn. (2) Trình sinh mã có thể đọc XML dễ dàng hơn phân tích chú thích Java. (3) Các nhà phân tích nghiệp vụ không biết Java vẫn có thể đọc và xem xét model XML. (4) XML cho phép mở rộng và ghi đè dễ dàng qua XPath. Tuy nhiên, nhược điểm là XML dài dòng hơn và không có an toàn kiểu lúc viết (IDE không tự động hoàn thành được như Java).
 
 ---
 
-### 9. VIEW DEFINITIONS - XÂY DỰNG GIAO DIỆN BẰNG XML
+### 9. ĐỊNH NGHĨA GIAO DIỆN - XÂY DỰNG GIAO DIỆN BẰNG XML
 
-**File nguồn:** `/modules/axelor-open-suite/axelor-base/src/main/resources/views/Address.xml` [Từ source code]
+**Nguồn:** `/modules/axelor-open-suite/axelor-base/src/main/resources/views/Address.xml` [Từ source code]
 
-Tương tự như domain models, giao diện người dùng (UI) trong Axelor cũng được định nghĩa hoàn toàn bằng XML thay vì HTML/JSP/Thymeleaf. Axelor cung cấp một DSL (Domain-Specific Language) dạng XML cho việc build UI, với các view types khác nhau phù hợp với từng màn hình nghiệp vụ:
+Tương tự như mô hình miền, giao diện người dùng trong Axelor cũng được định nghĩa hoàn toàn bằng XML thay vì HTML/JSP/Thymeleaf. Axelor cung cấp một ngôn ngữ chuyên dụng dạng XML cho việc xây dựng giao diện người dùng, với các loại giao diện khác nhau phù hợp với từng màn hình nghiệp vụ:
 
-**View types chính:**
-- **`<grid>`** - List view hoặc table view, hiển thị nhiều records trong một bảng với columns, sorting, filtering. Đây là view đầu tiên người dùng thấy khi click vào menu item.
-- **`<form>`** - Detail view hoặc form view, hiển thị chi tiết một record duy nhất với đầy đủ fields, organized trong panels, tabs. Khi user click vào một row trong grid, form view sẽ mở.
-- **`<panel-include>`** - Include và reuse panels từ views khác, giúp tránh duplication.
+**Các loại giao diện chính:**
+- **`<grid>`** - Giao diện danh sách hoặc bảng, hiển thị nhiều bản ghi trong một bảng với cột, sắp xếp, lọc. Đây là giao diện đầu tiên người dùng thấy khi nhấp vào mục menu.
+- **`<form>`** - Giao diện chi tiết hoặc biểu mẫu, hiển thị chi tiết một bản ghi duy nhất với đầy đủ trường, được tổ chức trong các bảng điều khiển, tab. Khi người dùng nhấp vào một hàng trong lưới, giao diện biểu mẫu sẽ mở.
+- **`<panel-include>`** - Bao gồm và tái sử dụng các bảng điều khiển từ giao diện khác, giúp tránh trùng lặp.
 
-Axelor view system cung cấp nhiều features phức tạp thông qua XML attributes:
+Hệ thống giao diện Axelor cung cấp nhiều tính năng phức tạp thông qua các thuộc tính XML:
 
-**Action lifecycle hooks:**
-- `onLoad` - Execute actions khi view được load lần đầu, thường dùng để set default values hoặc load related data.
-- `onSave` - Execute trước khi save record, thường dùng cho validation hoặc data transformation.
-- `onNew` - Execute khi user click nút "New" để tạo record mới, dùng để initialize fields.
-- `onCopy` - Execute khi user duplicate một record, có thể clear hoặc modify một số fields.
-- `onChange` - Execute khi một field thay đổi, dùng cho real-time computation hoặc cascading updates.
+**Móc nối vòng đời hành động:**
+- `onLoad` - Thực thi các hành động khi giao diện được tải lần đầu, thường dùng để đặt giá trị mặc định hoặc tải dữ liệu liên quan.
+- `onSave` - Thực thi trước khi lưu bản ghi, thường dùng cho kiểm tra hoặc chuyển đổi dữ liệu.
+- `onNew` - Thực thi khi người dùng nhấp nút "Mới" để tạo bản ghi mới, dùng để khởi tạo trường.
+- `onCopy` - Thực thi khi người dùng sao chép một bản ghi, có thể xóa hoặc sửa một số trường.
+- `onChange` - Thực thi khi một trường thay đổi, dùng cho tính toán thời gian thực hoặc cập nhật liên hoàn.
 
-**Action types:**
-Axelor định nghĩa nhiều loại actions, mỗi loại phục vụ một mục đích khác nhau:
-- `action-group-*` - Nhóm nhiều actions lại và execute theo thứ tự (chaining).
-- `action-*-method-*` - Call một Java method trong controller class, dùng khi cần business logic phức tạp không thể express bằng XML.
-- `action-*-record-*` - Thao tác với record: set field values, clear fields, copy values. Dùng cho logic đơn giản như "khi chọn customer, auto-fill address".
-- `action-*-attrs-*` - Update UI attributes: show/hide fields, make readonly, change required status, update title/css class. Dùng cho conditional UI logic.
-- `action-*-validate-*` - Validation rules, show error/warning/info messages khi điều kiện không thỏa mãn.
+**Các loại hành động:**
+Axelor định nghĩa nhiều loại hành động, mỗi loại phục vụ một mục đích khác nhau:
+- `action-group-*` - Nhóm nhiều hành động lại và thực thi theo thứ tự.
+- `action-*-method-*` - Gọi một phương thức Java trong lớp điều khiển, dùng khi cần logic nghiệp vụ phức tạp không thể biểu diễn bằng XML.
+- `action-*-record-*` - Thao tác với bản ghi: đặt giá trị trường, xóa trường, sao chép giá trị. Dùng cho logic đơn giản như "khi chọn khách hàng, tự động điền địa chỉ".
+- `action-*-attrs-*` - Cập nhật thuộc tính giao diện người dùng: ẩn/hiện trường, làm chỉ đọc, thay đổi trạng thái bắt buộc, cập nhật tiêu đề/lớp CSS. Dùng cho logic giao diện có điều kiện.
+- `action-*-validate-*` - Quy tắc kiểm tra, hiển thị thông báo lỗi/cảnh báo/thông tin khi điều kiện không thỏa mãn.
 
-**UI control features:**
-- **Conditional rendering:** `showIf`, `hideIf`, `readonlyIf` - Fields có thể tự động ẩn/hiện hoặc readonly dựa trên expressions. Ví dụ: `showIf="status == 'confirmed'"` chỉ hiển thị field khi order đã confirm.
-- **Layout system:** `colSpan` - Axelor dùng 12-column grid system (giống Bootstrap), mỗi field có thể span nhiều columns.
-- **Custom toolbar:** `<toolbar>` cho phép thêm custom buttons vào grid view, ví dụ "Bulk Import", "Generate Report".
-- **Client-side binding:** `x-bind` - Two-way data binding với transformations, ví dụ `{{fieldName|uppercase}}` tự động uppercase input.
-- **Permissions:** `canNew`, `canEdit`, `canRemove` - Control xem user có quyền create/edit/delete records hay không.
+**Tính năng điều khiển giao diện người dùng:**
+- **Hiển thị có điều kiện:** `showIf`, `hideIf`, `readonlyIf` - Các trường có thể tự động ẩn/hiện hoặc chỉ đọc dựa trên biểu thức. Ví dụ: `showIf="status == 'confirmed'"` chỉ hiển thị trường khi đơn hàng đã xác nhận.
+- **Hệ thống bố cục:** `colSpan` - Axelor dùng hệ thống lưới 12 cột, mỗi trường có thể trải nhiều cột.
+- **Thanh công cụ tùy chỉnh:** `<toolbar>` cho phép thêm nút tùy chỉnh vào giao diện lưới, ví dụ "Nhập hàng loạt", "Tạo báo cáo".
+- **Ràng buộc phía khách hàng:** `x-bind` - Ràng buộc dữ liệu hai chiều với chuyển đổi, ví dụ `{{fieldName|uppercase}}` tự động viết hoa đầu vào.
+- **Quyền:** `canNew`, `canEdit`, `canRemove` - Kiểm soát xem người dùng có quyền tạo/sửa/xóa bản ghi hay không.
 
-**Bằng chứng từ code (Grid view với custom toolbar):**
+**Bằng chứng từ mã (giao diện lưới với thanh công cụ tùy chỉnh):**
 ```xml
 <grid name="address-grid" title="Address list" model="com.axelor.apps.base.db.Address">
   <toolbar>
@@ -417,9 +383,9 @@ Axelor định nghĩa nhiều loại actions, mỗi loại phục vụ một m�
 </grid>
 ```
 
-**Giải thích code:** Grid view này hiển thị danh sách addresses. Attribute `model` chỉ định entity class đầy đủ package name. Block `<toolbar>` thêm một button "Check Duplicate" vào toolbar phía trên grid - khi click, nó gọi action `action-base-method-show-duplicate` (likely một Java method để find duplicate addresses based on some criteria). Field `fullName` được hiển thị trong grid. Một button đặc biệt `mapBtn` với icon Font Awesome `fa-map-marker` xuất hiện trên mỗi row, khi click sẽ mở map view để show address location.
+**Giải thích mã:** Giao diện lưới này hiển thị danh sách địa chỉ. Thuộc tính `model` chỉ định lớp thực thể với tên gói đầy đủ. Khối `<toolbar>` thêm một nút "Kiểm tra trùng lặp" vào thanh công cụ phía trên lưới - khi nhấp, nó gọi hành động `action-base-method-show-duplicate`. Trường `fullName` được hiển thị trong lưới. Một nút đặc biệt `mapBtn` với biểu tượng Font Awesome `fa-map-marker` xuất hiện trên mỗi hàng, khi nhấp sẽ mở giao diện bản đồ để hiển thị vị trí địa chỉ.
 
-**Bằng chứng từ code (Form view với conditional logic và lifecycle hooks):**
+**Bằng chứng từ mã (giao diện biểu mẫu với logic có điều kiện và móc nối vòng đời):**
 ```xml
 <form name="address-form" title="Address" model="com.axelor.apps.base.db.Address"
   width="large" onLoad="action-group-base-address-onload"
@@ -439,40 +405,40 @@ Axelor định nghĩa nhiều loại actions, mỗi loại phục vụ một m�
 </form>
 ```
 
-**Giải thích code:** Form này có `width="large"` - form sẽ chiếm nhiều không gian màn hình hơn default width. Attribute `onLoad="action-group-base-address-onload"` chỉ định một action group chạy khi form load, có thể dùng để set default country dựa trên user's company location. `onSave="action-group-base-address-onsave"` chạy trước khi save, có thể validate địa chỉ hoặc geocode để lấy lat/long.
+**Giải thích mã:** Biểu mẫu này có `width="large"` - biểu mẫu sẽ chiếm nhiều không gian màn hình hơn độ rộng mặc định. Thuộc tính `onLoad="action-group-base-address-onload"` chỉ định một nhóm hành động chạy khi biểu mẫu tải, có thể dùng để đặt quốc gia mặc định dựa trên vị trí công ty của người dùng. `onSave="action-group-base-address-onsave"` chạy trước khi lưu, có thể kiểm tra địa chỉ hoặc mã hóa địa lý để lấy tọa độ.
 
-Field `isInvoicingAddr` có conditional rendering: `showIf="$popup() && id == null"` - chỉ hiện khi form được mở trong popup mode VÀ đang tạo mới (id == null chưa save). Function `$popup()` là built-in expression function của Axelor. `&amp;` là cách viết `&&` trong XML (phải escape).
+Trường `isInvoicingAddr` có hiển thị có điều kiện: `showIf="$popup() && id == null"` - chỉ hiện khi biểu mẫu được mở trong chế độ cửa sổ bật lên VÀ đang tạo mới (id chưa lưu). Hàm `$popup()` là hàm biểu thức tích hợp của Axelor. `&amp;` là cách viết `&&` trong XML (phải thoát).
 
-Panel "actionsPanel" có `sidebar="true"` - đây là sidebar panel thường xuất hiện bên phải form, chứa actions buttons. Button group có `hideIf="$popup()"` - ẩn khi ở popup mode, và `readonlyIf="!id"` - disabled khi record chưa được save (id null). Use case: không thể view map cho address chưa save vì chưa có lat/long.
+Bảng điều khiển "actionsPanel" có `sidebar="true"` - đây là bảng điều khiển thanh bên thường xuất hiện bên phải biểu mẫu, chứa các nút hành động. Nhóm nút có `hideIf="$popup()"` - ẩn khi ở chế độ cửa sổ bật lên, và `readonlyIf="!id"` - vô hiệu hóa khi bản ghi chưa được lưu. Trường hợp sử dụng: không thể xem bản đồ cho địa chỉ chưa lưu vì chưa có tọa độ.
 
-**Bằng chứng từ code (Client-side transformations):**
+**Bằng chứng từ mã (chuyển đổi phía khách hàng):**
 ```xml
 <field name="department" x-bind="{{department|uppercase}}" colSpan="12"/>
 <field name="buildingNumber" onChange="action-address-record-change-streetName"
   x-bind="{{buildingNumber|uppercase}}" colSpan="12"/>
 ```
 
-**Giải thích code:** Attribute `x-bind` implements two-way data binding với pipe transformations (syntax giống Angular). `{{department|uppercase}}` automatically uppercase mọi input vào field department - user type "sales" sẽ tự động thành "SALES". Field `buildingNumber` vừa có uppercase binding VÀ `onChange` action - khi user nhập building number, nó uppercase, sau đó trigger action `action-address-record-change-streetName` có thể auto-construct street name từ building number + street name fields.
+**Giải thích mã:** Thuộc tính `x-bind` thực hiện ràng buộc dữ liệu hai chiều với chuyển đổi bằng ống. `{{department|uppercase}}` tự động viết hoa mọi đầu vào vào trường department - người dùng gõ "sales" sẽ tự động thành "SALES". Trường `buildingNumber` vừa có ràng buộc viết hoa VÀ hành động `onChange` - khi người dùng nhập số nhà, nó viết hoa, sau đó kích hoạt hành động `action-address-record-change-streetName` có thể tự động xây dựng tên đường từ các trường số nhà + tên đường.
 
-**Bằng chứng từ code (Java controller integration):**
+**Bằng chứng từ mã (tích hợp điều khiển Java):**
 ```xml
 <button name="validateBtn" title="Validate"
   onClick="com.axelor.apps.base.web.AddressController:validate,save"/>
 ```
 
-**Giải thích code:** Attribute `onClick` có thể reference trực tiếp một Java controller method bằng syntax `package.ClassName:methodName`. Có thể chain nhiều actions bằng comma: `,save` là built-in action để save record. Flow sẽ là: call `AddressController.validate()` (có thể validate address format, check with postal service API), nếu validate pass thì save record.
+**Giải thích mã:** Thuộc tính `onClick` có thể tham chiếu trực tiếp một phương thức điều khiển Java bằng cú pháp `package.ClassName:methodName`. Có thể xâu chuỗi nhiều hành động bằng dấu phẩy: `,save` là hành động tích hợp để lưu bản ghi. Luồng sẽ là: gọi `AddressController.validate()` (có thể kiểm tra định dạng địa chỉ, kiểm tra với API dịch vụ bưu điện), nếu kiểm tra thành công thì lưu bản ghi.
 
-Tại sao Axelor dùng XML cho views? (1) Declarative approach dễ maintain hơn imperative UI code. (2) Non-developers (business analysts) có thể customize UI. (3) Views có thể được extended và overridden bởi modules khác qua XPath (similar to domain extension). (4) Axelor view engine có thể generate optimized frontend code từ XML. Nhược điểm là: (1) XML verbose. (2) Khó debug vì không có stack traces như code thông thường. (3) IDE support hạn chế (no autocomplete). (4) Complex UI logic vẫn phải drop down to Java controller methods.
+> ⚠️ **Suy luận:** Tại sao Axelor dùng XML cho giao diện? (1) Cách tiếp cận khai báo dễ duy trì hơn mã giao diện người dùng mệnh lệnh. (2) Những người không phải lập trình viên (nhà phân tích nghiệp vụ) có thể tùy chỉnh giao diện. (3) Giao diện có thể được mở rộng và ghi đè bởi các module khác qua XPath. (4) Công cụ giao diện Axelor có thể sinh mã giao diện tối ưu từ XML. Nhược điểm là: (1) XML dài dòng. (2) Khó gỡ lỗi vì không có dấu vết ngăn xếp như mã thông thường. (3) Hỗ trợ IDE hạn chế (không tự động hoàn thành). (4) Logic giao diện phức tạp vẫn phải dùng phương thức điều khiển Java.
 
 ---
 
-### 10. FILE CẤU HÌNH ỨNG DỤNG CHÍNH
+### 10. TẬP TIN CẤU HÌNH ỨNG DỤNG CHÍNH
 
-**File nguồn:** `/src/main/resources/axelor-config.properties` [Từ source code]
+**Nguồn:** `/src/main/resources/axelor-config.properties` [Từ source code]
 
-File `axelor-config.properties` với 518 dòng là trung tâm cấu hình (configuration hub) của toàn bộ ứng dụng Axelor. File này tổng hợp mọi aspects: database, security, performance, UI, reporting, encryption. Việc tập trung configuration vào một file có ưu điểm là dễ quản lý và backup, nhưng nhược điểm là file rất dài và có thể overwhelming. Chúng ta sẽ phân tích từng nhóm cấu hình quan trọng.
+Tệp `axelor-config.properties` với 518 dòng là trung tâm cấu hình của toàn bộ ứng dụng Axelor. Tệp này tổng hợp mọi khía cạnh: cơ sở dữ liệu, bảo mật, hiệu năng, giao diện người dùng, báo cáo, mã hóa.
 
-#### 10.1. Cấu hình Database và Hibernate
+#### 10.1. Cấu hình cơ sở dữ liệu và Hibernate
 
 ```properties
 db.default.driver = org.postgresql.Driver
@@ -482,7 +448,9 @@ db.default.user = odooclau
 db.default.password = odoo
 ```
 
-Database connection sử dụng PostgreSQL driver kết nối đến IP `10.10.1.31` port `5432`, database name `axelor_demo_staging`. Điểm đáng chú ý nhất là `db.default.ddl = update` - đây là Hibernate DDL (Data Definition Language) auto strategy. Với setting này, mỗi khi application khởi động, Hibernate sẽ so sánh structure của Java entity classes với schema hiện tại trong database. Nếu có sự khác biệt (ví dụ: thêm field mới vào entity), Hibernate sẽ TỰ ĐỘNG execute `ALTER TABLE` statements để update schema. Approach này rất tiện lợi cho development vì không cần viết migration scripts thủ công, NHƯNG cực kỳ nguy hiểm cho production vì: (1) Không có version control của schema changes. (2) Không thể rollback nếu migration fail. (3) Risk mất dữ liệu nếu drop columns. Best practice trong production là dùng `ddl=validate` (chỉ kiểm tra, không tự động sửa) và dùng migration tools như Flyway hoặc Liquibase, nhưng Axelor không có migration tool này [Suy luận từ việc không tìm thấy trong source].
+Kết nối cơ sở dữ liệu sử dụng trình điều khiển PostgreSQL kết nối đến địa chỉ IP `10.10.1.31` cổng `5432`, tên cơ sở dữ liệu `axelor_demo_staging`. Điểm đáng chú ý nhất là `db.default.ddl = update` - đây là chiến lược tự động ngôn ngữ định nghĩa dữ liệu (Data Definition Language - DDL) của Hibernate. Với cài đặt này, mỗi khi ứng dụng khởi động, Hibernate sẽ so sánh cấu trúc của các lớp thực thể Java với lược đồ hiện tại trong cơ sở dữ liệu. Nếu có sự khác biệt (ví dụ: thêm trường mới vào thực thể), Hibernate sẽ tự động thực thi các câu lệnh `ALTER TABLE` để cập nhật lược đồ.
+
+> ⚠️ **Suy luận:** Cách tiếp cận này rất tiện lợi cho phát triển vì không cần viết tập lệnh di chuyển thủ công, nhưng cực kỳ nguy hiểm cho môi trường sản xuất vì: (1) Không có kiểm soát phiên bản của thay đổi lược đồ. (2) Không thể hoàn tác nếu di chuyển thất bại. (3) Nguy cơ mất dữ liệu nếu xóa cột. Thực hành tốt nhất trong sản xuất là dùng `ddl=validate` (chỉ kiểm tra, không tự động sửa) và dùng công cụ di chuyển như Flyway hoặc Liquibase, nhưng Axelor không có công cụ di chuyển này.
 
 ```properties
 javax.persistence.sharedCache.mode = ENABLE_SELECTIVE
@@ -492,13 +460,13 @@ hibernate.hikari.maximumPoolSize = 20
 hibernate.hikari.idleTimeout = 300000
 ```
 
-JPA shared cache (L2 cache) được set `ENABLE_SELECTIVE` nghĩa là chỉ entities được đánh dấu `@Cacheable` (hoặc trong Axelor là `cacheable="true"` trong domain XML) mới được cache. Đây là approach conservative và an toàn - tránh cache toàn bộ (tốn memory) nhưng vẫn cache những entities hot (frequently accessed) như Company, Currency, Country.
+Bộ đệm chia sẻ JPA (L2 cache) được đặt `ENABLE_SELECTIVE` nghĩa là chỉ các thực thể được đánh dấu `@Cacheable` (hoặc trong Axelor là `cacheable="true"` trong XML miền) mới được đệm. Đây là cách tiếp cận bảo thủ và an toàn - tránh đệm toàn bộ (tốn bộ nhớ) nhưng vẫn đệm những thực thể được truy cập thường xuyên như công ty, tiền tệ, quốc gia.
 
-Hibernate Search (full-text search engine) có `directory_provider = none` - có thể tính năng này bị disable hoặc Axelor dùng alternative solution. [Suy luận: cần kiểm tra xem có search implementation khác không]
+Nhóm kết nối HikariCP được cấu hình với tối thiểu 5 kết nối nhàn rỗi và tối đa 20 kết nối. Thời gian chờ nhàn rỗi là 300.000 mili giây (5 phút) - các kết nối không sử dụng quá 5 phút sẽ bị đóng để giải phóng tài nguyên. Con số 20 kết nối tối đa là bảo thủ, phù hợp cho triển khai nhỏ đến trung bình.
 
-HikariCP connection pool được cấu hình với minimum 5 idle connections và maximum 20 connections. Idle timeout là 300,000 milliseconds (5 phút) - connections không sử dụng quá 5 phút sẽ bị close để free resources. Con số 20 maximum connections là conservative, phù hợp cho small-to-medium deployments. Với high-traffic production system, có thể cần tăng lên 50-100. Tại sao cần connection pooling? Database connections rất "expensive" để tạo (mất vài chục milliseconds), nếu mỗi request đều tạo connection mới sẽ rất chậm. Pooling tái sử dụng connections, giảm latency và database load.
+> ⚠️ **Suy luận:** Tại sao cần nhóm kết nối? Các kết nối cơ sở dữ liệu rất "đắt" để tạo (mất vài chục mili giây), nếu mỗi yêu cầu đều tạo kết nối mới sẽ rất chậm. Nhóm tái sử dụng kết nối, giảm độ trễ và tải cơ sở dữ liệu.
 
-#### 10.2. Thông tin Application
+#### 10.2. Thông tin ứng dụng
 
 ```properties
 application.name = Axelor Open Suite
@@ -508,33 +476,33 @@ application.theme = Modern
 application.locale = fr
 ```
 
-Application đang chạy ở `mode = dev` (development mode) - ở mode này, Axelor có thể enable hot reload, detailed error messages, disable caching để dễ debug. Khi deploy production phải đổi sang `mode = prod`. Theme là "Modern" - Axelor có multiple UI themes. Default locale là `fr` (French) - toàn bộ UI mặc định sẽ hiển thị tiếng Pháp (Axelor là công ty Pháp).
+Ứng dụng đang chạy ở `mode = dev` (chế độ phát triển) - ở chế độ này, Axelor có thể bật tải lại nóng (hot reload), thông báo lỗi chi tiết, vô hiệu hóa bộ đệm để dễ gỡ lỗi. Khi triển khai sản xuất phải đổi sang `mode = prod`. Chủ đề là "Modern" - Axelor có nhiều chủ đề giao diện người dùng. Ngôn ngữ mặc định là `fr` (tiếng Pháp) - toàn bộ giao diện người dùng mặc định sẽ hiển thị tiếng Pháp (Axelor là công ty Pháp).
 
-#### 10.3. Security và SQL Injection Protection
+#### 10.3. Bảo mật và bảo vệ chèn SQL
 
 ```properties
 #application.domain-blocklist-pattern = (\\(\\s*(SELECT|DELETE|UPDATE)\\s+)|query_to_xml
 ```
 
-Domain expression filtering - đây là một security measure quan trọng. Axelor cho phép users (đặc biệt là admins) định nghĩa filter expressions cho records, ví dụ `self.status = 'draft' AND self.amount > 1000`. Nếu không validate cẩn thận, expressions này có thể chứa SQL injection attacks. Pattern này block các expressions chứa SQL keywords nguy hiểm như SELECT, DELETE, UPDATE bên trong parentheses, hoặc function `query_to_xml` có thể leak data. Hiện đang comment out - có thể đang dùng default pattern hoặc đã migrate sang validation approach khác.
+Lọc biểu thức miền - đây là một biện pháp bảo mật quan trọng. Axelor cho phép người dùng (đặc biệt là quản trị viên) định nghĩa biểu thức lọc cho bản ghi. Nếu không kiểm tra cẩn thận, các biểu thức này có thể chứa tấn công chèn SQL. Mẫu này chặn các biểu thức chứa từ khóa SQL nguy hiểm như SELECT, DELETE, UPDATE bên trong dấu ngoặc đơn, hoặc hàm `query_to_xml` có thể rò rỉ dữ liệu. Hiện đang được chú thích - có thể đang dùng mẫu mặc định hoặc đã di chuyển sang cách tiếp cận kiểm tra khác.
 
 ```properties
 #application.script.cache.size = 1000
 #application.script.cache.expire-time = 20
 ```
 
-Groovy script caching - Axelor cho phép viết Groovy scripts trong actions, BPM tasks. Groovy scripts phải được compiled trước khi execute, quá trình này tốn CPU. Caching compiled scripts với size 1000 (1000 unique scripts) và expire time 20 phút giúp tránh re-compilation. Nếu cache quá nhỏ hoặc expire quá nhanh, performance sẽ giảm. Nếu cache quá lớn, tốn memory.
+Bộ đệm kịch bản Groovy - Axelor cho phép viết kịch bản Groovy trong các hành động, nhiệm vụ BPM. Các kịch bản Groovy phải được biên dịch trước khi thực thi, quá trình này tốn CPU. Bộ đệm các kịch bản đã biên dịch với kích thước 1000 (1000 kịch bản duy nhất) và thời gian hết hạn 20 phút giúp tránh biên dịch lại.
 
-#### 10.4. View Configuration
+#### 10.4. Cấu hình giao diện
 
 ```properties
 view.max-tabs = 10
 view.menubar.location = both
 ```
 
-UI chỉ cho phép mở maximum 10 tabs cùng lúc - tránh users mở quá nhiều tabs làm chậm browser. Menubar có thể hiển thị ở `left` (sidebar), `top` (top bar), hoặc `both` - cấu hình này cho phép users chọn cách navigation ưa thích.
+Giao diện người dùng chỉ cho phép mở tối đa 10 tab cùng lúc - tránh người dùng mở quá nhiều tab làm chậm trình duyệt. Thanh menu có thể hiển thị ở `left` (thanh bên), `top` (thanh trên), hoặc `both` - cấu hình này cho phép người dùng chọn cách điều hướng ưa thích.
 
-#### 10.5. BPM Studio Configuration (QUAN TRỌNG)
+#### 10.5. Cấu hình BPM Studio (QUAN TRỌNG)
 
 ```properties
 studio.bpm.logging = false
@@ -543,13 +511,13 @@ studio.bpm.max.active.connections = 50
 studio.bpm.history.time.to.live = P180D
 ```
 
-Đây là phát hiện CỰC KỲ quan trọng - Axelor có tích hợp BPM (Business Process Management) engine! BPM engine có connection pool RIÊNG biệt với main application pool. Tại sao cần pool riêng? BPM workflows thường chạy lâu (long-running processes) và có thể hold database connections trong thời gian dài, nếu dùng chung pool với main app sẽ gây connection starvation. Idle connections: 10, max active: 50 - lớn hơn nhiều so với main pool (20), cho thấy BPM processes có concurrency cao.
+Đây là phát hiện cực kỳ quan trọng - Axelor có tích hợp công cụ quản lý quy trình nghiệp vụ! Công cụ BPM có nhóm kết nối riêng biệt với nhóm ứng dụng chính. Kết nối nhàn rỗi: 10, kết nối hoạt động tối đa: 50 - lớn hơn nhiều so với nhóm chính (20), cho thấy các quy trình BPM có tính đồng thời cao.
 
-`history.time.to.live = P180D` - ISO 8601 duration format, P180D = 180 days. Completed process instances và history data sẽ được giữ trong 180 ngày rồi tự động cleanup. Điều này quan trọng vì BPM tables phình to rất nhanh - mỗi process tạo nhiều rows (process instance, activities, variables, history), nếu không cleanup định kỳ database sẽ đầy. 180 ngày là balance tốt giữa audit requirements và database size.
+`history.time.to.live = P180D` - định dạng thời lượng ISO 8601, P180D = 180 ngày. Các thể hiện quy trình đã hoàn thành và dữ liệu lịch sử sẽ được giữ trong 180 ngày rồi tự động dọn dẹp. Điều này quan trọng vì các bảng BPM phình to rất nhanh - mỗi quy trình tạo nhiều hàng (thể hiện quy trình, hoạt động, biến, lịch sử), nếu không dọn dẹp định kỳ cơ sở dữ liệu sẽ đầy. 180 ngày là cân bằng tốt giữa yêu cầu kiểm toán và kích thước cơ sở dữ liệu.
 
-[Suy luận]: Dựa trên config patterns (connection pooling, history TTL), BPM engine có thể là Camunda - một trong những BPM engines phổ biến nhất cho Java. Camunda có config tương tự.
+> ⚠️ **Suy luận:** Dựa trên các mẫu cấu hình (nhóm kết nối, TTL lịch sử), công cụ BPM có thể là Camunda - một trong những công cụ BPM phổ biến nhất cho Java. Camunda có cấu hình tương tự.
 
-#### 10.6. Authentication và Single Sign-On
+#### 10.6. Xác thực và đăng nhập một lần
 
 ```properties
 #auth.provider-order =
@@ -571,11 +539,11 @@ studio.bpm.history.time.to.live = P180D
 #auth.provider.cas.login-url = https://localhost:8443/cas/login
 ```
 
-Axelor hỗ trợ đa dạng authentication methods: Google OAuth, Keycloak (enterprise identity management), SAML 2.0 (SSO standard), LDAP (Active Directory integration), CAS (Central Authentication Service). Đây là danh sách ấn tượng - phần lớn business applications chỉ support một hoặc hai methods. Multi-provider support rất quan trọng cho enterprise customers có infrastructure sẵn (ví dụ: đã có Keycloak hoặc LDAP).
+Axelor hỗ trợ đa dạng phương thức xác thực: Google OAuth, Keycloak (quản lý danh tính doanh nghiệp), SAML 2.0 (chuẩn đăng nhập một lần), LDAP (tích hợp Active Directory), CAS (dịch vụ xác thực tập trung - Central Authentication Service). Đây là danh sách ấn tượng - phần lớn ứng dụng nghiệp vụ chỉ hỗ trợ một hoặc hai phương thức.
 
-`auth.user.provisioning = none` control việc tự động tạo user accounts. Options có thể là: `create` (tự động tạo user trong database khi login qua SSO lần đầu), `link` (link SSO account với existing user), `none` (không tự động, phải tạo user trước). `none` là approach secure nhất nhưng kém convenient.
+`auth.user.provisioning = none` kiểm soát việc tự động tạo tài khoản người dùng. Các tùy chọn có thể là: `create` (tự động tạo người dùng trong cơ sở dữ liệu khi đăng nhập qua đăng nhập một lần lần đầu), `link` (liên kết tài khoản đăng nhập một lần với người dùng hiện có), `none` (không tự động, phải tạo người dùng trước). `none` là cách tiếp cận an toàn nhất nhưng kém tiện lợi.
 
-#### 10.7. Data Management
+#### 10.7. Quản lý dữ liệu
 
 ```properties
 data.upload.dir = {java.io.tmpdir}/axelor
@@ -590,30 +558,32 @@ data.export.dir = {java.io.tmpdir}/axelor
 data.import.demo-data = false
 ```
 
-File uploads được giới hạn 5MB - đủ cho documents, images nhưng không đủ cho videos. Upload directory là `{java.io.tmpdir}/axelor` - `{java.io.tmpdir}` là placeholder được replace bằng system temp dir. Allowlist/blocklist patterns control file types: có thể cho phép XML, HTML, images, PDFs nhưng block SVG (SVG có thể chứa JavaScript - XSS risk).
+Tải lên tệp được giới hạn 5MB - đủ cho tài liệu, hình ảnh nhưng không đủ cho video. Thư mục tải lên là `{java.io.tmpdir}/axelor` - `{java.io.tmpdir}` là chỗ giữ chỗ được thay thế bằng thư mục tạm thời của hệ thống. Các mẫu danh sách cho phép/chặn kiểm soát loại tệp: có thể cho phép XML, HTML, hình ảnh, PDF nhưng chặn SVG (SVG có thể chứa JavaScript - nguy cơ tấn công kịch bản chéo trang - XSS).
 
-Data export max size 5000 records - giới hạn này tránh users export millions of records làm database quá tải hoặc tạo file quá lớn không thể mở. UTF-8 encoding đảm bảo support đầy đủ Unicode characters (tiếng Việt, tiếng Trung, emoji).
+Kích thước tối đa xuất dữ liệu 5000 bản ghi - giới hạn này tránh người dùng xuất hàng triệu bản ghi làm cơ sở dữ liệu quá tải hoặc tạo tệp quá lớn không thể mở. Mã hóa UTF-8 đảm bảo hỗ trợ đầy đủ các ký tự Unicode (tiếng Việt, tiếng Trung, biểu tượng cảm xúc).
 
-`data.import.demo-data = false` - không import demo data khi khởi động. Demo data hữu ích cho testing nhưng phải disable trong production.
+`data.import.demo-data = false` - không nhập dữ liệu demo khi khởi động. Dữ liệu demo hữu ích cho kiểm thử nhưng phải vô hiệu hóa trong sản xuất.
 
-#### 10.8. Quartz Scheduler
+#### 10.8. Bộ lập lịch Quartz
 
 ```properties
 #quartz.enable = true
 #quartz.thread-count = 3
 ```
 
-Quartz là job scheduling library cho Java, cho phép chạy các tasks theo lịch (schedule) hoặc định kỳ (recurring). Thread count = 3 nghĩa là maximum 3 jobs có thể chạy đồng thời. Con số nhỏ này hợp lý vì scheduled jobs thường là nặng (heavy) - nếu cho phép quá nhiều jobs chạy cùng lúc sẽ overload system. Examples của scheduled jobs: send reminder emails, generate daily reports, cleanup old data, sync with external systems.
+Quartz là thư viện lập lịch công việc cho Java, cho phép chạy các nhiệm vụ theo lịch hoặc định kỳ. Số lượng luồng = 3 nghĩa là tối đa 3 công việc có thể chạy đồng thời. Con số nhỏ này hợp lý vì các công việc theo lịch thường là nặng - nếu cho phép quá nhiều công việc chạy cùng lúc sẽ quá tải hệ thống.
 
-#### 10.9. GDPR Compliance và Audit Trail
+> ⚠️ **Suy luận:** Ví dụ về các công việc theo lịch: gửi email nhắc nhở, tạo báo cáo hàng ngày, dọn dẹp dữ liệu cũ, đồng bộ với hệ thống bên ngoài.
+
+#### 10.9. Tuân thủ GDPR và nhật ký kiểm toán
 
 ```properties
 hibernate.session_factory.interceptor = com.axelor.apps.base.tracking.GlobalAuditInterceptor
 ```
 
-Đây là một Hibernate interceptor tùy chỉnh được gọi cho MỌI database operations (insert, update, delete). `GlobalAuditInterceptor` likely ghi lại WHO did WHAT WHEN - critical cho GDPR compliance (EU regulation yêu cầu track mọi access và modifications của personal data). Interceptor có performance cost (mỗi operation phải ghi thêm audit records) nhưng necessary cho compliance.
+Đây là một bộ chặn Hibernate tùy chỉnh được gọi cho mọi thao tác cơ sở dữ liệu (chèn, cập nhật, xóa). `GlobalAuditInterceptor` có thể ghi lại ai đã làm gì và khi nào - quan trọng cho tuân thủ GDPR (quy định của Liên minh châu Âu yêu cầu theo dõi mọi truy cập và sửa đổi dữ liệu cá nhân). Bộ chặn có chi phí hiệu năng (mỗi thao tác phải ghi thêm bản ghi kiểm toán) nhưng cần thiết cho tuân thủ.
 
-#### 10.10. Context Providers
+#### 10.10. Nhà cung cấp ngữ cảnh
 
 ```properties
 context.date = com.axelor.apps.base.service.DateService:date
@@ -621,41 +591,39 @@ context.appLogo = com.axelor.apps.base.service.user.UserService:getUserActiveCom
 context.app = com.axelor.studio.app.service.AppService
 ```
 
-Context providers inject dynamic values vào expressions và templates. Ví dụ: trong view expressions, có thể dùng `$date` sẽ gọi `DateService.date()` để lấy current date. `$appLogo` return URL của company logo để hiển thị trong UI. Đây là dependency injection pattern applied to configuration.
+Các nhà cung cấp ngữ cảnh tiêm các giá trị động vào biểu thức và mẫu. Ví dụ: trong biểu thức giao diện, có thể dùng `$date` sẽ gọi `DateService.date()` để lấy ngày hiện tại. `$appLogo` trả về địa chỉ URL của logo công ty để hiển thị trong giao diện người dùng. Đây là mẫu tiêm phụ thuộc được áp dụng cho cấu hình.
 
-#### 10.11. Studio Apps Installation
+#### 10.11. Cài đặt ứng dụng Studio
 
 ```properties
 studio.apps.install = all
 ```
 
-`studio.apps.install = all` tự động install TẤT CẢ Axelor Studio apps khi application khởi động lần đầu. Alternative là danh sách module names separated by comma (ví dụ: `sale,account,stock`). Setting `all` convenient cho development nhưng có thể không mong muốn trong production nếu chỉ cần subset of functionality.
+`studio.apps.install = all` tự động cài đặt tất cả ứng dụng Axelor Studio khi ứng dụng khởi động lần đầu. Thay thế là danh sách tên module phân tách bằng dấu phẩy (ví dụ: `sale,account,stock`). Cài đặt `all` tiện lợi cho phát triển nhưng có thể không mong muốn trong sản xuất nếu chỉ cần tập con chức năng.
 
 ---
 
-## Những điều KHÔNG tìm thấy trong Source Code
+## Những điều không tìm thấy trong mã nguồn
 
-Sau quá trình nghiên cứu toàn diện source code, có một số thành phần và công nghệ mà chúng tôi KHÔNG tìm thấy, điều này cũng tiết lộ nhiều thông tin về kiến trúc của Axelor:
+Sau quá trình nghiên cứu toàn diện mã nguồn, có một số thành phần và công nghệ mà chúng tôi không tìm thấy, điều này cũng tiết lộ nhiều thông tin về kiến trúc của Axelor:
 
-1. **Không tìm thấy Spring Framework dependencies** - Axelor KHÔNG sử dụng Spring Boot hay Spring Framework, điều này ngạc nhiên vì phần lớn Java enterprise applications hiện đại đều dùng Spring. Axelor có proprietary framework riêng với Dependency Injection dựa trên Google Guice (nhẹ hơn Spring nhiều). [Từ source code: không có spring-boot-starter hay spring-context trong dependencies]
+1. **Không tìm thấy phụ thuộc bộ khung Spring** - Axelor không sử dụng Spring Boot hay Spring Framework, điều này ngạc nhiên vì phần lớn ứng dụng doanh nghiệp Java hiện đại đều dùng Spring. Axelor có bộ khung độc quyền riêng với tiêm phụ thuộc dựa trên Google Guice (nhẹ hơn Spring nhiều). [Từ source code: không có spring-boot-starter hay spring-context trong các phụ thuộc]
 
-2. **Không tìm thấy file `persistence.xml`** - JPA standard thường yêu cầu file này để cấu hình persistence unit, nhưng Axelor quản lý JPA configuration qua framework riêng, có thể programmatically hoặc qua axelor-config.properties. [Từ source code: searched toàn bộ project không có file này]
+2. **Không tìm thấy tệp `persistence.xml`** - Chuẩn JPA thường yêu cầu tệp này để cấu hình đơn vị lưu trữ, nhưng Axelor quản lý cấu hình JPA qua bộ khung riêng, có thể theo chương trình hoặc qua axelor-config.properties. [Từ source code: tìm kiếm toàn bộ dự án không có tệp này]
 
-3. **Không tìm thấy Liquibase hoặc Flyway** - Đây là hai migration tools phổ biến nhất cho Java database versioning. Việc thiếu chúng nghĩa là Axelor hoàn toàn rely on Hibernate DDL auto-update (`ddl=update`), đây là một quyết định kiến trúc có rủi ro cho production environments. [Từ source code: không có dependencies và không có migration scripts directories]
+3. **Không tìm thấy Liquibase hoặc Flyway** - Đây là hai công cụ di chuyển phổ biến nhất cho quản lý phiên bản cơ sở dữ liệu Java. Việc thiếu chúng nghĩa là Axelor hoàn toàn dựa vào cập nhật tự động DDL của Hibernate (`ddl=update`), đây là một quyết định kiến trúc có rủi ro cho môi trường sản xuất. [Từ source code: không có phụ thuộc và không có thư mục tập lệnh di chuyển]
 
-4. **Không tìm thấy Docker configuration** - Không có `Dockerfile`, `docker-compose.yml` ở root project. Điều này có thể vì Axelor được thiết kế deploy theo traditional way (WAR file lên Tomcat) hơn là containerized deployment. Docker config có thể có ở repository riêng hoặc documentation riêng. [Từ source code: không có ở root level]
+4. **Không tìm thấy cấu hình Docker** - Không có `Dockerfile`, `docker-compose.yml` ở gốc dự án. [Từ source code: không có ở cấp gốc]
 
-5. **Không tìm thấy CI/CD configuration files** - Không có `.gitlab-ci.yml`, `.github/workflows`, `Jenkinsfile` ở root project. CI/CD có thể được setup ở infrastructure level hoặc trong git repository riêng của công ty deploy. [Từ source code: không có ở root level]
+5. **Không tìm thấy tệp cấu hình tích hợp liên tục/triển khai liên tục (CI/CD)** - Không có `.gitlab-ci.yml`, `.github/workflows`, `Jenkinsfile` ở gốc dự án. [Từ source code: không có ở cấp gốc]
 
-6. **Không tìm thấy modern frontend framework (ngoài React map-viewer)** - Không có Angular, Vue.js project ở frontend. Main UI của Axelor có thể dùng custom JavaScript framework (proprietary) generate từ view XMLs, hoặc có thể là legacy framework. React chỉ dùng cho map-viewer component. [Từ source code: chỉ có React trong axelor-base/map-viewer]
+6. **Không tìm thấy bộ khung giao diện hiện đại (ngoài React map-viewer)** - Không có dự án Angular, Vue.js ở giao diện. Giao diện người dùng chính của Axelor có thể dùng bộ khung JavaScript tùy chỉnh (độc quyền) được sinh từ XML giao diện, hoặc có thể là bộ khung kế thừa. React chỉ dùng cho thành phần trình xem bản đồ. [Từ source code: chỉ có React trong axelor-base/map-viewer]
 
-7. **Không tìm thấy REST API framework riêng biệt** - Không có Spring MVC, JAX-RS (Jersey/RESTEasy) configuration rõ ràng. Axelor likely có built-in REST layer generated tự động từ domain XMLs. [Suy luận: API references trong config nhưng không thấy explicit framework setup]
+7. **Không tìm thấy hệ thống hàng đợi thông điệp** - Không có phụ thuộc RabbitMQ, Kafka, ActiveMQ. Xử lý bất đồng bộ có thể dựa hoàn toàn vào bộ lập lịch Quartz, không có kiến trúc thực sự hướng thông điệp. [Từ source code: không có JMS hoặc thư viện nhắn tin ngoài addon axelor-message]
 
-8. **Không tìm thấy message queue systems** - Không có RabbitMQ, Kafka, ActiveMQ dependencies. Async processing có thể rely hoàn toàn on Quartz scheduler, không có true message-driven architecture. [Từ source code: không có JMS hoặc messaging libraries ngoài axelor-message addon]
+8. **Không tìm thấy công cụ giám sát/quan sát tích hợp** - Không có tích hợp Prometheus, Micrometer, ELK stack. [Từ source code: không có thư viện số liệu]
 
-9. **Không tìm thấy monitoring/observability tools built-in** - Không có Prometheus, Micrometer, ELK stack integrations. Monitoring có thể là responsibility của deployment infrastructure hơn là application code. [Từ source code: không có metrics libraries]
-
-10. **Không tìm thấy test coverage tools** - Có JUnit dependency nhưng không có Jacoco, Cobertura cho test coverage reporting. Testing có thể còn đơn giản hoặc use external tools. [Từ source code: chỉ có mockito và junit platform]
+9. **Không tìm thấy công cụ độ bao phủ kiểm thử** - Có phụ thuộc JUnit nhưng không có Jacoco, Cobertura cho báo cáo độ bao phủ kiểm thử. [Từ source code: chỉ có mockito và nền tảng junit]
 
 ---
 
@@ -663,196 +631,196 @@ Sau quá trình nghiên cứu toàn diện source code, có một số thành ph
 
 Sau bước nghiên cứu đầu tiên này, xuất hiện nhiều câu hỏi kỹ thuật cần điều tra sâu hơn ở các bước tiếp theo:
 
-1. **Code generation mechanism chi tiết:** Domain XMLs được transform thành Java entity classes bằng cách nào? Là annotation processor chạy lúc compile, hay là Gradle plugin generate code trước compile? Generated code được lưu ở đâu? Làm thế nào để inspect generated entities khi debugging?
+1. **Cơ chế sinh mã chi tiết:** Các XML miền được biến đổi thành các lớp thực thể Java bằng cách nào? Là bộ xử lý chú thích chạy lúc biên dịch, hay là plugin Gradle sinh mã trước khi biên dịch? Mã được sinh được lưu ở đâu? Làm thế nào để kiểm tra các thực thể được sinh khi gỡ lỗi?
 
-2. **Frontend rendering engine:** View XMLs được render ra HTML/JavaScript thế nào? Framework frontend là gì - custom framework, legacy GWT (Google Web Toolkit), hoặc một template engine nào đó? React chỉ dùng cho map, vậy phần còn lại dùng gì?
+2. **Công cụ hiển thị giao diện:** Các XML giao diện được hiển thị ra HTML/JavaScript thế nào? Bộ khung giao diện là gì - bộ khung tùy chỉnh, GWT kế thừa (Google Web Toolkit), hoặc một công cụ mẫu nào đó? React chỉ dùng cho bản đồ, vậy phần còn lại dùng gì?
 
-3. **BPM engine cụ thể:** Config cho thấy có BPM nhưng không rõ engine. Cần tìm trong axelor-studio addon (binary dependency) xem có reference đến Camunda, Activiti, Flowable hay custom implementation không? Có support BPMN 2.0 standard hay là proprietary notation?
+3. **Công cụ BPM cụ thể:** Cấu hình cho thấy có BPM nhưng không rõ công cụ. Cần tìm trong addon axelor-studio (phụ thuộc nhị phân) xem có tham chiếu đến Camunda, Activiti, Flowable hay triển khai tùy chỉnh không? Có hỗ trợ chuẩn BPMN 2.0 hay là ký hiệu độc quyền?
 
-4. **Repository pattern implementation:** Domain XML không define repository methods như `findByName()`. Vậy repositories được generate tự động với CRUD methods? Hay developers phải viết custom repository classes? Có Query DSL hay criteria API nào không?
+4. **Triển khai mẫu kho lưu trữ:** XML miền không định nghĩa các phương thức kho lưu trữ như `findByName()`. Vậy các kho lưu trữ được sinh tự động với các phương thức CRUD? Hay các lập trình viên phải viết các lớp kho lưu trữ tùy chỉnh? Có ngôn ngữ chuyên dụng truy vấn (Query DSL) hay API tiêu chí nào không?
 
-5. **Action execution engine:** Khi button trong view XML trigger `action-method`, hệ thống routing request tới Java controller method như thế nào? Có convention-based mapping (như Rails) hay annotation-based (như Spring)? Performance của action dispatching ra sao với thousands of actions?
+5. **Công cụ thực thi hành động:** Khi nút trong XML giao diện kích hoạt `action-method`, hệ thống định tuyến yêu cầu tới phương thức điều khiển Java như thế nào? Có ánh xạ dựa trên quy ước (như Rails) hay dựa trên chú thích (như Spring)? Hiệu năng của phân phối hành động ra sao với hàng nghìn hành động?
 
-6. **MetaJsonModel và Custom Models:** Yêu cầu research đề cập "custom models" và "JSON models". Cần tìm entities như `MetaJsonRecord`, `MetaJsonModel`, `MetaJsonField` để hiểu cơ chế. Dữ liệu được serialize/deserialize thế nào? Query performance với JSON columns?
+6. **MetaJsonModel và mô hình tùy chỉnh:** Yêu cầu nghiên cứu đề cập "mô hình tùy chỉnh" và "mô hình JSON". Cần tìm các thực thể như `MetaJsonRecord`, `MetaJsonModel`, `MetaJsonField` để hiểu cơ chế. Dữ liệu được tuần tự hóa/giải tuần tự như thế nào? Hiệu năng truy vấn với các cột JSON?
 
-7. **axelor-studio source code:** Studio addon là binary dependency (`axelor-studio:3.5.1`), không có source trong open-suite repository. Đây có phải là paid/proprietary addon? Có document nào về Studio APIs không? Có thể decompile để research không?
+7. **Mã nguồn axelor-studio:** Addon Studio là phụ thuộc nhị phân (`axelor-studio:3.5.1`), không có nguồn trong kho lưu trữ open-suite. Đây có phải là addon trả phí/độc quyền? Có tài liệu nào về API Studio không? Có thể dịch ngược để nghiên cứu không?
 
-8. **View inheritance và extension:** Đã thấy `extension="true"` trong view XML. Mechanism cụ thể là XPath-based patching? Có conflict resolution nào khi multiple modules extend cùng view? Order of extensions?
+8. **Kế thừa và mở rộng giao diện:** Đã thấy `extension="true"` trong XML giao diện. Cơ chế cụ thể là vá dựa trên XPath? Có giải quyết xung đột nào khi nhiều module mở rộng cùng giao diện? Thứ tự mở rộng?
 
-9. **Multi-tenancy implementation:** Config có mention `application.multi-tenancy` nhưng đang disabled. Khi enable, implementation là per-schema (mỗi tenant một database schema) hay per-row (shared tables với tenant_id column)? Security isolation thế nào?
+9. **Triển khai đa thuê bao:** Cấu hình có đề cập `application.multi-tenancy` nhưng đang bị vô hiệu hóa. Khi bật, triển khai là mỗi lược đồ (mỗi thuê bao một lược đồ cơ sở dữ liệu) hay mỗi hàng (bảng chia sẻ với cột tenant_id)? Cách ly bảo mật thế nào?
 
-10. **Hibernate Search alternatives:** Config có `hibernate.search.default.directory_provider = none`. Vậy full-text search được implement bằng gì? PostgreSQL full-text search? Elasticsearch integration? Hay không có search capability?
+10. **Các lựa chọn thay thế tìm kiếm Hibernate:** Cấu hình có `hibernate.search.default.directory_provider = none`. Vậy tìm kiếm toàn văn bản được triển khai bằng gì? Tìm kiếm toàn văn bản PostgreSQL? Tích hợp Elasticsearch? Hay không có khả năng tìm kiếm?
 
-11. **Generated API endpoints:** Mỗi domain entity tự động có REST API endpoints không? Format là gì - `/api/com.axelor.apps.base.db.Address` hay short form `/api/address`? Có Swagger/OpenAPI documentation auto-generated không?
+11. **Các điểm cuối API được sinh:** Mỗi thực thể miền tự động có các điểm cuối REST API không? Định dạng là gì - `/api/com.axelor.apps.base.db.Address` hay dạng ngắn `/api/address`? Có tài liệu Swagger/OpenAPI được sinh tự động không?
 
-12. **Permission system granularity:** Config có mention `application.permission.disable-action` và `disable-relational-field`. Điều này cho thấy permission system rất granular. Cần research cách define permissions - XML, database, annotation? Integration với views thế nào?
+12. **Độ chi tiết hệ thống quyền:** Cấu hình có đề cập `application.permission.disable-action` và `disable-relational-field`. Điều này cho thấy hệ thống quyền rất chi tiết. Cần nghiên cứu cách định nghĩa quyền - XML, cơ sở dữ liệu, chú thích? Tích hợp với giao diện thế nào?
 
-13. **Deployment options:** Axelor deploy như WAR file lên Tomcat? Hay có embedded server (như Spring Boot)? Có standalone JAR executable không? Kubernetes-friendly hay cần traditional application server?
+13. **Các tùy chọn triển khai:** Axelor triển khai như tệp WAR lên Tomcat? Hay có máy chủ nhúng (như Spring Boot)? Có tệp JAR độc lập thực thi không? Thân thiện với Kubernetes hay cần máy chủ ứng dụng truyền thống?
 
 ---
 
-## Sơ đồ kiến trúc tổng quan (Architecture Diagram)
+## Sơ đồ kiến trúc tổng quan
 
-Dựa trên findings từ source code analysis, đây là sơ đồ tổng quan về cấu trúc project Axelor ERP:
+Dựa trên các phát hiện từ phân tích mã nguồn, đây là sơ đồ tổng quan về cấu trúc dự án Axelor ERP:
 
 ```
-axelor-erp/                                    (Root Project)
-│                                              Version: 8.5.10
+axelor-erp/                                    (Dự án gốc)
+│                                              Phiên bản: 8.5.10
 │                                              Java: 21 (OpenJDK)
-│                                              Build: Gradle 8.x + Multi-module
+│                                              Xây dựng: Gradle 8.x + Đa module
 │
-├── build.gradle                               Root build configuration
+├── build.gradle                               Cấu hình xây dựng gốc
 │   └── allprojects {
 │         group = 'com.axelor.apps'
 │         java toolchain = Java 21
 │       }
 │
-├── settings.gradle                            Dynamic module discovery
-│   └── Traverse modules/ directory
-│       → Auto-include modules with build.gradle
+├── settings.gradle                            Phát hiện module động
+│   └── Duyệt thư mục modules/
+│       → Tự động thêm module có build.gradle
 │
-├── gradle.properties                          JVM settings
+├── gradle.properties                          Cài đặt JVM
 │   └── -Xmx2g heap
-│       parallel builds enabled
+│       xây dựng song song được bật
 │
 ├── src/main/resources/
-│   └── axelor-config.properties               [518 LINES] Main configuration
-│       ├── Database: PostgreSQL + Hibernate
-│       ├── Connection Pool: HikariCP (5-20 connections)
-│       ├── BPM: Dedicated pool (10-50 connections)
-│       ├── Auth: Google, Keycloak, SAML, LDAP, CAS
-│       ├── Security: GDPR audit interceptor
-│       └── Studio: Auto-install all apps
+│   └── axelor-config.properties               [518 DÒNG] Cấu hình chính
+│       ├── Cơ sở dữ liệu: PostgreSQL + Hibernate
+│       ├── Nhóm kết nối: HikariCP (5-20 kết nối)
+│       ├── BPM: Nhóm riêng (10-50 kết nối)
+│       ├── Xác thực: Google, Keycloak, SAML, LDAP, CAS
+│       ├── Bảo mật: Bộ chặn kiểm toán GDPR
+│       └── Studio: Tự động cài đặt tất cả ứng dụng
 │
 └── modules/
     └── axelor-open-suite/                     Git Submodule (v8.5.9)
         │
-        ├── libs.gradle                        External Dependencies
-        │   ├── axelor-studio:3.5.1           (Binary addon - No-code platform + BPM)
-        │   ├── axelor-message:3.3.0          (Binary addon - Messaging)
-        │   ├── axelor-utils:3.5.0            (Binary addon - Utilities)
-        │   ├── groovy:3.0.23                 (Scripting language)
-        │   ├── pac4j-core:5.7.7              (Multi-provider SSO)
-        │   ├── pdfbox, openpdf               (PDF processing)
-        │   ├── bouncycastle                  (Cryptography)
-        │   └── ical4j, iban4j, zxing, ...    (Business libs)
+        ├── libs.gradle                        Phụ thuộc bên ngoài
+        │   ├── axelor-studio:3.5.1           (Addon nhị phân - Nền tảng không mã + BPM)
+        │   ├── axelor-message:3.3.0          (Addon nhị phân - Nhắn tin)
+        │   ├── axelor-utils:3.5.0            (Addon nhị phân - Tiện ích)
+        │   ├── groovy:3.0.23                 (Ngôn ngữ kịch bản)
+        │   ├── pac4j-core:5.7.7              (Đăng nhập một lần đa nhà cung cấp)
+        │   ├── pdfbox, openpdf               (Xử lý PDF)
+        │   ├── bouncycastle                  (Mã hóa)
+        │   └── ical4j, iban4j, zxing, ...    (Thư viện nghiệp vụ)
         │
-        ├── version.gradle / version.txt       Version: 8.5.9
+        ├── version.gradle / version.txt       Phiên bản: 8.5.9
         │
-        ├── axelor-base/                       ★ FOUNDATION MODULE ★
-        │   ├── build.gradle                   Dependencies:
-        │   │   ├── axelor-studio             - No-code platform
-        │   │   ├── axelor-message            - Messaging
-        │   │   ├── axelor-utils              - Utilities
-        │   │   ├── Node.js 22.17.1           - Frontend build
-        │   │   └── React 19.1                - Map viewer component
+        ├── axelor-base/                       ★ MODULE NỀN TẢNG ★
+        │   ├── build.gradle                   Phụ thuộc:
+        │   │   ├── axelor-studio             - Nền tảng không mã
+        │   │   ├── axelor-message            - Nhắn tin
+        │   │   ├── axelor-utils              - Tiện ích
+        │   │   ├── Node.js 22.17.1           - Xây dựng giao diện
+        │   │   └── React 19.1                - Thành phần trình xem bản đồ
         │   │
-        │   ├── src/main/java/                 Java business logic
+        │   ├── src/main/java/                 Logic nghiệp vụ Java
         │   │   └── com/axelor/apps/base/
-        │   │       ├── service/              Service layer
-        │   │       ├── web/                  Web controllers
-        │   │       └── repo/                 Custom repositories
+        │   │       ├── service/              Lớp dịch vụ
+        │   │       ├── web/                  Điều khiển web
+        │   │       └── repo/                 Kho lưu trữ tùy chỉnh
         │   │
         │   ├── src/main/resources/
-        │   │   ├── domains/                   ★★★ 189 Domain XML files ★★★
-        │   │   │   └── (Entity definitions → Code generation)
-        │   │   ├── views/                     ★★★ 192 View XML files ★★★
-        │   │   │   └── (UI definitions → Rendered by framework)
-        │   │   ├── data-init/                CSV seed data
-        │   │   ├── reports/                  BIRT report templates
-        │   │   └── i18n/                     Translation files
+        │   │   ├── domains/                   ★★★ 189 tệp XML miền ★★★
+        │   │   │   └── (Định nghĩa thực thể → Sinh mã)
+        │   │   ├── views/                     ★★★ 192 tệp XML giao diện ★★★
+        │   │   │   └── (Định nghĩa giao diện → Hiển thị bởi bộ khung)
+        │   │   ├── data-init/                Dữ liệu khởi tạo CSV
+        │   │   ├── reports/                  Mẫu báo cáo BIRT
+        │   │   └── i18n/                     Tệp dịch
         │   │
-        │   ├── src/main/webapp/               Web resources
+        │   ├── src/main/webapp/               Tài nguyên web
         │   │
-        │   └── map-viewer/                    ★ React App ★
-        │       ├── package.json              React 19.1 + dependencies
-        │       ├── src/                      React components
-        │       └── dist/                     Build output → bundled into JAR
+        │   └── map-viewer/                    ★ Ứng dụng React ★
+        │       ├── package.json              React 19.1 + phụ thuộc
+        │       ├── src/                      Thành phần React
+        │       └── dist/                     Đầu ra xây dựng → đóng gói vào JAR
         │
-        ├── axelor-account/                    Accounting Module
-        │   ├── build.gradle                   Depends on: axelor-base
+        ├── axelor-account/                    Module kế toán
+        │   ├── build.gradle                   Phụ thuộc vào: axelor-base
         │   └── src/main/resources/
-        │       ├── domains/                   ★ 122 entities ★ (2nd largest)
-        │       ├── views/                     120 views
-        │       ├── l10n/                      Localization (country-specific)
-        │       └── reports/                   40 BIRT reports
+        │       ├── domains/                   ★ 122 thực thể ★ (lớn thứ hai)
+        │       ├── views/                     120 giao diện
+        │       ├── l10n/                      Địa phương hóa (theo quốc gia)
+        │       └── reports/                   40 báo cáo BIRT
         │
-        ├── axelor-sale/                       Sales Module
-        │   ├── build.gradle                   Depends on: axelor-crm
+        ├── axelor-sale/                       Module bán hàng
+        │   ├── build.gradle                   Phụ thuộc vào: axelor-crm
         │   └── src/main/resources/
-        │       ├── domains/                   31 entities
-        │       └── views/                     30 views
+        │       ├── domains/                   31 thực thể
+        │       └── views/                     30 giao diện
         │
-        ├── axelor-crm/                        CRM Module
-        ├── axelor-purchase/                   Purchase Module
-        ├── axelor-stock/                      Inventory Module
-        ├── axelor-supplychain/                Supply Chain (Integration layer)
-        ├── axelor-production/                 Manufacturing
-        ├── axelor-human-resource/             HR Module
-        ├── axelor-project/                    Project Management
-        ├── axelor-bank-payment/               Banking & SEPA
-        ├── axelor-budget/                     Budget Planning
-        └── [18 other business modules...]     Total: 27 modules
+        ├── axelor-crm/                        Module CRM
+        ├── axelor-purchase/                   Module mua hàng
+        ├── axelor-stock/                      Module kho
+        ├── axelor-supplychain/                Chuỗi cung ứng (lớp tích hợp)
+        ├── axelor-production/                 Sản xuất
+        ├── axelor-human-resource/             Module nhân sự
+        ├── axelor-project/                    Quản lý dự án
+        ├── axelor-bank-payment/               Ngân hàng & SEPA
+        ├── axelor-budget/                     Lập kế hoạch ngân sách
+        └── [18 module nghiệp vụ khác...]     Tổng cộng: 27 module
 ```
 
-**Luồng xử lý chính (Main Processing Flow):**
+**Luồng xử lý chính:**
 
 ```
-1. DEVELOPMENT TIME (Build Phase):
-   Domain XML files (189 in base)
+1. THỜI GIAN PHÁT TRIỂN (Giai đoạn xây dựng):
+   Tệp XML miền (189 trong base)
        ↓
-   Gradle Build Process
+   Quá trình xây dựng Gradle
        ↓
-   Axelor Code Generator (Plugin com.axelor.app:7.4.7)
+   Trình sinh mã Axelor (Plugin com.axelor.app:7.4.7)
        ↓
-   Generated Java Entity Classes + Repositories
+   Các lớp thực thể Java + kho lưu trữ được sinh
        ↓
-   Java Compilation (Java 21)
+   Biên dịch Java (Java 21)
        ↓
-   React Build (map-viewer: Node 22.17.1 + Yarn)
+   Xây dựng React (map-viewer: Node 22.17.1 + Yarn)
        ↓
-   JAR Packaging (All resources bundled)
+   Đóng gói JAR (Tất cả tài nguyên được đóng gói)
 
-2. RUNTIME (Application Phase):
-   axelor-config.properties → Load configuration
+2. THỜI GIAN CHẠY (Giai đoạn ứng dụng):
+   axelor-config.properties → Tải cấu hình
        ↓
-   Hibernate initializes with PostgreSQL
+   Hibernate khởi tạo với PostgreSQL
        ↓
-   ├─ Main Connection Pool: HikariCP (5-20)
-   └─ BPM Connection Pool: Dedicated (10-50)
+   ├─ Nhóm kết nối chính: HikariCP (5-20)
+   └─ Nhóm kết nối BPM: Riêng biệt (10-50)
        ↓
-   Dynamic Module Loading (27 modules)
+   Tải module động (27 module)
        ↓
-   View XML Rendering → Web UI
+   Hiển thị XML giao diện → Giao diện web
        ↓
-   User Interactions → Actions (XML-defined)
+   Tương tác người dùng → Hành động (định nghĩa XML)
        ↓
-   ├─ action-method → Java Controllers
-   ├─ action-record → Record manipulation
-   ├─ action-attrs → UI updates
-   └─ action-script → Groovy execution
+   ├─ action-method → Điều khiển Java
+   ├─ action-record → Thao tác bản ghi
+   ├─ action-attrs → Cập nhật giao diện
+   └─ action-script → Thực thi Groovy
        ↓
-   Service Layer (Business Logic)
+   Lớp dịch vụ (Logic nghiệp vụ)
        ↓
-   Repository Layer (JPA Queries)
+   Lớp kho lưu trữ (Truy vấn JPA)
        ↓
-   Database (PostgreSQL) + Caching (L1 + L2)
+   Cơ sở dữ liệu (PostgreSQL) + Bộ đệm (L1 + L2)
 ```
 
-**Key Architectural Patterns Identified:**
+**Các mẫu kiến trúc chính được xác định:**
 
-1. **XML-Driven Development (MDD - Model-Driven Development):** Entities và views được định nghĩa bằng XML, sau đó code generator tạo Java classes. Approach này cho phép rapid development và business analyst có thể maintain models.
+1. **Phát triển hướng XML (Phát triển hướng mô hình - MDD):** Các thực thể và giao diện được định nghĩa bằng XML, sau đó trình sinh mã tạo các lớp Java. Cách tiếp cận này cho phép phát triển nhanh và nhà phân tích nghiệp vụ có thể duy trì model.
 
-2. **Gradle Multi-Module với Dynamic Discovery:** Root project tự động phát hiện modules trong `modules/` directory, không cần hardcode. Scalable và dễ add modules mới.
+2. **Gradle đa module với phát hiện động:** Dự án gốc tự động phát hiện các module trong thư mục `modules/`, không cần viết cứng. Có thể mở rộng và dễ thêm module mới.
 
-3. **Git Submodule Architecture:** Business logic (axelor-open-suite) tách biệt thành submodule, có thể được fork và customized độc lập.
+3. **Kiến trúc Git Submodule:** Logic nghiệp vụ (axelor-open-suite) tách biệt thành submodule, có thể được tạo nhánh và tùy chỉnh độc lập.
 
-4. **Binary Addon Model:** Critical features (Studio, BPM, Messaging) được package thành binary addons, có thể cho licensing flexibility.
+4. **Mô hình addon nhị phân:** Các tính năng quan trọng (Studio, BPM, Messaging) được đóng gói thành các addon nhị phân, có thể cho tính linh hoạt cấp phép.
 
-5. **Hybrid Frontend:** React cho rich components (map), proprietary framework cho main UI generated từ view XMLs.
+5. **Giao diện lai:** React cho các thành phần phong phú (bản đồ), bộ khung độc quyền cho giao diện chính được sinh từ XML giao diện.
 
-6. **Dedicated BPM Connection Pool:** BPM workflows có resource requirements khác main app, cần pool riêng để avoid connection starvation.
+6. **Nhóm kết nối BPM riêng biệt:** Quy trình làm việc BPM có yêu cầu tài nguyên khác ứng dụng chính, cần nhóm riêng để tránh thiếu kết nối.
 
-7. **Comprehensive Security:** Multi-provider authentication (Google, SAML, LDAP, Keycloak), GDPR audit trail, SQL injection protection.
+7. **Bảo mật toàn diện:** Xác thực đa nhà cung cấp (Google, SAML, LDAP, Keycloak), nhật ký kiểm toán GDPR, bảo vệ chèn SQL.
 
-8. **Convention over Configuration với extensive Configuration:** Framework có nhiều conventions (domain XML → entities, views XML → UI) nhưng vẫn có central config file cho fine-tuning.
+8. **Quy ước hơn cấu hình với cấu hình mở rộng:** Bộ khung có nhiều quy ước (XML miền → thực thể, XML giao diện → giao diện) nhưng vẫn có tệp cấu hình tập trung cho tinh chỉnh.
