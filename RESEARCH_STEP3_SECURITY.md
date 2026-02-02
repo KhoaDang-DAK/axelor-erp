@@ -1,40 +1,40 @@
-# BƯỚC 3: PHÂN TÍCH HỆ THỐNG BẢO MẬT VÀ PHÂN QUYỀN - Phân Tích Từ Source Code
+# BƯỚC 3: PHÂN TÍCH HỆ THỐNG BẢO MẬT VÀ PHÂN QUYỀN - Phân Tích Từ Mã Nguồn
 
 ## Phương pháp phân tích
 
-Nghiên cứu kiến trúc bảo mật (security architecture) và hệ thống phân quyền (authorization system) được thực hiện qua việc phân tích domain entities liên quan đến authentication/authorization, service implementations xử lý permissions, và cấu hình authentication providers. Phạm vi bao gồm authentication mechanisms, authorization model hierarchy, object/field/record-level permissions, và permission management tools.
+Nghiên cứu kiến trúc bảo mật và hệ thống phân quyền được thực hiện thông qua phân tích các tệp định nghĩa thực thể (Domain XML) liên quan đến xác thực và phân quyền, mã nguồn các dịch vụ xử lý quyền hạn, cùng cấu hình nhà cung cấp xác thực. Phạm vi bao gồm cơ chế xác thực, mô hình phân quyền theo tầng, phân quyền ở cấp đối tượng/trường/bản ghi, và công cụ quản lý quyền hạn.
 
-**Domain XML files phân tích:**
-- `/modules/axelor-open-suite/axelor-base/src/main/resources/domains/User.xml` - Entity người dùng với business extensions
-- `/modules/axelor-open-suite/axelor-base/src/main/resources/domains/Group.xml` - Entity nhóm người dùng
-- `/modules/axelor-open-suite/axelor-base/src/main/resources/domains/Role.xml` - Entity vai trò
-- `/modules/axelor-open-suite/axelor-base/src/main/resources/domains/Permission.xml` - Permissions cấp object
+**Tệp định nghĩa thực thể đã phân tích:**
+- `/modules/axelor-open-suite/axelor-base/src/main/resources/domains/User.xml` - Thực thể người dùng với phần mở rộng nghiệp vụ
+- `/modules/axelor-open-suite/axelor-base/src/main/resources/domains/Group.xml` - Thực thể nhóm người dùng
+- `/modules/axelor-open-suite/axelor-base/src/main/resources/domains/Role.xml` - Thực thể vai trò
+- `/modules/axelor-open-suite/axelor-base/src/main/resources/domains/Permission.xml` - Quyền hạn cấp đối tượng
 
-**Service implementations:**
+**Mã nguồn dịch vụ:**
 - `/modules/axelor-open-suite/axelor-base/src/main/java/com/axelor/auth/service/PermissionServiceImpl.java` - Logic phân quyền
-- `/modules/axelor-open-suite/axelor-base/src/main/java/com/axelor/auth/service/PermissionAssistantService.java` - CSV import/export permissions
-- `/modules/axelor-open-suite/axelor-base/src/main/java/com/axelor/apps/base/service/pac4j/BaseAuthPac4jUserService.java` - Pac4j integration
+- `/modules/axelor-open-suite/axelor-base/src/main/java/com/axelor/auth/service/PermissionAssistantService.java` - Nhập/xuất quyền hạn qua CSV
+- `/modules/axelor-open-suite/axelor-base/src/main/java/com/axelor/apps/base/service/pac4j/BaseAuthPac4jUserService.java` - Tích hợp Pac4j
 
-**Configuration analysis:**
-- `/src/main/resources/axelor-config.properties` - Authentication providers, session config, password policy
+**Phân tích cấu hình:**
+- `/src/main/resources/axelor-config.properties` - Nhà cung cấp xác thực, cấu hình phiên làm việc, chính sách mật khẩu
 
 ---
 
 ## Kết quả chi tiết
 
-### 1. SECURITY FRAMEWORK VÀ KIẾN TRÚC TỔNG QUAN
+### 1. KHUNG BẢO MẬT VÀ KIẾN TRÚC TỔNG QUAN
 
-**File nguồn:** Analysis của imports trong service classes, configuration files [Từ source code]
+**Tệp nguồn:** Phân tích câu lệnh nhập (import) trong các lớp dịch vụ, tệp cấu hình [Từ source code]
 
-Axelor áp dụng một approach độc đáo trong ecosystem Java enterprise applications: thay vì sử dụng established security frameworks như Spring Security (de facto standard cho Spring applications) hoặc Apache Shiro (framework-agnostic security), Axelor xây dựng **custom security layer** được tích hợp chặt chẽ với framework core. Quyết định thiết kế này mang lại control tốt hơn về permission model phức tạp (multi-level permissions: object, field, record) nhưng cũng có trade-off về maintenance burden (phải tự maintain security code thay vì rely on community-tested frameworks) và ecosystem integration (khó integrate third-party security tools expecting Spring Security APIs).
+Axelor áp dụng một cách tiếp cận riêng biệt trong hệ sinh thái ứng dụng Java doanh nghiệp: thay vì sử dụng các khung bảo mật phổ biến như Spring Security (tiêu chuẩn thực tế cho ứng dụng Spring) hay Apache Shiro (khung bảo mật không phụ thuộc nền tảng), Axelor tự xây dựng tầng bảo mật tùy chỉnh (custom security layer) tích hợp chặt chẽ với lõi khung ứng dụng. Quyết định thiết kế này mang lại khả năng kiểm soát tốt hơn đối với mô hình phân quyền phức tạp gồm nhiều cấp (đối tượng, trường, bản ghi), nhưng đổi lại phải tự bảo trì mã bảo mật thay vì dựa vào khung đã được cộng đồng kiểm chứng, đồng thời khó tích hợp với công cụ bảo mật của bên thứ ba vốn được thiết kế cho Spring Security.
 
-Security architecture của Axelor chia làm hai layers rõ ràng: **authentication layer** (xác thực danh tính - "who you are") và **authorization layer** (phân quyền truy cập - "what you can do"). Authentication layer được implement qua Pac4j library version 5.7.7 - một abstraction layer cho phép support nhiều authentication providers (OAuth 2.0, SAML, LDAP, CAS) mà không cần write provider-specific code. Pac4j là excellent choice cho multi-provider scenarios vì nó cung cấp unified API: developers write code against Pac4j interfaces, có thể switch providers bằng cách change configuration không cần code changes. Version 5.7.7 (released 2023) là relatively recent, showing Axelor keeps dependencies updated.
+Kiến trúc bảo mật của Axelor chia thành hai tầng rõ ràng: tầng xác thực (authentication - "bạn là ai") và tầng phân quyền (authorization - "bạn được làm gì"). Tầng xác thực được triển khai thông qua thư viện Pac4j phiên bản 5.7.7 - một tầng trừu tượng cho phép hỗ trợ nhiều nhà cung cấp xác thực (OAuth 2.0, SAML, LDAP, CAS) mà không cần viết mã riêng cho từng nhà cung cấp. Pac4j là lựa chọn phù hợp cho kịch bản đa nhà cung cấp vì cung cấp giao diện lập trình thống nhất: lập trình viên viết mã dựa trên giao diện của Pac4j, có thể chuyển đổi nhà cung cấp chỉ bằng thay đổi cấu hình mà không cần sửa mã. Phiên bản 5.7.7 (phát hành năm 2023) tương đối mới, cho thấy Axelor duy trì cập nhật các thư viện phụ thuộc.
 
-Authorization layer hoàn toàn custom-built bởi Axelor, consisting of proprietary entity model (User, Group, Role, Permission, MetaPermission) và service layer logic (PermissionServiceImpl, PermissionAssistantService) để resolve permissions at runtime. Framework này không expose Spring Security's `@PreAuthorize`, `@Secured` annotations - authorization checks likely happen trong framework internals (interceptors, filters) transparent to application code. Dependency injection sử dụng Google Guice thay vì Spring - fundamental architectural decision affecting how components wired together, how scopes managed, và how AOP-based security interception implemented.
+Tầng phân quyền hoàn toàn do Axelor tự xây dựng, bao gồm mô hình thực thể riêng (User, Group, Role, Permission, MetaPermission) và logic tầng dịch vụ (PermissionServiceImpl, PermissionAssistantService) để giải quyết quyền hạn khi chạy. Khung này không sử dụng các chú thích (annotation) `@PreAuthorize` hay `@Secured` của Spring Security - việc kiểm tra quyền hạn có thể xảy ra trong nội bộ khung (bộ chặn, bộ lọc) một cách trong suốt đối với mã ứng dụng. Cơ chế tiêm phụ thuộc (Dependency Injection) sử dụng Google Guice thay vì Spring - đây là quyết định kiến trúc cơ bản ảnh hưởng đến cách các thành phần được kết nối, cách quản lý phạm vi (scope), và cách triển khai chặn dựa trên AOP cho bảo mật.
 
-**Bằng chứng từ code - Service layer imports:**
+**Bằng chứng từ mã nguồn - Câu lệnh nhập trong tầng dịch vụ:**
 ```java
-// File: PermissionAssistantService.java
+// Tệp: PermissionAssistantService.java
 import com.axelor.auth.db.Group;
 import com.axelor.auth.db.Permission;
 import com.axelor.auth.db.Role;
@@ -42,130 +42,131 @@ import com.axelor.meta.db.MetaPermission;
 import com.axelor.meta.db.MetaPermissionRule;
 ```
 
-**Giải thích code:** Import statements reveal security entities package structure: `com.axelor.auth.db` chứa core authorization entities (Group, Permission, Role), trong khi `com.axelor.meta.db` chứa metadata-driven permission entities (MetaPermission, MetaPermissionRule). Prefix "Meta" suggests runtime-configurable permissions (thay vì compile-time defined), aligning với Axelor's philosophy về configurability. Entities này không extend Spring Security classes (như GrantedAuthority, UserDetails) - confirming custom implementation.
+**Giải thích mã nguồn:** Các câu lệnh nhập cho thấy cấu trúc gói (package) của thực thể bảo mật: `com.axelor.auth.db` chứa các thực thể phân quyền lõi (Group, Permission, Role), trong khi `com.axelor.meta.db` chứa thực thể phân quyền dựa trên siêu dữ liệu (MetaPermission, MetaPermissionRule). Tiền tố "Meta" gợi ý rằng đây là quyền hạn có thể cấu hình khi chạy (thay vì được định nghĩa lúc biên dịch), phù hợp với triết lý của Axelor về khả năng cấu hình. Các thực thể này không kế thừa từ lớp Spring Security (như GrantedAuthority, UserDetails) - xác nhận đây là triển khai tùy chỉnh hoàn toàn. [Từ source code]
 
-**Bằng chứng từ code - Pac4j integration service:**
+**Bằng chứng từ mã nguồn - Dịch vụ tích hợp Pac4j:**
 ```java
-// File path:
+// Đường dẫn tệp:
 /modules/axelor-open-suite/axelor-base/src/main/java/com/axelor/apps/base/service/pac4j/BaseAuthPac4jUserService.java
 ```
 
-**Giải thích code:** Service class `BaseAuthPac4jUserService` acts as bridge giữa Pac4j authentication results và Axelor's User entity. Khi user successfully authenticates qua OAuth/SAML/LDAP provider, Pac4j returns profile data (email, name, attributes). Service này maps profile to Axelor User entity, handles user provisioning (create new user or link existing user), và assigns default group/roles. Class name prefix "Base" indicates này là base implementation có thể được override trong customer projects cho custom provisioning logic.
+**Giải thích mã nguồn:** Lớp dịch vụ `BaseAuthPac4jUserService` đóng vai trò cầu nối giữa kết quả xác thực từ Pac4j và thực thể User của Axelor. Khi người dùng xác thực thành công qua nhà cung cấp OAuth/SAML/LDAP, Pac4j trả về dữ liệu hồ sơ (email, tên, thuộc tính). Dịch vụ này ánh xạ hồ sơ sang thực thể User của Axelor, xử lý việc cấp phát tài khoản (tạo người dùng mới hoặc liên kết người dùng hiện có), và gán nhóm/vai trò mặc định. Tiền tố "Base" trong tên lớp cho thấy đây là triển khai cơ sở có thể được ghi đè (override) trong dự án khách hàng để tùy chỉnh logic cấp phát tài khoản. [Từ source code]
 
-**Authentication providers supported:** [Từ configuration analysis]
-Axelor configuration files show support cho:
-- **Local authentication** - Username/password stored trong database
-- **Google OAuth 2.0** - OpenID Connect protocol
-- **Keycloak** - Open-source Identity and Access Management
-- **SAML 2.0** - Enterprise SSO standard
-- **LDAP** - Corporate directory integration (Active Directory, OpenLDAP)
-- **CAS** - Central Authentication Service (legacy SSO protocol)
+**Các nhà cung cấp xác thực được hỗ trợ:** [Từ phân tích cấu hình]
 
-Sự đa dạng này critical cho enterprise deployments nơi different organizations có different authentication infrastructure. Large enterprises thường đã có LDAP/Active Directory chứa employee accounts - Axelor's LDAP support enables seamless integration without duplicating user management. Startups hoặc cloud-native companies có thể prefer OAuth 2.0 với Google/Keycloak cho modern authentication flows. Government/high-security organizations may require SAML 2.0 for compliance với security standards.
+Axelor hỗ trợ sáu nhà cung cấp xác thực:
+- **Xác thực nội bộ (Local authentication)** - Tên đăng nhập/mật khẩu lưu trong cơ sở dữ liệu
+- **Google OAuth 2.0** - Giao thức OpenID Connect
+- **Keycloak** - Nền tảng quản lý danh tính và truy cập mã nguồn mở
+- **SAML 2.0** - Tiêu chuẩn đăng nhập một lần (SSO) cho doanh nghiệp
+- **LDAP** - Tích hợp thư mục doanh nghiệp (Active Directory, OpenLDAP)
+- **CAS** - Dịch vụ xác thực tập trung (giao thức SSO cũ)
+
+Sự đa dạng này rất quan trọng cho triển khai doanh nghiệp, nơi các tổ chức khác nhau có hạ tầng xác thực khác nhau. Doanh nghiệp lớn thường đã có LDAP/Active Directory chứa tài khoản nhân viên - khả năng hỗ trợ LDAP của Axelor cho phép tích hợp liền mạch mà không cần quản lý người dùng trùng lặp. Các công ty khởi nghiệp hoặc thiên về đám mây có thể ưu tiên OAuth 2.0 với Google/Keycloak cho luồng xác thực hiện đại. Tổ chức chính phủ hoặc có yêu cầu bảo mật cao có thể cần SAML 2.0 để tuân thủ tiêu chuẩn an ninh. [Từ source code]
 
 ---
 
-### 2. MÔ HÌNH PHÂN QUYỀN: HIERARCHY BA CẤP (USER → GROUP/ROLE → PERMISSIONS)
+### 2. MÔ HÌNH PHÂN QUYỀN: PHÂN CẤP BA TẦNG (NGƯỜI DÙNG → NHÓM/VAI TRÒ → QUYỀN HẠN)
 
-**File nguồn:** User.xml, Group.xml, Role.xml, Permission.xml, PermissionAssistantService.java [Từ source code]
+**Tệp nguồn:** User.xml, Group.xml, Role.xml, Permission.xml, PermissionAssistantService.java [Từ source code]
 
-Axelor implements một **three-tier authorization hierarchy** sophisticated hơn so với simple role-based access control (RBAC) nhưng straightforward hơn complex attribute-based access control (ABAC) systems. Model này balances giữa flexibility (support complex enterprise permission requirements) và manageability (administrators có thể understand và configure permissions without deep technical knowledge). Hierarchy design là: **User** (người dùng cá nhân) belongs to một **Group** (nhóm nghiệp vụ: Sales, Accounting, Management) và có thể có nhiều **Roles** (vai trò chức năng: Order Approver, Report Viewer, Admin), mỗi Group/Role chứa **Permissions** (quyền truy cập cụ thể vào objects/fields).
+Axelor triển khai hệ thống phân quyền phân cấp ba tầng (three-tier authorization hierarchy), tinh vi hơn mô hình kiểm soát truy cập dựa trên vai trò đơn giản (RBAC - Role-Based Access Control) nhưng dễ hiểu hơn hệ thống kiểm soát truy cập dựa trên thuộc tính (ABAC - Attribute-Based Access Control). Mô hình này cân bằng giữa tính linh hoạt (hỗ trợ yêu cầu phân quyền phức tạp của doanh nghiệp) và khả năng quản lý (quản trị viên có thể hiểu và cấu hình quyền hạn mà không cần kiến thức kỹ thuật sâu). Thiết kế phân cấp như sau: **Người dùng** (User - cá nhân) thuộc về một **Nhóm** (Group - nhóm nghiệp vụ: Kinh doanh, Kế toán, Quản lý) và có thể có nhiều **Vai trò** (Role - chức năng: Người duyệt đơn hàng, Người xem báo cáo, Quản trị viên), mỗi Nhóm/Vai trò chứa **Quyền hạn** (Permission - quyền truy cập cụ thể vào đối tượng/trường).
 
-Lý do cho dual Group/Role system (thay vì chỉ Roles như many RBAC systems) là separate organizational structure từ functional capabilities. Groups typically map to business units hoặc departments (thường stable, thay đổi ít khi org restructuring), trong khi Roles map to job functions hoặc responsibilities (có thể assigned/revoked frequently khi people change positions). Ví dụ: một user belongs to "Sales - North Region" group (organizational placement) và có roles "Order Creator", "Quote Approver" (functional capabilities). Khi user moves to different region, chỉ cần change group; khi user promoted, add role "Manager" without changing group. Separation này makes permission management scalable trong large organizations với hundreds/thousands users.
+Lý do cho hệ thống kép Nhóm/Vai trò (thay vì chỉ có Vai trò như nhiều hệ thống RBAC) là tách biệt cấu trúc tổ chức khỏi năng lực chức năng. Nhóm thường ánh xạ tới đơn vị kinh doanh hoặc phòng ban (thường ổn định, ít thay đổi), trong khi Vai trò ánh xạ tới chức năng công việc hoặc trách nhiệm (có thể được gán/thu hồi thường xuyên khi nhân sự thay đổi vị trí). Ví dụ: một người dùng thuộc nhóm "Kinh doanh - Miền Bắc" (vị trí tổ chức) và có vai trò "Người tạo đơn hàng", "Người duyệt báo giá" (năng lực chức năng). Khi người dùng chuyển sang khu vực khác, chỉ cần đổi nhóm; khi được thăng chức, thêm vai trò "Quản lý" mà không cần đổi nhóm. Sự tách biệt này giúp quản lý quyền hạn có thể mở rộng trong tổ chức lớn với hàng trăm, hàng nghìn người dùng.
 
-Permission aggregation logic crucial nhưng không explicitly documented trong analyzed code - likely implemented trong framework core. Inferred behavior based on common RBAC patterns: user's effective permissions là union of permissions từ their group PLUS permissions từ all their roles. Merging strategy appears grant-based (permissive): nếu ANY source (group or role) grants permission, user có permission đó. Không có evidence của explicit DENY rules - absence of permission nghĩa là deny. Grant-based merging simpler to reason about (administrators don't have to worry about permission conflicts) nhưng less flexible than priority-based systems allowing deny to override grant.
+Logic tổng hợp quyền hạn rất quan trọng nhưng không được mô tả rõ ràng trong mã đã phân tích - có thể được triển khai trong lõi khung ứng dụng. Dựa trên các mẫu RBAC phổ biến, hành vi suy luận là: quyền hạn hiệu lực của người dùng là phép hợp (union) của quyền hạn từ nhóm CỘNG VỚI quyền hạn từ tất cả vai trò. Chiến lược hợp nhất theo hướng cấp phép (grant-based): nếu BẤT KỲ nguồn nào (nhóm hoặc vai trò) cấp quyền, người dùng có quyền đó. Không có bằng chứng về quy tắc TỪ CHỐI (DENY) tường minh - sự vắng mặt của quyền đồng nghĩa với từ chối. Cách hợp nhất dựa trên cấp phép đơn giản hơn để suy luận (quản trị viên không phải lo lắng về xung đột quyền) nhưng kém linh hoạt hơn hệ thống có ưu tiên cho phép từ chối ghi đè cấp phép. [Suy luận]
 
-**Bằng chứng từ code - User → Group relationship:**
+**Bằng chứng từ mã nguồn - Quan hệ Người dùng → Nhóm:**
 ```xml
-<!-- File: User.xml, line 45 -->
+<!-- Tệp: User.xml, dòng 45 -->
 <many-to-one name="group" ref="Group" column="group_id" massUpdate="true"/>
 ```
 
-**Giải thích code:** User entity có many-to-one relationship tới Group, nghĩa là mỗi user belongs to exactly ONE primary group (hoặc NULL nếu no group assigned). Attribute `massUpdate="true"` cho phép bulk operations: administrator có thể select nhiều users và reassign hết cho different group cùng lúc - practical feature cho scenarios như "move all users from closed department to new department" hoặc "bulk upgrade interns to full employees, changing their group". Column name `group_id` explicitly specified (instead of Axelor default naming) có thể for backward compatibility với existing schema hoặc integration với external systems expecting specific column names.
+**Giải thích mã nguồn:** Thực thể User có quan hệ nhiều-một (many-to-one) tới Group, nghĩa là mỗi người dùng thuộc về đúng MỘT nhóm chính (hoặc không có nhóm nào nếu chưa gán). Thuộc tính `massUpdate="true"` cho phép thao tác hàng loạt: quản trị viên có thể chọn nhiều người dùng và chuyển tất cả sang nhóm khác cùng lúc - tính năng thực tế cho kịch bản như "chuyển tất cả nhân viên từ phòng ban bị giải thể sang phòng ban mới". Tên cột `group_id` được chỉ định rõ ràng (thay vì dùng quy tắc đặt tên mặc định), có thể để tương thích ngược với lược đồ hiện có hoặc tích hợp với hệ thống bên ngoài. [Từ source code]
 
-**Bằng chứng từ code - Group/Role → Permissions relationship:**
+**Bằng chứng từ mã nguồn - Quan hệ Nhóm/Vai trò → Quyền hạn:**
 ```java
-// File: PermissionAssistantService.java
+// Tệp: PermissionAssistantService.java
 
-// Line 636: Group có collection of MetaPermissions
+// Dòng 636: Nhóm chứa tập hợp MetaPermission
 group.addMetaPermission(metaPermission);
 
-// Line 657: Role có collection of MetaPermissions
+// Dòng 657: Vai trò chứa tập hợp MetaPermission
 role.addMetaPermission(metaPermission);
 
-// Line 715: Group có collection of Permissions
+// Dòng 715: Nhóm chứa tập hợp Permission
 group.addPermission(permission);
 
-// Line 744: Role có collection of Permissions
+// Dòng 744: Vai trò chứa tập hợp Permission
 role.addPermission(permission);
 ```
 
-**Giải thích code:** Method calls `addMetaPermission()` và `addPermission()` indicate both Group và Role entities có one-to-many relationships với MetaPermission và Permission entities. Relationship này bidirectional: từ Group/Role perspective, có collection of permissions; từ Permission perspective, có reference back to owning Group or Role. Dual permission types (Permission vs MetaPermission) serve different purposes: **Permission** for object-level authorization (can user read/write/delete SaleOrder entity?), **MetaPermission** for field-level authorization (can user edit 'discountAmount' field trong SaleOrder?). Separation enables fine-grained control: có thể grant user access to entity nhưng restrict specific sensitive fields.
+**Giải thích mã nguồn:** Các lời gọi phương thức `addMetaPermission()` và `addPermission()` cho thấy cả thực thể Group và Role đều có quan hệ một-nhiều (one-to-many) với MetaPermission và Permission. Hai loại quyền hạn phục vụ mục đích khác nhau: **Permission** cho phân quyền cấp đối tượng (người dùng có thể đọc/ghi/xóa thực thể SaleOrder không?), **MetaPermission** cho phân quyền cấp trường (người dùng có thể sửa trường 'discountAmount' trong SaleOrder không?). Sự tách biệt này cho phép kiểm soát chi tiết: có thể cấp quyền truy cập thực thể nhưng hạn chế các trường nhạy cảm cụ thể. [Từ source code]
 
-**Hierarchy visualization:** [Suy luận từ code structure]
+**Sơ đồ phân cấp:** [Suy luận từ cấu trúc mã]
 ```
-User (individual người dùng)
-  ├─→ Group (many-to-one) - Primary organizational group
-  │     ├─→ Permission[] (object-level CRUD permissions)
-  │     └─→ MetaPermission[] (field-level permissions)
+Người dùng (User - cá nhân)
+  ├─→ Nhóm (Group, quan hệ nhiều-một) - Nhóm tổ chức chính
+  │     ├─→ Permission[] (quyền CRUD cấp đối tượng)
+  │     └─→ MetaPermission[] (quyền cấp trường)
   │
-  └─→ Role[] (many-to-many, inferred) - Functional roles
-        ├─→ Permission[] (object-level CRUD permissions)
-        └─→ MetaPermission[] (field-level permissions)
+  └─→ Vai trò[] (Role, quan hệ nhiều-nhiều, suy luận) - Vai trò chức năng
+        ├─→ Permission[] (quyền CRUD cấp đối tượng)
+        └─→ MetaPermission[] (quyền cấp trường)
 ```
 
-Model này follows principle of least privilege: users start với no permissions (default deny), permissions explicitly granted qua group/role membership. Administrative overhead là assigning users to appropriate groups/roles, not managing per-user permissions (which wouldn't scale). New employee onboarding simple: assign to group (organizational unit) và relevant roles (job functions), automatically inherits all necessary permissions. Permission changes centralized: update group/role permissions once, affects all members immediately.
+Mô hình này tuân theo nguyên tắc đặc quyền tối thiểu (principle of least privilege): người dùng khởi đầu không có quyền nào (từ chối mặc định), quyền được cấp phát tường minh thông qua thành viên nhóm/vai trò. Chi phí quản trị là gán người dùng vào nhóm/vai trò phù hợp, không phải quản lý quyền theo từng người dùng (cách đó không thể mở rộng). Khi nhân viên mới vào, chỉ cần gán vào nhóm (đơn vị tổ chức) và các vai trò liên quan (chức năng công việc), tự động kế thừa tất cả quyền cần thiết. Thay đổi quyền được tập trung: cập nhật quyền của nhóm/vai trò một lần, áp dụng cho tất cả thành viên ngay lập tức. [Suy luận]
 
 ---
 
-### 3. USER ENTITY: AUTHENTICATION VÀ BUSINESS CONTEXT
+### 3. THỰC THỂ NGƯỜI DÙNG: XÁC THỰC VÀ NGỮ CẢNH NGHIỆP VỤ
 
-**File nguồn:** `/modules/axelor-open-suite/axelor-base/src/main/resources/domains/User.xml` [Từ source code]
+**Tệp nguồn:** `/modules/axelor-open-suite/axelor-base/src/main/resources/domains/User.xml` [Từ source code]
 
-User entity trong Axelor serves dual purpose: **authentication credentials** (username, password, email) và **business context** (companies, teams, partner linkage, preferences). Đây là common pattern trong business applications where authentication user identity phải mapped to business domain concepts. Ví dụ: khi sales representative logs in, system cần biết không chỉ "this is user 'john.doe'" (authentication) mà còn "john.doe represents partner Acme Corp, works in North Region team, current company context is NYC branch" (business context). Business context này critical cho permission resolution (record-level filtering based on user's company/team) và application behavior (default values, available actions, dashboard content).
+Thực thể User trong Axelor phục vụ hai mục đích: **thông tin xác thực** (tên đăng nhập, mật khẩu, email) và **ngữ cảnh nghiệp vụ** (công ty, nhóm làm việc, liên kết đối tác, tùy chọn cá nhân). Đây là mẫu thiết kế phổ biến trong ứng dụng kinh doanh, nơi danh tính xác thực phải được ánh xạ tới các khái niệm trong lĩnh vực nghiệp vụ. Ví dụ: khi nhân viên kinh doanh đăng nhập, hệ thống cần biết không chỉ "đây là người dùng 'john.doe'" (xác thực) mà còn "john.doe đại diện cho đối tác Công ty Acme, làm việc trong nhóm Miền Bắc, ngữ cảnh công ty hiện tại là chi nhánh Hà Nội" (ngữ cảnh nghiệp vụ). Ngữ cảnh nghiệp vụ này rất quan trọng cho giải quyết quyền hạn (lọc bản ghi theo công ty/nhóm của người dùng) và hành vi ứng dụng (giá trị mặc định, hành động khả dụng, nội dung bảng điều khiển).
 
-User entity được defined trong `com.axelor.auth.db` package (framework core), nhưng axelor-open-suite **extends** base entity với business-specific fields qua XML extension mechanism. Extension pattern allows framework maintain core authentication logic (password hashing, session management, login/logout) trong stable base class, while applications add domain-specific customizations without forking framework code. Trade-off: extensions limited to adding fields/methods, cannot change core authentication behavior without modifying framework - acceptable for most use cases nhưng may limit deep customizations cho unusual authentication requirements.
+Thực thể User được định nghĩa trong gói `com.axelor.auth.db` (lõi khung ứng dụng), nhưng axelor-open-suite **mở rộng** thực thể cơ sở bằng các trường riêng cho nghiệp vụ thông qua cơ chế mở rộng XML (XML extension). Mẫu mở rộng cho phép khung duy trì logic xác thực lõi (băm mật khẩu, quản lý phiên, đăng nhập/đăng xuất) trong lớp cơ sở ổn định, trong khi ứng dụng thêm tùy chỉnh theo lĩnh vực mà không cần phân nhánh (fork) mã khung. Đổi lại, mở rộng bị giới hạn ở việc thêm trường/phương thức, không thể thay đổi hành vi xác thực lõi mà không sửa đổi khung - chấp nhận được cho hầu hết trường hợp sử dụng nhưng có thể hạn chế tùy chỉnh sâu với yêu cầu xác thực đặc biệt.
 
-Security-related fields trong User entity provide temporal access control: `blocked` boolean flag immediately disables user account (for terminated employees hoặc security incidents), `activateOn` date implements delayed activation (create account now, becomes active on hire date), `expiresOn` date implements automatic expiration (temporary contractors, trial accounts). Combination của ba fields này enables sophisticated account lifecycle management: HR creates account when contract signed với `activateOn` set to start date và `expiresOn` set to end date, account automatically becomes active/inactive theo schedule without manual intervention. Field `sendEmailUponPasswordChange` implements security notification (user receives email when password changed - detect unauthorized password resets).
+Các trường liên quan đến bảo mật trong thực thể User cung cấp kiểm soát truy cập theo thời gian: cờ `blocked` (kiểu boolean) vô hiệu hóa tài khoản ngay lập tức (cho nhân viên đã nghỉ việc hoặc sự cố bảo mật), ngày `activateOn` triển khai kích hoạt trì hoãn (tạo tài khoản trước, kích hoạt vào ngày bắt đầu làm việc), ngày `expiresOn` triển khai hết hạn tự động (nhân viên hợp đồng tạm thời, tài khoản dùng thử). Sự kết hợp ba trường này cho phép quản lý vòng đời tài khoản tinh vi: bộ phận nhân sự tạo tài khoản khi ký hợp đồng với `activateOn` đặt vào ngày bắt đầu và `expiresOn` đặt vào ngày kết thúc, tài khoản tự động kích hoạt/vô hiệu theo lịch mà không cần can thiệp thủ công. Trường `sendEmailUponPasswordChange` triển khai thông báo bảo mật (người dùng nhận email khi mật khẩu thay đổi - phát hiện đặt lại mật khẩu trái phép). [Từ source code]
 
-**Bằng chứng từ code - User entity structure:**
+**Bằng chứng từ mã nguồn - Cấu trúc thực thể User:**
 ```xml
 <entity name="User" sequential="true">
-  <!-- Authentication & Access Control -->
+  <!-- Xác thực & Kiểm soát truy cập -->
   <many-to-one name="group" ref="Group" column="group_id" massUpdate="true"/>
   <boolean name="blocked" default="true"
     help="Specify whether to block the user for an indefinite period." massUpdate="true"/>
 
-  <!-- Business Context - Multi-Company -->
+  <!-- Ngữ cảnh nghiệp vụ - Đa công ty -->
   <many-to-many name="companySet" ref="com.axelor.apps.base.db.Company" title="Company set"/>
   <many-to-one name="activeCompany" ref="com.axelor.apps.base.db.Company"
     title="Active company" massUpdate="true"/>
 
-  <!-- Business Context - Teams -->
+  <!-- Ngữ cảnh nghiệp vụ - Nhóm làm việc -->
   <many-to-many name="teamSet" ref="com.axelor.apps.base.db.Team" title="Team set"/>
   <many-to-one name="activeTeam" ref="com.axelor.apps.base.db.Team"
     title="Active team" massUpdate="true"/>
 
-  <!-- Business Context - Partner Linkage -->
+  <!-- Ngữ cảnh nghiệp vụ - Liên kết đối tác -->
   <one-to-one name="partner" ref="com.axelor.apps.base.db.Partner"
     title="Partner" mappedBy="linkedUser"/>
 
-  <!-- Localization & Preferences -->
+  <!-- Bản địa hóa & Tùy chọn -->
   <string name="language" selection="select.language"/>
   <string name="localization"/>
 
-  <!-- Custom Fields Support -->
+  <!-- Hỗ trợ trường tùy chỉnh -->
   <string name="attrs" json="true"/>
 </entity>
 ```
 
-**Giải thích code:** Entity declaration không có base class specified trong XML (chỉ `<entity name="User">`), indicating đây là extension của existing User entity từ framework core - generator sẽ merge fields này vào base class. Attribute `sequential="true"` có thể indicate entity có sequence number generation (user codes auto-incremented).
+**Giải thích mã nguồn:** Khai báo thực thể không có lớp cơ sở trong XML (chỉ `<entity name="User">`), cho thấy đây là phần mở rộng của thực thể User hiện có từ lõi khung - bộ sinh mã sẽ hợp nhất các trường này vào lớp cơ sở. Thuộc tính `sequential="true"` chỉ ra thực thể có cơ chế sinh số thứ tự tự động.
 
-Field `blocked` có `default="true"` - surprising choice! New users created trong blocked state, phải explicitly unblocked before they can login. Rationale: safety-first approach preventing accidental account activation, ensures administrator reviews và explicitly enables account after setup complete. Help text confirms purpose: "block user for indefinite period" (không phải temporary suspension, là complete disable).
+Trường `blocked` có `default="true"` - lựa chọn đáng chú ý! Người dùng mới được tạo ở trạng thái bị chặn, phải được mở khóa tường minh trước khi đăng nhập. Lý do: cách tiếp cận an toàn trước (safety-first) ngăn kích hoạt tài khoản vô tình, đảm bảo quản trị viên xem xét và kích hoạt tài khoản tường minh sau khi thiết lập hoàn tất. Nội dung trợ giúp xác nhận mục đích: "chặn người dùng trong thời gian vô thời hạn" (không phải đình chỉ tạm thời mà là vô hiệu hóa hoàn toàn).
 
-Multi-company support via `companySet` (many-to-many: user có thể work for multiple companies) và `activeCompany` (current context). Pattern này common trong multi-tenant scenarios where single user account spans multiple legal entities/branches. User switches active company trong UI, application filters data/permissions accordingly. Similar pattern for teams: `teamSet` (all teams user belongs to) và `activeTeam` (current team context for filtering/defaults).
+Hỗ trợ đa công ty thông qua `companySet` (nhiều-nhiều: người dùng có thể làm việc cho nhiều công ty) và `activeCompany` (ngữ cảnh hiện tại). Mẫu này phổ biến trong kịch bản đa pháp nhân (multi-tenant) khi một tài khoản người dùng trải trên nhiều thực thể pháp lý/chi nhánh. Người dùng chuyển đổi công ty đang hoạt động trong giao diện, ứng dụng lọc dữ liệu/quyền hạn tương ứng. Mẫu tương tự cho nhóm làm việc: `teamSet` (tất cả nhóm người dùng tham gia) và `activeTeam` (ngữ cảnh nhóm hiện tại dùng cho lọc/giá trị mặc định). [Từ source code]
 
-**Bằng chứng từ code - Computed fullName field:**
+**Bằng chứng từ mã nguồn - Trường tính toán fullName:**
 ```xml
 <string name="fullName" namecolumn="true" search="partner,name" title="Partner name">
   <![CDATA[
@@ -180,68 +181,56 @@ Multi-company support via `companySet` (many-to-many: user có thể work for mu
 </string>
 ```
 
-**Giải thích code:** Field `fullName` computed dynamically based on whether user linked to Partner entity. Logic prioritizes partner's name (business entity representation) over technical username: nếu user linked to partner John Doe, display name là "John Doe" thay vì "jdoe". Fallback to `name` (username) nếu no partner link. Attribute `namecolumn="true"` marks này là display name used trong dropdowns, search results, audit logs. Attribute `search="partner,name"` enables searching by either partner name OR username - users có thể search "John" (partner first name) hoặc "jdoe" (username) để find same user record.
+**Giải thích mã nguồn:** Trường `fullName` được tính toán động dựa trên việc người dùng có liên kết với thực thể Đối tác (Partner) hay không. Logic ưu tiên tên đối tác (đại diện thực thể nghiệp vụ) hơn tên đăng nhập kỹ thuật: nếu người dùng liên kết với đối tác Nguyễn Văn A, tên hiển thị là "Văn A Nguyễn" thay vì "nguyen.a". Dự phòng sang `name` (tên đăng nhập) nếu không có liên kết đối tác. Thuộc tính `namecolumn="true"` đánh dấu đây là tên hiển thị dùng trong danh sách thả xuống, kết quả tìm kiếm, nhật ký kiểm toán. Thuộc tính `search="partner,name"` cho phép tìm kiếm theo tên đối tác HOẶC tên đăng nhập.
 
-**Partner linkage implication:** [Suy luận về integration patterns]
-One-to-one relationship `partner` với `mappedBy="linkedUser"` indicates bidirectional link: User entity có partner reference, Partner entity có linkedUser reference. Use case: sales application nơi external partners (customers, suppliers) need access to portal - partner's contact person given user account linked to their Partner record. Khi partner user logs in, application automatically knows which company they represent, can show only relevant data (their own orders, invoices). Alternative pattern would be separate PartnerUser entity, nhưng direct linkage simpler for 1:1 mapping scenarios.
+**Ý nghĩa của liên kết Đối tác:** [Suy luận về mẫu tích hợp]
+
+Quan hệ một-một `partner` với `mappedBy="linkedUser"` chỉ ra liên kết hai chiều: thực thể User có tham chiếu đến Partner, thực thể Partner có tham chiếu ngược linkedUser. Trường hợp sử dụng: ứng dụng kinh doanh nơi đối tác bên ngoài (khách hàng, nhà cung cấp) cần truy cập cổng thông tin - người liên hệ của đối tác được cấp tài khoản người dùng liên kết với bản ghi Đối tác. Khi người dùng đối tác đăng nhập, ứng dụng tự động biết họ đại diện cho công ty nào, có thể chỉ hiển thị dữ liệu liên quan (đơn hàng, hóa đơn của chính họ).
 
 ---
 
-### 4. GROUP ENTITY: ORGANIZATIONAL UNITS VÀ BUSINESS ROLES
+### 4. THỰC THỂ NHÓM: ĐƠN VỊ TỔ CHỨC VÀ VAI TRÒ NGHIỆP VỤ
 
-**File nguồn:** `/modules/axelor-open-suite/axelor-base/src/main/resources/domains/Group.xml` [Từ source code]
+**Tệp nguồn:** `/modules/axelor-open-suite/axelor-base/src/main/resources/domains/Group.xml` [Từ source code]
 
-Group entity represents **organizational units** hoặc **business role groupings** trong enterprise structure - không chỉ technical permission containers. Fields như `isClient`, `isSupplier` indicate groups có thể represent external user communities (customer portal users, supplier portal users), not just internal employees. Field `technicalStaff` suggests special category for IT/admin users có elevated privileges. Pattern này blurs line giữa "group as department" và "group as persona" - same entity type serving multiple organizational concepts. Flexibility này powerful nhưng có risk confusion: administrators must establish clear naming conventions để distinguish group types (prefix "Dept-" for departments, "Portal-" for external users, "Tech-" for technical staff).
+Thực thể Group đại diện cho **đơn vị tổ chức** hoặc **nhóm vai trò nghiệp vụ** trong cấu trúc doanh nghiệp - không chỉ là hộp chứa quyền hạn kỹ thuật. Các trường như `isClient`, `isSupplier` cho thấy nhóm có thể đại diện cho cộng đồng người dùng bên ngoài (người dùng cổng khách hàng, người dùng cổng nhà cung cấp), không chỉ nhân viên nội bộ. Trường `technicalStaff` gợi ý danh mục đặc biệt cho nhân viên CNTT/quản trị có đặc quyền nâng cao. Mẫu này mờ ranh giới giữa "nhóm như phòng ban" và "nhóm như nhân cách" (persona) - cùng loại thực thể phục vụ nhiều khái niệm tổ chức. Tính linh hoạt này mạnh mẽ nhưng có rủi ro nhầm lẫn: quản trị viên cần thiết lập quy ước đặt tên rõ ràng để phân biệt loại nhóm.
 
-Entity marked `cacheable="true"` - important performance optimization vì group data accessed frequently (every permission check may query group membership) nhưng changes infrequently (organizational restructuring happens quarterly/yearly, not hourly). Hibernate L2 cache stores deserialized Group objects trong memory, subsequent queries hit cache instead of database. Cache invalidation critical: khi group modified (permissions added/removed, properties changed), cache entry must be evicted or stale data causes permission bugs (users có permissions they shouldn't, or vice versa). Axelor framework likely has automatic cache invalidation hooks trong entity lifecycle listeners.
+Thực thể được đánh dấu `cacheable="true"` - tối ưu hiệu suất quan trọng vì dữ liệu nhóm được truy cập thường xuyên (mỗi lần kiểm tra quyền có thể truy vấn thành viên nhóm) nhưng ít thay đổi (tái cơ cấu tổ chức xảy ra theo quý/năm, không phải hàng giờ). Bộ đệm cấp hai (L2 cache) của Hibernate lưu các đối tượng Group đã giải mã hóa trong bộ nhớ, truy vấn sau đó lấy từ bộ đệm thay vì cơ sở dữ liệu. Vô hiệu hóa bộ đệm (cache invalidation) là yếu tố then chốt: khi nhóm bị sửa đổi (thêm/xóa quyền, thay đổi thuộc tính), mục bộ đệm phải được loại bỏ nếu không dữ liệu cũ gây lỗi quyền hạn. Khung Axelor có thể đã tích hợp cơ chế vô hiệu hóa bộ đệm tự động trong bộ lắng nghe vòng đời thực thể (entity lifecycle listener). [Từ source code]
 
-Fields `navigation` và `homeAction` enable per-group UI customization: different groups see different navigation menus và different home dashboards on login. Ví dụ: Sales group home action shows sales pipeline dashboard, Accounting group shows financial summary, Executives show KPI dashboard. Implementation likely: on login, framework loads user's group, reads homeAction property, redirects to specified action. Navigation property có thể control menu items visibility (technical staff sees admin menus, regular users don't). Customization này improves user experience (users immediately see relevant content) nhưng increases configuration complexity (administrators must maintain group-specific UI configs).
+Các trường `navigation` và `homeAction` cho phép tùy chỉnh giao diện theo nhóm: nhóm khác nhau thấy menu điều hướng khác nhau và bảng điều khiển trang chủ khác nhau khi đăng nhập. Ví dụ: nhóm Kinh doanh thấy bảng điều khiển kênh bán hàng, nhóm Kế toán thấy tổng kết tài chính, nhóm Lãnh đạo thấy chỉ số KPI. Việc triển khai có thể: khi đăng nhập, khung tải nhóm của người dùng, đọc thuộc tính homeAction, chuyển hướng đến hành động được chỉ định. Tùy chỉnh này cải thiện trải nghiệm người dùng (người dùng thấy nội dung liên quan ngay lập tức) nhưng tăng độ phức tạp cấu hình (quản trị viên phải duy trì cấu hình giao diện riêng cho từng nhóm). [Suy luận]
 
-**Bằng chứng từ code - Group entity fields:**
+**Bằng chứng từ mã nguồn - Các trường của thực thể Group:**
 ```xml
 <entity name="Group" cacheable="true">
-  <!-- Business Role Flags -->
+  <!-- Cờ vai trò nghiệp vụ -->
   <boolean name="technicalStaff"
     help="Specify whether the members of this group are technical staff." massUpdate="true"/>
   <boolean name="isClient" default="false" massUpdate="true" title="Client"/>
   <boolean name="isSupplier" default="false" massUpdate="true" title="Supplier"/>
 
-  <!-- UI Customization -->
+  <!-- Tùy chỉnh giao diện -->
   <string name="navigation" selection="select.user.navigation" massUpdate="true"/>
   <string name="homeAction" help="Default home action." massUpdate="true"/>
 </entity>
 ```
 
-**Giải thích code:** Entity extends base Group từ `com.axelor.auth.db` package (core framework), adding business-specific fields. All boolean flags have `massUpdate="true"` enabling bulk changes - useful when reclassifying groups (e.g., promote entire group to technical staff status).
+**Giải thích mã nguồn:** Thực thể mở rộng Group cơ sở từ gói `com.axelor.auth.db` (lõi khung), thêm các trường riêng cho nghiệp vụ. Tất cả cờ boolean đều có `massUpdate="true"` cho phép thay đổi hàng loạt - hữu ích khi phân loại lại nhóm.
 
-Field `technicalStaff` có descriptive help text suggesting special handling: technical staff members có thể bypass certain restrictions, see debug information, access admin features. Implementation likely checked trong permission evaluation logic: `if (user.getGroup().getTechnicalStaff()) { grant elevated access }`. Risk: overly broad technical staff designation leads to excessive privilege escalation - best practice limit to genuine IT/admin users.
+Trường `technicalStaff` có nội dung trợ giúp mô tả gợi ý xử lý đặc biệt: thành viên nhóm kỹ thuật có thể bỏ qua một số hạn chế, xem thông tin gỡ lỗi, truy cập tính năng quản trị. Rủi ro: chỉ định nhóm kỹ thuật quá rộng dẫn đến leo thang đặc quyền quá mức - thực hành tốt nhất là giới hạn cho nhân viên CNTT/quản trị thực sự.
 
-Fields `isClient` và `isSupplier` enable portal scenarios where external entities have limited access. Client groups might have read-only access to their orders/invoices với self-service capabilities (download PDFs, submit support tickets). Supplier groups might update delivery status, submit invoices electronically. Default `false` means internal employee groups unless explicitly marked - safety-first (don't accidentally expose internal data to external users).
-
-Selection field `navigation` references `select.user.navigation` - a selection definition (enum-like) elsewhere defining navigation modes. Possible values might be: "classic" (traditional menu tree), "tiles" (modern card-based), "minimal" (simplified for external users). Field type `string` instead of integer selection suggests navigation modes identified by string keys for extensibility (can add custom navigation types without database changes).
-
-**Group naming conventions inferred:** [Suy luận best practices]
-Effective group management trong large deployments requires consistent naming. Recommended patterns:
-- **Department groups:** "Sales-North", "Finance-HQ", "Operations-Manufacturing"
-- **Portal groups:** "Portal-Customers", "Portal-Suppliers"
-- **Technical groups:** "Admins", "Developers", "Support-Staff"
-- **Role-based groups:** "Order-Approvers", "Report-Viewers" (though these better as Roles)
-
-Prefix approach helps administrators quickly identify group type when reviewing permission assignments hoặc troubleshooting access issues.
+Các trường `isClient` và `isSupplier` hỗ trợ kịch bản cổng thông tin nơi thực thể bên ngoài có quyền truy cập hạn chế. Nhóm khách hàng có thể có quyền chỉ đọc đối với đơn hàng/hóa đơn của họ cùng khả năng tự phục vụ. Nhóm nhà cung cấp có thể cập nhật tình trạng giao hàng, gửi hóa đơn điện tử. Giá trị mặc định `false` nghĩa là nhóm nhân viên nội bộ trừ khi được đánh dấu tường minh - an toàn trước (không vô tình tiết lộ dữ liệu nội bộ cho người dùng bên ngoài). [Từ source code]
 
 ---
 
-### 5. ROLE ENTITY: FUNCTIONAL CAPABILITIES VÀ ORTHOGONAL PERMISSIONS
+### 5. THỰC THỂ VAI TRÒ: NĂNG LỰC CHỨC NĂNG VÀ QUYỀN HẠN TRỰC GIAO
 
-**File nguồn:** `/modules/axelor-open-suite/axelor-base/src/main/resources/domains/Role.xml` [Từ source code]
+**Tệp nguồn:** `/modules/axelor-open-suite/axelor-base/src/main/resources/domains/Role.xml` [Từ source code]
 
-Role entity trong Axelor remarkably minimal - chỉ có `name` và `description` fields trong extension XML, indicating framework core provides most functionality. Minimalism này intentional: roles là pure permission containers without business logic hoặc UI customization (unlike Groups có navigation/homeAction). Separation of concerns: Groups = organizational context + UI customization + permissions, Roles = pure functional capabilities (permissions only). Users can have one group (organizational placement) nhưng multiple roles (multiple functional capabilities), enabling fine-grained authorization.
+Thực thể Role trong Axelor cực kỳ tối giản - chỉ có trường `name` và `description` trong XML mở rộng, cho thấy lõi khung cung cấp hầu hết chức năng. Tính tối giản này có chủ đích: vai trò là nơi chứa quyền hạn thuần túy, không có logic nghiệp vụ hay tùy chỉnh giao diện (khác với Nhóm có navigation/homeAction). Phân tách trách nhiệm: Nhóm = ngữ cảnh tổ chức + tùy chỉnh giao diện + quyền hạn, Vai trò = năng lực chức năng thuần túy (chỉ quyền hạn). Người dùng có thể có một nhóm (vị trí tổ chức) nhưng nhiều vai trò (nhiều năng lực chức năng), cho phép phân quyền chi tiết.
 
-Use case cho roles versus groups: consider employee working part-time trong multiple capacities - member of "Sales" group (primary organizational placement) nhưng có roles "Order-Creator" (can create sales orders), "Invoice-Approver" (can approve invoices), "Report-Viewer" (can view analytics). Khi employee promoted, add role "Manager" (can approve higher amounts, see subordinate data) without changing group membership. Khi employee temporarily covers for colleague, add temporary role (can be revoked sau khi coverage period ends). Role assignment/revocation more frequent và granular than group membership changes.
+Trường hợp sử dụng cho vai trò so với nhóm: xét nhân viên làm việc bán thời gian nhiều vai: thuộc nhóm "Kinh doanh" (vị trí tổ chức chính) nhưng có vai trò "Người tạo đơn hàng" (có thể tạo đơn hàng), "Người duyệt hóa đơn" (có thể duyệt hóa đơn), "Người xem báo cáo" (có thể xem phân tích). Khi nhân viên được thăng chức, thêm vai trò "Quản lý" (có thể duyệt số tiền cao hơn, xem dữ liệu cấp dưới) mà không đổi thành viên nhóm. Khi nhân viên tạm thay thế đồng nghiệp, thêm vai trò tạm thời (có thể thu hồi sau khi hết thời gian thay thế). Gán/thu hồi vai trò thường xuyên và chi tiết hơn thay đổi thành viên nhóm. [Suy luận]
 
-Entity chỉ có tracking configuration (audit trail cho name và description changes) - confirming roles primarily metadata containers. Real power comes from relationship với permissions (not shown trong extension XML nhưng inferred từ PermissionAssistantService code). Role architecture supports **role composition**: có thể có "basic" roles ("Order-Viewer") và "advanced" roles ("Order-Manager" = Order-Viewer + Order-Editor + Order-Approver permissions) - though composition logic would be implemented trong permission management UI or service layer, không phải entity level.
-
-**Bằng chứng từ code - Role entity structure:**
+**Bằng chứng từ mã nguồn - Cấu trúc thực thể Role:**
 ```xml
 <entity name="Role">
   <track>
@@ -251,47 +240,29 @@ Entity chỉ có tracking configuration (audit trail cho name và description ch
 </entity>
 ```
 
-**Giải thích code:** XML exceptionally terse - chỉ tracking configuration. No custom fields, no business logic, no UI hints. Này reinforces roles as lightweight permission aggregators. Tracking captures changes to role definition: khi administrator renames role hoặc updates description, audit log records who made change và when. Audit trail important cho compliance scenarios (auditors ask "who changed permissions for Finance role?").
+**Giải thích mã nguồn:** XML cực kỳ ngắn gọn - chỉ có cấu hình theo dõi kiểm toán (audit tracking). Không có trường tùy chỉnh, không có logic nghiệp vụ, không có gợi ý giao diện. Điều này củng cố vai trò như bộ tổng hợp quyền hạn nhẹ. Theo dõi ghi lại thay đổi đối với định nghĩa vai trò: khi quản trị viên đổi tên vai trò hoặc cập nhật mô tả, nhật ký kiểm toán ghi nhận ai đã thay đổi và khi nào. Nhật ký kiểm toán quan trọng cho kịch bản tuân thủ (kiểm toán viên hỏi "ai đã thay đổi quyền hạn cho vai trò Tài chính?"). [Từ source code]
 
-Base Role entity (in framework core) must contain:
-- Primary key (`id`)
-- Audit fields (`createdBy`, `createdOn`, `updatedBy`, `updatedOn`)
-- `name` field (unique identifier)
-- `description` field (human-readable explanation)
-- Relationship to Permission entities (one-to-many)
-- Relationship to MetaPermission entities (one-to-many)
+**Ma trận quyết định Vai trò và Nhóm:** [Suy luận về thực hành tốt nhất]
 
-**Role vs Group decision matrix:** [Suy luận về best practices]
+Dùng **Nhóm** khi: tập quyền phản ánh cấu trúc tổ chức (phòng ban, bộ phận); người dùng thường có một liên kết chính; cần tùy chỉnh giao diện (màn hình chủ khác nhau theo đơn vị tổ chức); cần cờ nghiệp vụ (isClient, isSupplier, technicalStaff); thay đổi không thường xuyên.
 
-Use **Groups** when:
-- Permission set reflects organizational structure (departments, divisions)
-- Users typically have one primary affiliation
-- UI customization needed (different home screens per org unit)
-- Business flags needed (isClient, isSupplier, technicalStaff)
-- Changes infrequent (reorganizations happen annually)
+Dùng **Vai trò** khi: tập quyền phản ánh chức năng công việc (người xem, người sửa, người duyệt); người dùng có thể có nhiều năng lực đồng thời; quyền được gán/thu hồi thường xuyên; quan tâm xuyên suốt trải trên nhiều nhóm (tất cả quản lý ở mọi phòng ban cần quyền xem báo cáo); tổ hợp quyền chi tiết (xây dựng quyền phức tạp từ các khối đơn giản).
 
-Use **Roles** when:
-- Permission set reflects job functions (viewer, editor, approver)
-- Users may have multiple capabilities simultaneously
-- Permissions assigned/revoked frequently (promotions, temporary duties)
-- Cross-cutting concerns spanning multiple groups (all managers across all departments need report access)
-- Fine-grained permission composition (build complex permissions from simple building blocks)
-
-Hybrid approach (using both) most powerful: user inherits broad permissions từ group (departmental baseline) plus specific capabilities từ roles (functional additions).
+Cách tiếp cận kết hợp (dùng cả hai) mạnh mẽ nhất: người dùng kế thừa quyền rộng từ nhóm (mức cơ bản phòng ban) cộng thêm năng lực cụ thể từ vai trò (bổ sung chức năng).
 
 ---
 
-### 6. PERMISSION ENTITY: OBJECT-LEVEL CRUD AUTHORIZATION
+### 6. THỰC THỂ QUYỀN HẠN: PHÂN QUYỀN CRUD CẤP ĐỐI TƯỢNG
 
-**File nguồn:** `/modules/axelor-open-suite/axelor-base/src/main/resources/domains/Permission.xml`, PermissionAssistantService.java [Từ source code]
+**Tệp nguồn:** `/modules/axelor-open-suite/axelor-base/src/main/resources/domains/Permission.xml`, PermissionAssistantService.java [Từ source code]
 
-Permission entity implements **object-level authorization** - kiểm soát quyền truy cập vào entire entities (SaleOrder, Invoice, Product) chứ không phải individual instances hoặc fields. Granularity level này coarser than record-level (where permissions vary by instance: "can edit MY orders but not others' orders") nhưng finer than application-level (where permissions apply to entire application: "can access sales module"). Object-level permissions practical sweet spot: administrators có thể control "can Sales group create Purchase Orders?" without micromanaging every single order instance. Entity marked `cacheable="true"` critical cho performance - permission checks happen extremely frequently (potentially every database query), caching results prevents database from becoming bottleneck.
+Thực thể Permission triển khai **phân quyền cấp đối tượng** - kiểm soát quyền truy cập vào toàn bộ thực thể (SaleOrder, Invoice, Product) chứ không phải từng bản ghi riêng lẻ hoặc từng trường. Mức chi tiết này thô hơn phân quyền cấp bản ghi (nơi quyền khác nhau theo bản ghi: "có thể sửa đơn hàng CỦA TÔI nhưng không phải của người khác") nhưng mịn hơn phân quyền cấp ứng dụng (nơi quyền áp dụng cho toàn bộ ứng dụng: "có thể truy cập mô-đun kinh doanh"). Phân quyền cấp đối tượng là điểm cân bằng thực tế: quản trị viên có thể kiểm soát "nhóm Kinh doanh có thể tạo Đơn mua hàng không?" mà không phải quản lý vi mô từng đơn hàng riêng lẻ. Thực thể được đánh dấu `cacheable="true"`, rất quan trọng cho hiệu suất - kiểm tra quyền xảy ra cực kỳ thường xuyên (có thể mỗi truy vấn cơ sở dữ liệu), bộ đệm ngăn cơ sở dữ liệu trở thành nút thắt cổ chai.
 
-Permission model supports five operations representing standard CRUD plus export capability: **canRead** (view records), **canWrite** (edit existing records), **canCreate** (create new records), **canRemove** (delete records), và **canExport** (export to CSV/Excel/PDF). Separation của create từ write important cho workflows: trainee users có thể create draft orders (canCreate) nhưng cannot edit submitted orders (no canWrite), forcing review process. Export permission separate vì data export raises data leakage concerns: users có thể view individual records on screen (canRead) nhưng bulk export to spreadsheet (canExport) enables data exfiltration - tighter control needed. Default permission structure follows "all or nothing" principle: absence of permission entity for object means deny all operations, presence means grant specified operations.
+Mô hình quyền hỗ trợ năm thao tác đại diện cho CRUD tiêu chuẩn cộng khả năng xuất: **canRead** (xem bản ghi), **canWrite** (sửa bản ghi hiện có), **canCreate** (tạo bản ghi mới), **canRemove** (xóa bản ghi), và **canExport** (xuất ra CSV/Excel/PDF). Tách biệt tạo (create) khỏi ghi (write) quan trọng cho quy trình làm việc: người dùng thực tập có thể tạo đơn hàng nháp (canCreate) nhưng không thể sửa đơn hàng đã gửi (không có canWrite), buộc phải qua quy trình duyệt. Quyền xuất tách riêng vì xuất dữ liệu gây lo ngại rò rỉ dữ liệu: người dùng có thể xem từng bản ghi trên màn hình (canRead) nhưng xuất hàng loạt ra bảng tính (canExport) cho phép chiết xuất dữ liệu - cần kiểm soát chặt hơn. [Từ source code]
 
-Naming convention cho permissions follows pattern `perm.{ObjectName}.{GroupOrRoleCode}` - ví dụ: `perm.SaleOrder.sales_team`, `perm.Product.admins`, `perm.Partner.suppliers`. Convention này enables: (1) visual scanning in permission lists (sort alphabetically groups related permissions), (2) avoid naming collisions (unique names across entire system), (3) programmatic generation (services can construct permission names without database lookups). Field `object` contains fully qualified class name (e.g., `com.axelor.apps.sale.db.SaleOrder`) hoặc wildcard package patterns (e.g., `com.axelor.apps.sale.db.*` meaning all entities in package). Wildcard support critical for scaling: administrators can grant "all sales entities" without enumerating hundreds of individual entities.
+Quy ước đặt tên cho quyền hạn tuân theo mẫu `perm.{TênĐốiTượng}.{MãNhómHoặcVaiTrò}` - ví dụ: `perm.SaleOrder.sales_team`, `perm.Product.admins`. Quy ước này cho phép: (1) dò quét trực quan trong danh sách quyền, (2) tránh xung đột tên, (3) sinh tên bằng chương trình. Trường `object` chứa tên lớp đầy đủ (ví dụ: `com.axelor.apps.sale.db.SaleOrder`) hoặc mẫu ký tự đại diện theo gói (ví dụ: `com.axelor.apps.sale.db.*` nghĩa là tất cả thực thể trong gói). Hỗ trợ ký tự đại diện rất quan trọng để mở rộng: quản trị viên có thể cấp "tất cả thực thể kinh doanh" mà không cần liệt kê hàng trăm thực thể riêng lẻ. [Từ source code]
 
-**Bằng chứng từ code - Permission entity structure:**
+**Bằng chứng từ mã nguồn - Cấu trúc thực thể Permission:**
 ```xml
 <entity name="Permission" cacheable="true">
   <track>
@@ -308,11 +279,11 @@ Naming convention cho permissions follows pattern `perm.{ObjectName}.{GroupOrRol
 </entity>
 ```
 
-**Giải thích code:** Tracking configuration logs all field changes - essential for security auditing. Khi permission modified (e.g., admin accidentally grants canRemove when should only grant canRead), audit trail shows who made mistake và when, enabling quick rollback. Fields `condition` và `conditionParams` enable record-level filtering (discussed in next section) - permissions không chỉ binary allow/deny nhưng có thể conditional based on record attributes và user context.
+**Giải thích mã nguồn:** Cấu hình theo dõi ghi nhật ký mọi thay đổi trường - thiết yếu cho kiểm toán bảo mật. Khi quyền bị sửa đổi (ví dụ quản trị viên vô tình cấp canRemove khi chỉ nên cấp canRead), nhật ký kiểm toán cho thấy ai đã mắc lỗi và khi nào, cho phép hoàn tác nhanh chóng. Các trường `condition` và `conditionParams` hỗ trợ lọc cấp bản ghi (thảo luận ở mục tiếp theo) - quyền hạn không chỉ cho phép/từ chối nhị phân mà có thể có điều kiện dựa trên thuộc tính bản ghi và ngữ cảnh người dùng. [Từ source code]
 
-**Bằng chứng từ code - Permission CRUD assignment:**
+**Bằng chứng từ mã nguồn - Gán quyền CRUD:**
 ```java
-// File: PermissionAssistantService.java, lines 280-285
+// Tệp: PermissionAssistantService.java, dòng 280-285
 permission.setCanRead(row[0].equalsIgnoreCase("x"));
 permission.setCanWrite(row[1].equalsIgnoreCase("x"));
 permission.setCanCreate(row[2].equalsIgnoreCase("x"));
@@ -320,11 +291,11 @@ permission.setCanRemove(row[3].equalsIgnoreCase("x"));
 permission.setCanExport(row[4].equalsIgnoreCase("x"));
 ```
 
-**Giải thích code:** Service code parses CSV import row where each operation represented by "x" marker (present = grant, absent = deny). Boolean fields set based on case-insensitive check - accepting "X" hoặc "x" for user convenience. Simple representation (x vs blank) makes CSV files human-readable và editable in spreadsheet tools - administrators can export permissions, modify in Excel, re-import. Alternative would be 0/1 or true/false, nhưng "x" provides better visual scanning (checkboxes metaphor familiar to users).
+**Giải thích mã nguồn:** Mã dịch vụ phân tích dòng CSV nhập vào, mỗi thao tác được biểu diễn bằng dấu "x" (có = cấp phép, không có = từ chối). Các trường boolean được thiết lập dựa trên so sánh không phân biệt hoa thường - chấp nhận cả "X" lẫn "x" cho tiện lợi. Biểu diễn đơn giản này (x so với ô trống) giúp tệp CSV dễ đọc và chỉnh sửa trong công cụ bảng tính - quản trị viên có thể xuất quyền, sửa đổi trong Excel, nhập lại. [Từ source code]
 
-**Bằng chứng từ code - Permission naming convention:**
+**Bằng chứng từ mã nguồn - Quy ước đặt tên quyền:**
 ```java
-// File: PermissionAssistantService.java, lines 251-256
+// Tệp: PermissionAssistantService.java, dòng 251-256
 protected String getPermissionName(MetaField userField, String objectName, String suffix) {
     String permName = "perm." + objectName + "." + suffix;
     if (userField != null) {
@@ -334,9 +305,9 @@ protected String getPermissionName(MetaField userField, String objectName, Strin
 }
 ```
 
-**Giải thích code:** Method constructs permission name từ components: prefix "perm" (identifies permission entities vs other entities), object name (target entity), suffix (group/role code), optional field name (for field-level permissions). Dot-separated format enables hierarchical organization và parsing. Method used by both permission creation (generate consistent names) và permission lookup (find existing permissions by calculated name). Null check for `userField` indicates method serves dual purpose: object-level permissions (field null) và field-level permissions (field specified).
+**Giải thích mã nguồn:** Phương thức xây dựng tên quyền từ các thành phần: tiền tố "perm" (nhận diện thực thể quyền), tên đối tượng (thực thể đích), hậu tố (mã nhóm/vai trò), tùy chọn tên trường (cho quyền cấp trường). Định dạng phân tách bằng dấu chấm cho phép tổ chức phân cấp và phân tích cú pháp. Kiểm tra null cho `userField` cho thấy phương thức phục vụ hai mục đích: quyền cấp đối tượng (trường null) và quyền cấp trường (trường được chỉ định). [Từ source code]
 
-**Permission validation against metamodel:** [Từ source code PermissionAssistantService lines 500-514]
+**Kiểm tra quyền đối chiếu với siêu mô hình:** [Từ source code, PermissionAssistantService dòng 500-514]
 ```java
 public List<Long> checkPermissionsObject() {
     List<Permission> permissionList = permissionRepository.all().fetch();
@@ -344,7 +315,7 @@ public List<Long> checkPermissionsObject() {
       return null;
     }
 
-    initObjectOrPackages();  // Get all entity packages from JPA metamodel
+    initObjectOrPackages();  // Lấy tất cả gói thực thể từ siêu mô hình JPA
 
     return permissionList.stream()
         .filter(permission -> !isValidObject(permission.getObject()))
@@ -353,29 +324,29 @@ public List<Long> checkPermissionsObject() {
 }
 
 protected boolean isValidObject(String object) {
-    String regex = object.replace("*", ".*");  // Support wildcard
+    String regex = object.replace("*", ".*");  // Hỗ trợ ký tự đại diện
     return objectOrPackages.stream()
         .anyMatch(entityPackage -> entityPackage.matches(regex));
 }
 ```
 
-**Giải thích code:** Validation service detects "orphaned" permissions - permissions referencing entities không còn exists trong application (deleted modules, renamed entities, typos trong permission setup). Method `initObjectOrPackages()` queries JPA metamodel để get list of all entity classes currently registered. Stream filtering checks mỗi permission's object name against metamodel, using regex matching to support wildcards. Invalid permissions returned as ID list để administrators can review và delete. Validation critical sau khi uninstalling modules hoặc refactoring code - prevents accumulation of stale permissions causing confusion.
+**Giải thích mã nguồn:** Dịch vụ kiểm tra phát hiện quyền hạn mồ côi (orphaned) - tức quyền tham chiếu đến thực thể không còn tồn tại trong ứng dụng (mô-đun đã gỡ, thực thể đã đổi tên, lỗi chính tả trong thiết lập quyền). Phương thức `initObjectOrPackages()` truy vấn siêu mô hình JPA (JPA metamodel) để lấy danh sách tất cả lớp thực thể đang đăng ký. Bộ lọc luồng (stream filter) kiểm tra tên đối tượng của mỗi quyền đối chiếu với siêu mô hình, sử dụng khớp biểu thức chính quy (regex) để hỗ trợ ký tự đại diện (wildcard). Quyền không hợp lệ được trả về dưới dạng danh sách mã định danh (ID) để quản trị viên xem xét và xóa. Kiểm tra này rất quan trọng sau khi gỡ mô-đun hoặc tái cấu trúc mã - ngăn tích tụ quyền cũ gây nhầm lẫn. [Từ source code]
 
 ---
 
-### 7. RECORD-LEVEL SECURITY: DOMAIN FILTERS VÀ CONDITIONAL ACCESS
+### 7. BẢO MẬT CẤP BẢN GHI: BỘ LỌC MIỀN VÀ TRUY CẬP CÓ ĐIỀU KIỆN
 
-**File nguồn:** PermissionAssistantService.java lines 310-343 [Từ source code]
+**Tệp nguồn:** PermissionAssistantService.java dòng 310-343 [Từ source code]
 
-Record-level security (còn gọi là row-level security trong database terminology) represents most sophisticated level của authorization system: permissions không chỉ control "can user access SaleOrder entity?" (object-level) mà còn "which specific SaleOrder instances can user access?" (record-level). Implementation qua **condition mechanism** - SQL-like WHERE clauses dynamically injected vào queries based on user context. Pattern này transforms simple permission check từ binary yes/no thành filtered dataset: user always "has permission" nhưng only sees subset of records matching their context.
+Bảo mật cấp bản ghi (record-level security) — còn gọi là bảo mật cấp dòng (row-level security) trong thuật ngữ cơ sở dữ liệu — là cấp phân quyền tinh vi nhất trong hệ thống: quyền hạn không chỉ kiểm soát "người dùng có được truy cập thực thể SaleOrder không?" (cấp đối tượng) mà còn kiểm soát "người dùng được truy cập những bản ghi SaleOrder CỤ THỂ nào?" (cấp bản ghi). Cơ chế triển khai thông qua **điều kiện** (condition) — các mệnh đề WHERE dạng SQL được chèn động vào truy vấn dựa trên ngữ cảnh người dùng. Mẫu thiết kế này biến đổi kiểm tra quyền đơn giản từ dạng nhị phân có/không thành tập dữ liệu được lọc: người dùng luôn "có quyền" nhưng chỉ nhìn thấy tập con bản ghi phù hợp với ngữ cảnh của họ.
 
-Condition syntax resembles JPA query language: `self.fieldName` references current entity being queried, placeholders `?` represent parameter values supplied from `conditionParams`. Critical insight: conditions executed at database level (part of SQL WHERE clause) not application level (filtering in Java code), ensuring: (1) performance - database indexes used, only matching rows returned, (2) security - users cannot bypass by manipulating application code, (3) consistency - same filtering applies across all access paths (UI, API, reports). Trade-off: conditions limited to expressions database can evaluate - complex business logic requiring service layer computations cannot be encoded in conditions.
+Cú pháp điều kiện giống ngôn ngữ truy vấn JPA: `self.tenTruong` tham chiếu thực thể đang được truy vấn, chỗ giữ chỗ `?` đại diện cho giá trị tham số được cung cấp từ `conditionParams`. Điểm then chốt: điều kiện được thực thi ở tầng cơ sở dữ liệu (là một phần của mệnh đề WHERE trong SQL) chứ không phải ở tầng ứng dụng (lọc trong mã Java), đảm bảo: (1) hiệu năng — chỉ mục cơ sở dữ liệu được sử dụng, chỉ các dòng khớp được trả về; (2) bảo mật — người dùng không thể vượt qua bằng cách thao túng mã ứng dụng; (3) nhất quán — cùng một bộ lọc áp dụng cho mọi đường truy cập (giao diện, API, báo cáo). Đánh đổi (trade-off): điều kiện bị giới hạn ở các biểu thức mà cơ sở dữ liệu có thể đánh giá — logic nghiệp vụ phức tạp cần tính toán ở tầng dịch vụ không thể mã hóa trong điều kiện. [Từ source code]
 
-Magic variables trong `conditionParams` enable dynamic filtering based on current user's attributes. Pattern `__user__.{fieldName}` resolved at runtime: framework reads logged-in user's field value và substitutes into query. Ví dụ: condition `self.company = ?` với param `__user__.activeCompany` becomes SQL `WHERE sale_order.company_id = 123` (where 123 is current user's activeCompany ID). Variable resolution supports traversing relationships: `__user__.partner.company` navigates from User to Partner to Company. Collection fields enable IN clauses: `__user__.teamSet` expands to `(1,2,3)` for user belonging to teams 1,2,3.
+Các biến ngữ cảnh đặc biệt trong `conditionParams` cho phép lọc động dựa trên thuộc tính của người dùng hiện tại. Mẫu `__user__.{tenTruong}` được giải quyết khi chạy (runtime): bộ khung (framework) đọc giá trị trường của người dùng đang đăng nhập và thay thế vào truy vấn. Ví dụ: điều kiện `self.company = ?` với tham số `__user__.activeCompany` trở thành SQL `WHERE sale_order.company_id = 123` (trong đó 123 là mã công ty đang hoạt động của người dùng hiện tại). Cơ chế giải quyết biến hỗ trợ duyệt quan hệ: `__user__.partner.company` điều hướng từ Người dùng qua Đối tác đến Công ty. Các trường tập hợp hỗ trợ mệnh đề IN: `__user__.teamSet` mở rộng thành `(1,2,3)` cho người dùng thuộc nhóm làm việc 1, 2, 3. [Suy luận]
 
-**Bằng chứng từ code - Condition generation logic:**
+**Bằng chứng từ mã nguồn - Logic sinh điều kiện:**
 ```java
-// File: PermissionAssistantService.java, lines 325-342
+// Tệp: PermissionAssistantService.java, dòng 325-342
 String condition = "";
 String conditionParams = "__user__." + userField.getName();
 
@@ -385,89 +356,81 @@ if (userField.getRelationship().contentEquals("ManyToOne")) {
   condition = "self." + objectField.getName() + " in (?)";
 }
 
-// Example outputs:
-// For many-to-one relationship (user has one activeCompany):
+// Ví dụ kết quả:
+// Quan hệ nhiều-một (người dùng có một công ty đang hoạt động):
 //   condition: "self.company = ?"
 //   conditionParams: "__user__.activeCompany"
 //
-// For many-to-many relationship (user has multiple teams):
+// Quan hệ nhiều-nhiều (người dùng thuộc nhiều nhóm làm việc):
 //   condition: "self.assignedTo in (?)"
 //   conditionParams: "__user__.teamSet"
 ```
 
-**Giải thích code:** Code dynamically generates condition syntax based on relationship type discovered via metamodel introspection. Many-to-one relationships (single value) use equality operator `=`, collection relationships (many-to-many, one-to-many) use set membership operator `in`. Field name extraction from metadata (`userField.getName()`, `objectField.getName()`) ensures conditions valid against actual schema - typos prevented. Generated conditions stored trong Permission entity for runtime evaluation, not compile-time - enabling administrators modify filtering rules without code deployment.
+**Giải thích mã nguồn:** Mã sinh cú pháp điều kiện một cách động dựa trên loại quan hệ được phát hiện qua nội suy siêu mô hình (metamodel introspection). Quan hệ nhiều-một (giá trị đơn) dùng toán tử bằng `=`, quan hệ tập hợp (nhiều-nhiều, một-nhiều) dùng toán tử thuộc tập `in`. Tên trường được trích xuất từ siêu dữ liệu (`userField.getName()`, `objectField.getName()`) đảm bảo điều kiện hợp lệ đối với lược đồ thực tế — ngăn lỗi chính tả. Điều kiện được sinh ra lưu trong thực thể Permission để đánh giá khi chạy, không phải khi biên dịch — cho phép quản trị viên sửa đổi quy tắc lọc mà không cần triển khai lại mã. [Từ source code]
 
-**Example scenarios demonstrating power:**
+**Ví dụ minh họa sức mạnh cơ chế:**
 
-**Scenario 1: Multi-company data isolation**
+**Kịch bản 1: Cách ly dữ liệu đa công ty**
 ```
-User: John (activeCompany: NYC Branch)
-Permission on SaleOrder:
+Người dùng: Minh (activeCompany: Chi nhánh Hà Nội)
+Quyền trên SaleOrder:
   condition: "self.company = ?"
   conditionParams: "__user__.activeCompany"
 
-Result: John sees only SaleOrders where company_id = NYC Branch ID
-All queries automatically filtered, transparent to application code
+Kết quả: Minh chỉ thấy đơn hàng có company_id = mã Chi nhánh Hà Nội
+Mọi truy vấn được lọc tự động, trong suốt đối với mã ứng dụng.
 ```
 
-**Scenario 2: Team-based record assignment**
+**Kịch bản 2: Phân bổ bản ghi theo nhóm làm việc**
 ```
-User: Sarah (teamSet: [Sales-North, Sales-West])
-Permission on Lead:
+Người dùng: Lan (teamSet: [Kinh doanh Bắc, Kinh doanh Tây])
+Quyền trên Lead:
   condition: "self.assignedTeam in (?)"
   conditionParams: "__user__.teamSet"
 
-Result: Sarah sees Leads assigned to Sales-North OR Sales-West
-When Sarah reassigned to different teams, visible leads change automatically
+Kết quả: Lan thấy khách hàng tiềm năng gán cho Kinh doanh Bắc HOẶC Kinh doanh Tây.
+Khi Lan được chuyển sang nhóm khác, dữ liệu hiển thị thay đổi tự động.
 ```
 
-**Scenario 3: Hierarchical access (manager sees subordinates' data)**
+**Kịch bản 3: Truy cập phân cấp (quản lý xem dữ liệu cấp dưới)**
 ```
-User: Manager Mike (teamSet includes all managed teams)
-Permission on TimeSheet:
+Người dùng: Quản lý Tuấn (teamSet bao gồm tất cả nhóm quản lý)
+Quyền trên TimeSheet:
   condition: "self.employee.team in (?)"
   conditionParams: "__user__.teamSet"
 
-Result: Mike sees timesheets of all employees in his managed teams
-Path expression "self.employee.team" traverses TimeSheet→Employee→Team
+Kết quả: Tuấn thấy bảng chấm công của tất cả nhân viên trong các nhóm do mình quản lý.
+Biểu thức đường dẫn "self.employee.team" duyệt từ BảngChấmCông → NhânViên → NhómLàmViệc.
 ```
 
-**Implementation challenges inferred:** [Suy luận về technical complexity]
+**Thách thức triển khai suy luận:** [Suy luận về độ phức tạp kỹ thuật]
 
-Implementing record-level security properly requires framework handle:
-1. **Query rewriting**: Intercept all queries (JPA Criteria, JPQL, Query DSL) và inject condition WHERE clauses
-2. **Parameter binding**: Resolve `__user__` variables, handle type conversion (entity references → IDs), expand collections
-3. **JOIN optimization**: Conditions với path expressions (`self.employee.team`) require automatic JOINs, must avoid N+1 queries
-4. **Permission composition**: Multiple permissions với different conditions (from group + roles) must be ORed together correctly
-5. **Caching complexity**: Condition results user-specific, cannot cache globally, only per-user session
-6. **Update validation**: When user modifies record, verify updated record still matches their conditions (prevent privilege escalation: user updates record they can see, changes it to values they shouldn't see)
+Triển khai bảo mật cấp bản ghi đúng cách đòi hỏi bộ khung xử lý: (1) viết lại truy vấn — chặn mọi truy vấn (JPA Criteria, JPQL, DSL truy vấn) và chèn mệnh đề WHERE điều kiện; (2) ràng buộc tham số — giải quyết biến `__user__`, xử lý chuyển đổi kiểu (tham chiếu thực thể → mã định danh), mở rộng tập hợp; (3) tối ưu phép nối (JOIN) — điều kiện có biểu thức đường dẫn (`self.employee.team`) yêu cầu phép nối tự động, phải tránh vấn đề N+1 truy vấn; (4) tổ hợp quyền — nhiều quyền có điều kiện khác nhau (từ nhóm + vai trò) phải được kết hợp bằng phép HOẶC (OR) đúng cách; (5) độ phức tạp bộ đệm — kết quả điều kiện phụ thuộc người dùng, không thể đệm toàn cục mà chỉ theo phiên làm việc.
 
-Axelor framework core likely implements này qua JPA entity listeners hoặc Hibernate filters - technical details not visible trong analyzed application code. Complexity explains why many frameworks don't support row-level security out-of-box (Spring Security has basic support via ACLs nhưng not query-integrated).
-
-**Bằng chứng từ code - CSV export includes conditions:**
+**Bằng chứng từ mã nguồn - Xuất CSV bao gồm điều kiện:**
 ```java
-// File: PermissionAssistantService.java, lines 310-312
+// Tệp: PermissionAssistantService.java, dòng 310-312
 row[colIndex++] = Strings.isNullOrEmpty(perm.getCondition()) ? "" : perm.getCondition();
 row[colIndex++] = Strings.isNullOrEmpty(perm.getConditionParams()) ? "" : perm.getConditionParams();
 ```
 
-**Giải thích code:** CSV export/import includes condition và conditionParams as regular columns - administrators can edit conditions trong spreadsheet tool. Empty string handling (`Strings.isNullOrEmpty` check) distinguishes between no condition (empty = all records visible) versus empty condition string (could be parsing error). Export format enables bulk condition updates: administrator exports all permissions, uses Excel formulas to generate conditions for multiple groups/entities, re-imports. Alternative manual condition entry per permission tedious for hundreds of entities.
+**Giải thích mã nguồn:** Xuất CSV bao gồm cả điều kiện và tham số điều kiện như các cột thông thường — quản trị viên có thể chỉnh sửa điều kiện trong công cụ bảng tính. Xử lý chuỗi rỗng (kiểm tra `Strings.isNullOrEmpty`) phân biệt giữa không có điều kiện (ô trống = tất cả bản ghi hiển thị) và chuỗi điều kiện rỗng (có thể là lỗi phân tích). Định dạng xuất cho phép cập nhật điều kiện hàng loạt: quản trị viên xuất tất cả quyền, dùng công thức Excel để sinh điều kiện cho nhiều nhóm/thực thể, rồi nhập lại. [Từ source code]
 
 ---
 
-### 8. FIELD-LEVEL PERMISSIONS: METAPERMISSION VÀ METAPERMISSIONRULE
+### 8. QUYỀN CẤP TRƯỜNG: METAPERMISSION VÀ METAPERMISSIONRULE
 
-**File nguồn:** PermissionAssistantService.java lines 621-689 [Từ source code]
+**Tệp nguồn:** PermissionAssistantService.java dòng 621-689 [Từ source code]
 
-Field-level permissions provide finest-grained authorization control: even when user has object-level permission to read SaleOrder entity, specific sensitive fields (discountAmount, costPrice, marginPercentage) có thể hidden hoặc readonly. Architecture uses **two-tier structure**: **MetaPermission** acts as container/grouping entity for một object's field permissions, **MetaPermissionRule** defines actual per-field access rules. Two-tier design enables efficient querying (load MetaPermission once, get all field rules together) và clear organization (field rules grouped by object, not scattered across database).
+Quyền cấp trường dữ liệu (field-level permission) cung cấp kiểm soát phân quyền chi tiết nhất: ngay cả khi người dùng có quyền cấp đối tượng để đọc thực thể SaleOrder, các trường nhạy cảm cụ thể (discountAmount, costPrice, marginPercentage) vẫn có thể bị ẩn hoặc chỉ đọc. Kiến trúc sử dụng **cấu trúc hai tầng**: **MetaPermission** đóng vai trò thùng chứa/nhóm gom cho quyền trường của một đối tượng, **MetaPermissionRule** định nghĩa quy tắc truy cập thực tế cho từng trường. Thiết kế hai tầng cho phép truy vấn hiệu quả (tải MetaPermission một lần, lấy tất cả quy tắc trường cùng nhau) và tổ chức rõ ràng (quy tắc trường được nhóm theo đối tượng, không phân tán khắp cơ sở dữ liệu).
 
-MetaPermission entity follows same naming convention as Permission (`perm.{Object}.{GroupOrRole}`), owned by Group hoặc Role via one-to-many relationship. One MetaPermission can contain dozens of MetaPermissionRule entities (one per field). Structural similarity với Permission entity intentional - administrators understand "Permissions control objects, MetaPermissions control fields" without learning completely different concepts. Generated code likely includes convenience methods: `group.getMetaPermissions()` returns all field permission containers, `metaPermission.getRules()` returns all field rules.
+Thực thể MetaPermission tuân theo cùng quy ước đặt tên như Permission (`perm.{ĐốiTượng}.{NhómHoặcVaiTrò}`), thuộc sở hữu của Nhóm hoặc Vai trò qua quan hệ một-nhiều (one-to-many). Một MetaPermission có thể chứa hàng chục thực thể MetaPermissionRule (mỗi quy tắc ứng với một trường). Sự tương đồng cấu trúc với thực thể Permission là có chủ đích — quản trị viên hiểu "Permission kiểm soát đối tượng, MetaPermission kiểm soát trường" mà không cần học khái niệm hoàn toàn khác.
 
-MetaPermissionRule provides three boolean flags (canRead, canWrite, canExport) parallel to Permission's flags but notably MISSING canCreate và canRemove - logical vì fields don't exist independently của parent entity, cannot "create field" without creating entire entity. Export permission separate (như object-level) vì exported data shows field values even when UI hides them - users có thể export spreadsheet then search for hidden columns. Readonly vs hidden distinction important: **readonly fields visible but not editable** (users see values, understand business logic, but cannot change - e.g., computed totals), **hidden fields completely invisible** (users unaware field exists - e.g., internal cost data not shown to sales team).
+MetaPermissionRule cung cấp ba cờ boolean (canRead, canWrite, canExport) song song với cờ của Permission nhưng đáng chú ý là THIẾU canCreate và canRemove — hợp lý vì trường không tồn tại độc lập với thực thể cha, không thể "tạo trường" mà không tạo toàn bộ thực thể. Quyền xuất tách riêng (giống cấp đối tượng) vì dữ liệu xuất hiển thị giá trị trường ngay cả khi giao diện ẩn chúng. Phân biệt giữa chỉ đọc (readonly) và ẩn (hidden) rất quan trọng: **trường chỉ đọc hiển thị nhưng không chỉnh sửa được** (người dùng thấy giá trị, hiểu logic nghiệp vụ, nhưng không thể thay đổi — ví dụ tổng tính toán), **trường ẩn hoàn toàn vô hình** (người dùng không biết trường tồn tại — ví dụ dữ liệu giá vốn nội bộ không hiển thị cho nhóm kinh doanh). [Từ source code]
 
-**Bằng chứng từ code - MetaPermission retrieval/creation:**
+**Bằng chứng từ mã nguồn - Truy xuất/tạo MetaPermission:**
 ```java
-// File: PermissionAssistantService.java, lines 621-640
+// Tệp: PermissionAssistantService.java, dòng 621-640
 public MetaPermission getMetaPermission(Group group, String objectName) {
     String permName = getPermissionName(null, objectNames[objectNames.length - 1], group.getCode());
     MetaPermission metaPermission = metaPermissionRepository.all()
@@ -479,18 +442,18 @@ public MetaPermission getMetaPermission(Group group, String objectName) {
       metaPermission.setName(permName);
       metaPermission.setObject(objectName);
 
-      group.addMetaPermission(metaPermission);  // ← Bidirectional relationship
+      group.addMetaPermission(metaPermission);  // ← Quan hệ hai chiều
     }
 
     return metaPermission;
 }
 ```
 
-**Giải thích code:** Method implements get-or-create pattern: query for existing MetaPermission by name, if not found create new instance. Pattern common trong permission management - avoid duplicate permission entries (which would cause ambiguous authorization). Call to `group.addMetaPermission()` establishes bidirectional relationship: MetaPermission references Group, Group's collection includes MetaPermission. Bidirectional link enables navigation both directions: "what permissions does Sales group have?" và "which group owns this permission?". Null check in `getPermissionName(null, ...)` indicates object-level permission name (no specific field).
+**Giải thích mã nguồn:** Phương thức triển khai mẫu lấy-hoặc-tạo (get-or-create): truy vấn MetaPermission hiện có theo tên, nếu không tìm thấy thì tạo phiên bản mới. Mẫu này phổ biến trong quản lý quyền hạn — tránh tạo bản ghi quyền trùng lặp (sẽ gây phân quyền mơ hồ). Lời gọi `group.addMetaPermission()` thiết lập quan hệ hai chiều (bidirectional): MetaPermission tham chiếu đến Nhóm, tập hợp của Nhóm bao gồm MetaPermission. Liên kết hai chiều cho phép duyệt cả hai hướng: "nhóm Kinh doanh có những quyền nào?" và "quyền này thuộc nhóm nào?". [Từ source code]
 
-**Bằng chứng từ code - MetaPermissionRule creation with conditional logic:**
+**Bằng chứng từ mã nguồn - Tạo MetaPermissionRule với logic có điều kiện:**
 ```java
-// File: PermissionAssistantService.java, lines 663-689
+// Tệp: PermissionAssistantService.java, dòng 663-689
 public MetaPermission updateFieldPermission(
     MetaPermission metaPermission, String field, String[] row) {
 
@@ -502,14 +465,14 @@ public MetaPermission updateFieldPermission(
     if (permissionRule == null) {
       permissionRule = new MetaPermissionRule();
       permissionRule.setMetaPermission(metaPermission);
-      permissionRule.setField(field);  // ← Field name as string
+      permissionRule.setField(field);  // ← Tên trường dưới dạng chuỗi
     }
 
     permissionRule.setCanRead(row[0].equalsIgnoreCase("x"));
     permissionRule.setCanWrite(row[1].equalsIgnoreCase("x"));
     permissionRule.setCanExport(row[4].equalsIgnoreCase("x"));
-    permissionRule.setReadonlyIf(row[5]);  // ← Conditional readonly expression
-    permissionRule.setHideIf(row[6]);      // ← Conditional hide expression
+    permissionRule.setReadonlyIf(row[5]);  // ← Biểu thức chỉ đọc có điều kiện
+    permissionRule.setHideIf(row[6]);      // ← Biểu thức ẩn có điều kiện
 
     metaPermission.addRule(permissionRule);
 
@@ -517,222 +480,127 @@ public MetaPermission updateFieldPermission(
 }
 ```
 
-**Giải thích code:** Similar get-or-create pattern for MetaPermissionRule. Query uses composite filter matching both field name AND parent MetaPermission - necessary vì same field name appears across different objects (every entity has "id" field, must distinguish SaleOrder.id rule from Invoice.id rule). Field name stored as string (`permissionRule.setField(field)`) not reference to MetaField entity - looser coupling enables field permissions survive schema changes (rename field in code, update permission field name separately).
+**Giải thích mã nguồn:** Mẫu lấy-hoặc-tạo tương tự cho MetaPermissionRule. Truy vấn sử dụng bộ lọc kết hợp khớp cả tên trường VÀ MetaPermission cha — cần thiết vì cùng tên trường xuất hiện ở nhiều đối tượng (mọi thực thể đều có trường "id", phải phân biệt quy tắc SaleOrder.id với Invoice.id). Tên trường được lưu dưới dạng chuỗi (`permissionRule.setField(field)`) thay vì tham chiếu đến thực thể MetaField — liên kết lỏng hơn cho phép quyền trường tồn tại qua các thay đổi lược đồ (đổi tên trường trong mã, cập nhật tên quyền trường riêng).
 
-Row indices `[0]`, `[1]`, `[4]`, `[5]`, `[6]` reveal CSV column layout: columns 0-4 are canRead/canWrite/canCreate/canRemove/canExport (parallel to object permissions), columns 5-6 are field-specific readonlyIf/hideIf. Gaps (skipping canCreate/canRemove for fields) maintain column alignment với object permission rows - CSV has uniform structure whether row represents object or field.
+Chỉ số dòng `[0]`, `[1]`, `[4]`, `[5]`, `[6]` cho thấy bố cục cột CSV: cột 0-4 là canRead/canWrite/canCreate/canRemove/canExport (song song với quyền đối tượng), cột 5-6 là readonlyIf/hideIf dành riêng cho trường. Khoảng trống (bỏ qua canCreate/canRemove cho trường) duy trì căn chỉnh cột với dòng quyền đối tượng — CSV có cấu trúc đồng nhất dù dòng biểu diễn đối tượng hay trường. [Từ source code]
 
-**Conditional field visibility:** Fields `readonlyIf` và `hideIf` contain **expressions** evaluated at runtime to dynamically control field visibility based on record state và user context. Expression language likely Groovy (Axelor's scripting language) or JavaScript. Examples of powerful conditional logic:
+**Hiển thị trường có điều kiện:** Các trường `readonlyIf` và `hideIf` chứa **biểu thức** được đánh giá khi chạy để kiểm soát hiển thị trường một cách động dựa trên trạng thái bản ghi và ngữ cảnh người dùng. Ngôn ngữ biểu thức có thể là Groovy (ngôn ngữ kịch bản của Axelor) hoặc JavaScript. Ví dụ về logic có điều kiện mạnh mẽ:
 
 ```groovy
-// readonlyIf: Make discount field readonly after order confirmed
-"statusSelect > 1"  // Status > Draft
+// readonlyIf: Trường chiết khấu chỉ đọc sau khi đơn hàng được xác nhận
+"statusSelect > 1"  // Trạng thái > Nháp
 
-// hideIf: Hide internal cost from non-managers
-"!__user__.group.technicalStaff"  // User's group is not technical staff
+// hideIf: Ẩn giá vốn nội bộ với người không phải quản trị
+"!__user__.group.technicalStaff"  // Nhóm người dùng không phải nhân viên kỹ thuật
 
-// readonlyIf: Field readonly unless user is creator
-"createdBy.id != __user__.id"  // Created by different user
+// readonlyIf: Trường chỉ đọc trừ khi người dùng là người tạo
+"createdBy.id != __user__.id"  // Được tạo bởi người dùng khác
 
-// hideIf: Hide field based on order type
-"typeSelect != 3"  // Not a special order type
+// hideIf: Ẩn trường dựa trên loại đơn hàng
+"typeSelect != 3"  // Không phải loại đơn hàng đặc biệt
 ```
 
-Expressions access both record fields (`statusSelect`, `createdBy.id`, `typeSelect`) và user context (`__user__` variables), enabling context-aware UIs. Implementation requires framework evaluate expressions for each field on each record during rendering - performance consideration for large forms or grids. Caching expression compilation (parse once, evaluate many times) critical.
+Biểu thức truy cập cả trường bản ghi (`statusSelect`, `createdBy.id`, `typeSelect`) lẫn ngữ cảnh người dùng (biến `__user__`), cho phép giao diện nhạy ngữ cảnh. Việc triển khai yêu cầu bộ khung đánh giá biểu thức cho từng trường trên từng bản ghi trong quá trình hiển thị — cần cân nhắc hiệu năng cho biểu mẫu hoặc lưới dữ liệu lớn. Đệm kết quả biên dịch biểu thức (phân tích một lần, đánh giá nhiều lần) là yếu tố then chốt. [Suy luận]
 
-**Bằng chứng từ code - CSV export format for field rules:**
-```java
-// File: PermissionAssistantService.java, lines 272-294
-protected int writeFieldPermission(MetaField field, String[] row, int colIndex, String permName) {
-    MetaPermissionRule rule = ruleRepository.all()
-        .filter("self.metaPermission.name = ?1 and self.metaPermission.object = ?2 and self.field = ?3",
-                permName, field.getMetaModel().getFullName(), field.getName())
-        .fetchOne();
-
-    if (rule != null) {
-      row[colIndex++] = !rule.getCanRead() ? "" : "x";
-      row[colIndex++] = !rule.getCanWrite() ? "" : "x";
-      row[colIndex++] = "";  // canCreate (N/A for fields)
-      row[colIndex++] = "";  // canRemove (N/A for fields)
-      row[colIndex++] = !rule.getCanExport() ? "" : "x";
-      row[colIndex++] = "";  // condition (N/A for fields)
-      row[colIndex++] = "";  // conditionParams (N/A for fields)
-      row[colIndex++] = Strings.isNullOrEmpty(rule.getReadonlyIf()) ? "" : rule.getReadonlyIf();
-      row[colIndex++] = Strings.isNullOrEmpty(rule.getHideIf()) ? "" : rule.getHideIf();
-    }
-
-    return colIndex;
-}
+**Ví dụ trường hợp sử dụng - Ma trận quyền nhóm kinh doanh:**
+```
+Đối tượng: SaleOrder (Đơn hàng bán)
+Quyền trường cho nhóm "sales_team":
+- clientPartner: canRead=CÓ, canWrite=CÓ (có thể sửa khách hàng)
+- ourCompany: canRead=CÓ, canWrite=KHÔNG (xem công ty, không thể đổi)
+- exTaxTotal: canRead=CÓ, canWrite=KHÔNG (xem tổng trước thuế, không thể thao túng)
+- inTaxTotal: canRead=CÓ, canWrite=KHÔNG (xem tổng sau thuế, không thể thao túng)
+- discountAmount: canRead=CÓ, canWrite=CÓ, readonlyIf="statusSelect > 2"
+    (chỉnh sửa được khi nháp/xác nhận, chỉ đọc sau đó)
+- costPrice: canRead=KHÔNG, hideIf="true" (ẩn hoàn toàn — bảo vệ biên lợi nhuận)
+- internalNotes: canRead=CÓ, canWrite=CÓ (có thể thêm ghi chú nội bộ)
 ```
 
-**Giải thích code:** CSV export writes blank cells for N/A columns (canCreate, canRemove, condition, conditionParams) - maintaining column alignment với object permission rows enables single CSV file contain both object và field permissions. Triple-filter query (`permName AND object AND field`) ensures correct rule retrieval - same field name may appear in multiple objects under multiple permission names. Null checks prevent writing "null" strings to CSV - empty cells cleaner than literal "null" text.
-
-**Use case example - Sales team permission matrix:**
-```
-Object: SaleOrder
-Field permissions for "sales_team" group:
-- clientPartner: canRead=YES, canWrite=YES (can edit customer)
-- ourCompany: canRead=YES, canWrite=NO (see company, cannot change)
-- exTaxTotal: canRead=YES, canWrite=NO (see subtotal, cannot manipulate)
-- inTaxTotal: canRead=YES, canWrite=NO (see total, cannot manipulate)
-- discountAmount: canRead=YES, canWrite=YES, readonlyIf="statusSelect > 2" (editable only in draft/confirmed, readonly after)
-- costPrice: canRead=NO, hideIf="true" (completely hidden - margin protection)
-- internalNotes: canRead=YES, canWrite=YES (can add internal notes)
-```
-
-Matrix này enforces: sales team can create/edit orders but cannot manipulate computed totals (preventing fraud), cannot see cost prices (preventing margin disclosure), cannot edit discounts after certain workflow stage (preventing post-approval changes).
+Ma trận này đảm bảo: nhóm kinh doanh có thể tạo/sửa đơn hàng nhưng không thể thao túng tổng tính toán (ngăn gian lận), không thể xem giá vốn (ngăn tiết lộ biên lợi nhuận), không thể sửa chiết khấu sau giai đoạn quy trình nhất định (ngăn thay đổi sau khi duyệt).
 
 ---
 
-### 9. PERMISSION MANAGEMENT: CSV IMPORT/EXPORT TOOL
+### 9. QUẢN LÝ QUYỀN HẠN: CÔNG CỤ NHẬP/XUẤT CSV
 
-**File nguồn:** PermissionAssistantService.java - Full class analysis [Từ source code]
+**Tệp nguồn:** PermissionAssistantService.java - Phân tích toàn bộ lớp [Từ source code]
 
-Managing hundreds of permissions across dozens of groups/roles và hundreds of entities through UI forms would be tedious và error-prone. Axelor provides **Permission Assistant** - sophisticated CSV-based import/export tool enabling bulk permission management using familiar spreadsheet software. Tool architecture follows ETL (Extract-Transform-Load) pattern common in data integration: export current permissions to CSV (Extract), edit in Excel/LibreOffice (Transform), import modified CSV (Load). Approach leverages administrators' spreadsheet skills - most administrators comfortable với Excel, can use formulas/fills/filters to rapidly configure permissions.
+Quản lý hàng trăm quyền hạn xuyên suốt hàng chục nhóm/vai trò và hàng trăm thực thể thông qua biểu mẫu giao diện sẽ rất tẻ nhạt và dễ sai sót. Axelor cung cấp **Trợ lý quyền hạn** (Permission Assistant) — công cụ nhập/xuất CSV tinh vi cho phép quản lý quyền hàng loạt bằng phần mềm bảng tính quen thuộc. Kiến trúc công cụ tuân theo mẫu ETL (Trích xuất - Biến đổi - Nạp): xuất quyền hiện tại ra CSV (Trích xuất), chỉnh sửa trong Excel/LibreOffice (Biến đổi), nhập lại CSV đã sửa (Nạp). Cách tiếp cận này tận dụng kỹ năng bảng tính của quản trị viên — hầu hết quản trị viên thành thạo Excel, có thể dùng công thức/điền/lọc để cấu hình quyền nhanh chóng.
 
-CSV format cleverly encodes hierarchical permission structure (objects → fields) trong flat tabular format. Header rows identify groups/roles (each group gets multiple columns: Read/Write/Create/Delete/Export/Condition/Params/ReadonlyIf/HideIf). Data rows represent either objects (entity-level permissions) or fields (indented under parent object). Example format:
+Định dạng CSV mã hóa khéo léo cấu trúc quyền phân cấp (đối tượng → trường) trong định dạng bảng phẳng. Các dòng tiêu đề xác định nhóm/vai trò (mỗi nhóm có nhiều cột: Đọc/Ghi/Tạo/Xóa/Xuất/ĐiềuKiện/ThamSố/ChỉĐọcNếu/ẨnNếu). Các dòng dữ liệu biểu diễn đối tượng (quyền cấp thực thể) hoặc trường (thụt lề dưới đối tượng cha). Ví dụ định dạng:
 
 ```csv
-;;;;;Group: Sales Team;;;;;;;Group: Managers;;;;;;;
-Object;Field;Title;;R;W;C;D;E;Cond;Params;RO-If;Hide;;R;W;C;D;E;Cond;Params;RO-If;Hide
+;;;;;Nhóm: Kinh doanh;;;;;;;Nhóm: Quản lý;;;;;;;
+Đối tượng;Trường;Tiêu đề;;Đ;G;T;X;Xu;ĐK;TS;ĐN;Ẩn;;Đ;G;T;X;Xu;ĐK;TS;ĐN;Ẩn
 com.axelor.apps.sale.db.SaleOrder;;;x;x;x;;x;self.company=?;__user__.activeCompany;;;x;x;x;x;x;;;;
-;clientPartner;Customer;;;x;x;;;;;;;x;x;;;;;;
-;discountAmount;Discount;;;x;x;;;;;;statusSelect>2;;x;x;;;;;;
+;clientPartner;Khách hàng;;;x;x;;;;;;;x;x;;;;;;
+;discountAmount;Chiết khấu;;;x;x;;;;;;statusSelect>2;;x;x;;;;;;
 ```
 
-First row (group headers) spans multiple columns per group. Second row (column headers) defines meaning của each column. Subsequent rows mix object-level (no field name) và field-level (field name populated) permissions. Semicolons separate columns, empty cells represent "no permission" or "not applicable".
+Dòng đầu (tiêu đề nhóm) trải trên nhiều cột mỗi nhóm. Dòng thứ hai (tiêu đề cột) định nghĩa ý nghĩa từng cột. Các dòng sau trộn quyền cấp đối tượng (không có tên trường) và cấp trường (có tên trường). Dấu chấm phẩy phân tách cột, ô trống biểu diễn "không có quyền" hoặc "không áp dụng". [Từ source code]
 
-**Bằng chứng từ code - CSV export structure:**
-```java
-// File: PermissionAssistantService.java, lines 119-247 (export logic)
-public void exportPermissions(/* parameters */) {
-    // Build header rows with group/role names spanning columns
-    // For each object in metamodel:
-    //   Write object-level permission row
-    //   For each field in object:
-    //     Write field-level permission row (indented)
-    // Generate CSV file with proper escaping
-}
-```
+**Quy trình nhập cung cấp kiểm tra hợp lệ và cập nhật theo giao dịch:**
 
-**Export workflow:** [Suy luận từ code structure]
-1. Query all groups/roles to be exported (or all if none specified)
-2. Query JPA metamodel để get all entities và their fields
-3. For each entity, query existing Permissions và MetaPermissionRules
-4. Build matrix: rows=objects+fields, columns=groups×9 (R/W/C/D/E/Cond/Params/RO/Hide)
-5. Populate cells: "x" for granted permissions, condition text for filters, empty for denied
-6. Write CSV with UTF-8 encoding, proper quote escaping, column alignment
-7. Return file to user for download
+Các kiểm tra hợp lệ khi nhập bao gồm: (1) **kiểm tra tiêu đề** — tên nhóm/vai trò trong CSV phải khớp với bản ghi cơ sở dữ liệu hiện có, ngăn lỗi chính tả tạo quyền mồ côi; (2) **kiểm tra đối tượng** — tên lớp thực thể phải tồn tại trong siêu mô hình JPA (kiểm tra qua `isValidObject()`), ngăn quyền cho thực thể không tồn tại; (3) **kiểm tra trường** — tên trường phải tồn tại trên đối tượng được chỉ định, ngăn lỗi chính tả trong quyền trường; (4) **kiểm tra cú pháp** — biểu thức điều kiện phải phân tích được (dù kiểm tra có thể không nghiêm ngặt — lỗi bị bắt khi chạy).
 
-**Import workflow provides validation và transactional updates:**
+Hành vi giao dịch là yếu tố then chốt: toàn bộ cập nhật quyền được bọc trong một giao dịch cơ sở dữ liệu duy nhất. Nếu bất kỳ kiểm tra nào thất bại hoặc lỗi xảy ra giữa chừng, toàn bộ nhập được hoàn tác — ngăn cập nhật quyền một phần khiến hệ thống ở trạng thái không nhất quán. Cách tiếp cận không có giao dịch sẽ tạo quyền cho N đối tượng đầu rồi thất bại ở đối tượng N+1, để lại một số nhóm được cấu hình còn nhóm khác thì không. [Từ source code]
 
-**Bằng chứng từ code - CSV import validation:**
-```java
-// File: PermissionAssistantService.java, lines 397-747 (import logic)
-public void importPermissions(File csvFile) {
-    // Parse CSV, extract group/role names from headers
-    // Validate groups/roles exist in database
-    // For each data row:
-    //   Validate object name against JPA metamodel
-    //   Validate field name exists on object
-    //   Create/update Permission entities
-    //   Create/update MetaPermissionRule entities
-    // Save all changes in transaction (rollback on error)
-}
-```
+**Các trường hợp sử dụng nâng cao nhờ cách tiếp cận CSV:**
 
-**Import validations performed:**
-1. **Header validation**: Group/role names in CSV must match existing database records - prevents typos creating orphaned permissions
-2. **Object validation**: Entity class names must exist in JPA metamodel (checked via `isValidObject()`) - prevents permissions for non-existent entities
-3. **Field validation**: Field names must exist on specified object - prevents typos in field permissions
-4. **Syntax validation**: Condition expressions should parse correctly (though validation may be lenient - errors caught at runtime)
+**Trường hợp 1: Sao chép quyền từ nhóm này sang nhóm khác** — Xuất quyền với cả nhóm "nguồn" và "đích", trong Excel sao chép cột nhóm nguồn sang nhóm đích, điều chỉnh nhỏ (đích hạn chế hơn một chút), nhập lại — nhóm đích có cùng quyền như nguồn.
 
-**Transactional behavior critical:** All permission updates wrapped in single database transaction. If any validation fails or error occurs mid-import, entire import rolled back - prevents partial permission updates leaving system in inconsistent state. Alternative non-transactional approach would create permissions for first N objects then fail on object N+1, leaving some groups configured and others not.
+**Trường hợp 2: Sinh quyền hàng loạt bằng công thức** — Xuất ma trận quyền rỗng, dùng công thức Excel: `=IF(ISNUMBER(SEARCH("sale", B2)), "x", "")` cấp tất cả đối tượng liên quan đến kinh doanh; dùng VLOOKUP áp dụng mẫu quyền chuẩn (mẫu người xem, mẫu người sửa, mẫu quản trị), nhập lại — hàng trăm quyền được cấu hình bằng công thức.
 
-**Advanced use cases enabled by CSV approach:**
+**Trường hợp 3: Kiểm toán và rà soát quyền** — Xuất quyền hiện tại, dùng định dạng có điều kiện trong Excel để làm nổi bật tổ hợp nguy hiểm (ví dụ: "canRemove=x trên thực thể tài chính"), dùng bảng tổng hợp (pivot table) phân tích: nhóm nào có quyền xóa? đối tượng nào mở hoàn toàn cho mọi nhóm? — nhận diện nhóm được cấp quyền quá mức.
 
-**Use Case 1: Clone permissions from one group to another**
-1. Export permissions with both "source" and "target" groups
-2. In Excel, copy source group columns to target group columns
-3. Make minor adjustments (target slightly restricted)
-4. Re-import - target group now has same permissions as source
+**Trường hợp 4: Kiểm soát phiên bản và theo dõi thay đổi** — Xuất quyền ra CSV hàng tháng, lưu tệp CSV vào kho Git, so sánh giữa các phiên bản cho thấy thay đổi quyền theo thời gian, hoàn tác về trạng thái quyền trước đó bằng cách nhập CSV lịch sử.
 
-**Use Case 2: Bulk permission generation with formulas**
-1. Export empty permission matrix (all groups, all objects, no permissions)
-2. Use Excel formulas: `=IF(ISNUMBER(SEARCH("sale", B2)), "x", "")` grants all sales-related objects
-3. Use VLOOKUP to apply standard permission templates (viewer template, editor template, admin template)
-4. Re-import - hundreds of permissions configured via formulas
-
-**Use Case 3: Permission audit and review**
-1. Export current permissions
-2. Use Excel conditional formatting to highlight dangerous combinations (e.g., "canRemove=x on financial entities")
-3. Use pivot tables to analyze: which groups have delete permission? which objects fully open to all groups?
-4. Identify over-permissioned groups, export again with corrections, re-import
-
-**Use Case 4: Version control and change tracking**
-1. Export permissions to CSV monthly
-2. Commit CSV files to Git repository
-3. Diff between versions shows permission changes over time
-4. Rollback to previous permission state by importing historical CSV
-
-CSV approach's power comes from leveraging Excel's computational capabilities - filters, sorts, formulas, pivot tables, conditional formatting, VBA macros - to manipulate permissions as data. Alternative pure-UI approaches limited to forms/grids cannot compete với spreadsheet flexibility.
-
-**Security consideration:** CSV import powerful but dangerous - importing malicious CSV could grant excessive permissions or wipe existing permissions. Access to Permission Assistant should be restricted to security administrators only. Import should log all changes (who imported, when, which file, what changed) for audit trail. Best practice: export before import (backup), review changes in CSV diff tool before importing.
+**Cân nhắc bảo mật:** Nhập CSV mạnh mẽ nhưng nguy hiểm — nhập CSV độc hại có thể cấp quyền quá mức hoặc xóa sạch quyền hiện có. Truy cập Trợ lý quyền hạn nên được giới hạn cho quản trị viên bảo mật. Nhập nên ghi nhật ký mọi thay đổi (ai nhập, khi nào, tệp nào, thay đổi gì) cho nhật ký kiểm toán. Thực hành tốt: xuất trước khi nhập (sao lưu), rà soát thay đổi trong công cụ so sánh CSV trước khi nhập. [Suy luận]
 
 ---
 
-### 10. AUTHENTICATION CONFIGURATION: PAC4J MULTI-PROVIDER SUPPORT
+### 10. CẤU HÌNH XÁC THỰC: HỖ TRỢ ĐA NHÀ CUNG CẤP PAC4J
 
-**File nguồn:** `/src/main/resources/axelor-config.properties` [Từ source code]
+**Tệp nguồn:** `/src/main/resources/axelor-config.properties` [Từ source code]
 
-Axelor's authentication configuration demonstrates enterprise-grade flexibility through Pac4j library integration, supporting six different authentication providers simultaneously. Configuration follows convention-over-configuration principle: most settings commented out (disabled by default), administrators uncomment và populate only providers they need. Provider-agnostic configuration structure (`auth.provider.{name}.{property}`) enables adding custom providers without framework code changes - Pac4j extensibility shines through.
+Cấu hình xác thực của Axelor thể hiện tính linh hoạt cấp doanh nghiệp thông qua tích hợp thư viện Pac4j, hỗ trợ đồng thời sáu nhà cung cấp xác thực khác nhau. Cấu hình tuân theo nguyên tắc quy ước hơn cấu hình (convention-over-configuration): hầu hết thiết lập ở dạng ghi chú (bị tắt mặc định), quản trị viên bỏ ghi chú và điền thông tin chỉ cho nhà cung cấp cần dùng. Cấu trúc cấu hình không phụ thuộc nhà cung cấp (`auth.provider.{tên}.{thuộc_tính}`) cho phép thêm nhà cung cấp tùy chỉnh mà không cần thay đổi mã bộ khung.
 
-Session configuration controls user session lifecycle - critical security parameters. Setting `session.timeout = 480` (8 hours) balances security (automatic logout after inactivity reduces risk of unauthorized access to abandoned sessions) versus usability (users don't get logged out mid-workday). Commented `session.cookie.secure = true` should be enabled in production for HTTPS-only cookie transmission - prevents session hijacking over unencrypted connections. Session storage mechanism not explicit in config - likely defaults to servlet container's session management (in-memory for single server, distributed session store for clusters).
+Cấu hình phiên làm việc (session) kiểm soát vòng đời phiên người dùng — các tham số bảo mật quan trọng. Thiết lập `session.timeout = 480` (8 giờ) cân bằng giữa bảo mật (tự động đăng xuất sau thời gian không hoạt động giảm rủi ro truy cập trái phép vào phiên bị bỏ rơi) và tính tiện dụng (người dùng không bị đăng xuất giữa ngày làm việc). Thiết lập `session.cookie.secure = true` đang ở dạng ghi chú nhưng nên được bật trong môi trường chính thức để truyền cookie chỉ qua HTTPS — ngăn chiếm đoạt phiên qua kết nối không mã hóa. [Từ source code]
 
-**Bằng chứng từ code - Session configuration:**
+**Bằng chứng từ mã nguồn - Cấu hình phiên làm việc:**
 ```properties
-session.timeout = 480                    # 8 hours (in minutes)
-#session.cookie.secure = true            # HTTPS only (uncomment in production!)
+session.timeout = 480                    # 8 giờ (tính bằng phút)
+#session.cookie.secure = true            # Chỉ HTTPS (bỏ ghi chú trong sản xuất!)
 ```
 
-**Giải thích code:** Timeout value 480 minutes = 8 hours assumes standard business day - users login morning, can work entire day without re-authenticating. Alternative shorter timeouts (30-60 minutes) appropriate for high-security environments (banking, healthcare) accepting usability trade-off. Cookie secure flag commented indicates development-friendly default (allow HTTP testing) - dangerous if forgotten in production. Security audit checklist should verify này enabled for internet-facing deployments.
+**Giải thích mã nguồn:** Giá trị hết hạn 480 phút = 8 giờ giả định ngày làm việc tiêu chuẩn — người dùng đăng nhập buổi sáng, có thể làm việc cả ngày mà không cần xác thực lại. Các giá trị hết hạn ngắn hơn (30-60 phút) phù hợp cho môi trường bảo mật cao (ngân hàng, y tế) chấp nhận đánh đổi tính tiện dụng. Cờ bảo mật cookie ở dạng ghi chú cho thấy giá trị mặc định thân thiện với phát triển (cho phép kiểm thử HTTP) — nguy hiểm nếu quên bật trong sản xuất. Danh sách kiểm tra kiểm toán bảo mật nên xác minh thiết lập này được bật cho triển khai công khai trên Internet. [Từ source code]
 
-**Provider ordering và authentication flow controlled globally:**
-
-**Bằng chứng từ code - Global authentication settings:**
+**Bằng chứng từ mã nguồn - Thiết lập xác thực toàn cục:**
 ```properties
-#auth.provider-order =                   # Comma-separated provider names
-#auth.callback-url =                     # OAuth callback URL
+#auth.provider-order =                   # Tên nhà cung cấp phân cách bằng dấu phẩy
+#auth.callback-url =                     # URL gọi ngược OAuth
 #auth.user.provisioning = none           # create / link / none
-#auth.user.default-group = users         # Default group for new users
-#auth.user.principal-attribute = email   # Attribute for principal name
+#auth.user.default-group = users         # Nhóm mặc định cho người dùng mới
+#auth.user.principal-attribute = email   # Thuộc tính dùng làm tên chủ thể
 ```
 
-**Giải thích code:** Provider order determines authentication cascade: nếu first provider rejects (user not found), try second provider, etc. Example: `auth.provider-order = ldap,google,local` attempts LDAP first (corporate directory), falls back to Google OAuth (external partners), finally local auth (emergency access). Callback URL critical for OAuth/SAML flows - providers redirect users back to this URL after authentication, must be publicly accessible và match provider registration exactly (mismatch causes authentication failures).
+**Giải thích mã nguồn:** Thứ tự nhà cung cấp quyết định chuỗi xác thực phân tầng: nếu nhà cung cấp đầu tiên từ chối (không tìm thấy người dùng), thử nhà cung cấp thứ hai, v.v. Ví dụ: `auth.provider-order = ldap,google,local` thử LDAP trước (thư mục doanh nghiệp), dự phòng Google OAuth (đối tác bên ngoài), cuối cùng xác thực nội bộ (truy cập khẩn cấp). URL gọi ngược (callback URL) quan trọng cho luồng OAuth/SAML — nhà cung cấp chuyển hướng người dùng về URL này sau xác thực, phải truy cập công khai được và khớp chính xác với đăng ký nhà cung cấp (sai khớp gây thất bại xác thực).
 
-User provisioning setting controls whether external authentication automatically creates users (`create`), links to existing users by email (`link`), or rejects unknown users (`none`). Setting `create` enables self-service onboarding (Google OAuth user authenticates, account auto-created in Axelor), convenient but security risk if public OAuth domain (anyone with @company.com email could access). Setting `link` requires administrators pre-create accounts (tight control) but enables flexible authentication (user can login via LDAP OR Google using same account). Setting `none` strictest - only explicitly created users can login.
+Thiết lập cấp phát tài khoản người dùng (provisioning) kiểm soát việc xác thực bên ngoài có tự động tạo người dùng hay không: `create` cho phép đăng ký tự phục vụ (người dùng OAuth Google xác thực, tài khoản tự tạo trong Axelor) — tiện nhưng có rủi ro bảo mật nếu miền OAuth công khai; `link` yêu cầu quản trị viên tạo tài khoản trước (kiểm soát chặt) nhưng cho phép xác thực linh hoạt (người dùng có thể đăng nhập qua LDAP HOẶC Google dùng cùng tài khoản); `none` nghiêm ngặt nhất — chỉ người dùng được tạo tường minh mới đăng nhập được. [Từ source code]
 
-**Local authentication with basic auth support:**
-
-**Bằng chứng từ code - Local auth configuration:**
+**Bằng chứng từ mã nguồn - Xác thực nội bộ với xác thực cơ bản (Basic Auth):**
 ```properties
-#auth.local.basic-auth = indirect, direct  # Enable HTTP Basic Authentication
+#auth.local.basic-auth = indirect, direct  # Bật xác thực cơ bản HTTP
 ```
 
-**Giải thích code:** Basic auth enables API authentication without browser sessions - clients send `Authorization: Basic <base64(username:password)>` header. Mode `indirect` requires redirect to login page for browser clients, `direct` allows immediate authentication for programmatic clients. Security warning: Basic auth transmits credentials with every request (even if base64-encoded), HTTPS mandatory to prevent credential interception. Modern alternatives (JWT tokens, OAuth 2.0 client credentials) more secure for APIs.
+**Giải thích mã nguồn:** Xác thực cơ bản (Basic Auth) cho phép xác thực API mà không cần phiên trình duyệt — máy khách gửi tiêu đề `Authorization: Basic <base64(tên:mật_khẩu)>` mỗi yêu cầu. Chế độ `indirect` yêu cầu chuyển hướng đến trang đăng nhập cho trình duyệt, `direct` cho phép xác thực trực tiếp cho máy khách lập trình. Cảnh báo bảo mật: xác thực cơ bản truyền thông tin đăng nhập với mọi yêu cầu (dù đã mã hóa base64), HTTPS bắt buộc để ngăn chặn đánh cắp thông tin. Các phương thức thay thế hiện đại (mã thông báo JWT, luồng thông tin OAuth 2.0) an toàn hơn cho API. [Từ source code]
 
-**Google OpenID Connect integration:**
-
-**Bằng chứng từ code - Google OAuth config:**
+**Bằng chứng từ mã nguồn - Tích hợp Google OpenID Connect:**
 ```properties
-#auth.provider.google.client-id =        # Google Cloud Console - OAuth Client ID
-#auth.provider.google.secret =           # Client secret (keep confidential!)
+#auth.provider.google.client-id =        # Google Cloud Console - Mã khách OAuth
+#auth.provider.google.secret =           # Bí mật khách (giữ bí mật!)
 ```
 
-**Giải thích code:** Google OAuth requires application registration in Google Cloud Console, generates client ID (public identifier) và secret (confidential key). Setup process: create OAuth consent screen (what permissions requested), configure authorized redirect URIs (must match auth.callback-url), obtain credentials. Security: client secret must be protected (exposure allows impersonation), rotate if compromised. Google automatically provides user's email, name, profile picture - suitable for external partner access without creating separate credentials.
-
-**Keycloak integration for enterprise SSO:**
-
-**Bằng chứng từ code - Keycloak config:**
+**Bằng chứng từ mã nguồn - Tích hợp Keycloak cho SSO doanh nghiệp:**
 ```properties
 #auth.provider.keycloak.client-id = demo-app
 #auth.provider.keycloak.secret = 233d1690-4498-490c-a60d-5d12bb685557
@@ -740,11 +608,9 @@ User provisioning setting controls whether external authentication automatically
 #auth.provider.keycloak.base-uri = http://localhost:8083/auth
 ```
 
-**Giải thích code:** Keycloak là open-source IAM platform popular trong enterprise Java ecosystems. Realm concept enables multi-tenancy within Keycloak (demo-app realm isolates test users từ production users). Base URI points to Keycloak server - can be internal corporate server (http://keycloak.company.com) hoặc cloud-hosted (https://company.auth0.com). Benefits over Google OAuth: full control (self-hosted), integration với corporate systems (LDAP sync, Active Directory federation), advanced features (two-factor auth, password policies, user federation).
+**Giải thích mã nguồn:** Keycloak là nền tảng quản lý danh tính và truy cập mã nguồn mở phổ biến trong hệ sinh thái Java doanh nghiệp. Khái niệm vương quốc (realm) cho phép đa thuê bao (multi-tenancy) trong Keycloak (vương quốc demo-app cách ly người dùng kiểm thử khỏi sản xuất). URI cơ sở trỏ đến máy chủ Keycloak — có thể là máy chủ nội bộ doanh nghiệp hoặc đám mây. Lợi ích so với Google OAuth: toàn quyền kiểm soát (tự lưu trữ), tích hợp với hệ thống doanh nghiệp (đồng bộ LDAP, liên kết Active Directory), tính năng nâng cao (xác thực hai yếu tố, chính sách mật khẩu, liên kết người dùng). [Từ source code]
 
-**SAML 2.0 for standardized enterprise SSO:**
-
-**Bằng chứng từ code - SAML configuration:**
+**Bằng chứng từ mã nguồn - Cấu hình SAML 2.0:**
 ```properties
 #auth.provider.saml.keystore-path = {java.io.tmpdir}/samlKeystore.jks
 #auth.provider.saml.keystore-password = open-platform-demo-passwd
@@ -754,14 +620,12 @@ User provisioning setting controls whether external authentication automatically
 #auth.provider.saml.service-provider-entity-id = sp.test.pac4j
 ```
 
-**Giải thích code:** SAML more complex than OAuth - requires mutual metadata exchange và cryptographic keys for assertion signing/verification. Keystore holds certificates for signing SAML requests và decrypting responses. Identity Provider metadata (from corporate IdP like Okta, Azure AD, ADFS) describes IdP's endpoints và certificates. Service Provider metadata (Axelor's metadata) sent to IdP describing callback URLs và expected assertion format. Entity ID uniquely identifies Axelor instance to IdP. SAML complexity justified for enterprises requiring: standardized protocol (not vendor lock-in), attribute release control (which user attributes shared), logout propagation (logout from IdP logs out from all SPs).
+**Giải thích mã nguồn:** SAML phức tạp hơn OAuth — đòi hỏi trao đổi siêu dữ liệu lẫn nhau và khóa mật mã để ký/xác minh xác nhận (assertion). Kho khóa (keystore) chứa chứng chỉ để ký yêu cầu SAML và giải mã phản hồi. Siêu dữ liệu nhà cung cấp danh tính (từ IdP doanh nghiệp như Okta, Azure AD, ADFS) mô tả điểm cuối (endpoint) và chứng chỉ của IdP. Siêu dữ liệu nhà cung cấp dịch vụ (siêu dữ liệu của Axelor) được gửi cho IdP mô tả URL gọi ngược và định dạng xác nhận mong đợi. Độ phức tạp SAML được biện minh cho doanh nghiệp yêu cầu: giao thức chuẩn hóa (không bị khóa nhà cung cấp), kiểm soát phát hành thuộc tính (thuộc tính người dùng nào được chia sẻ), truyền đăng xuất (đăng xuất từ IdP đăng xuất khỏi tất cả SP). [Từ source code]
 
-**LDAP integration for directory authentication:**
-
-**Bằng chứng từ code - LDAP configuration:**
+**Bằng chứng từ mã nguồn - Tích hợp LDAP:**
 ```properties
 #auth.ldap.server.url = ldap://localhost:389
-#auth.ldap.server.starttls = false              # Encrypt connection
+#auth.ldap.server.starttls = false              # Mã hóa kết nối
 #auth.ldap.server.auth.type = simple            # simple / CRAM-MD5 / DIGEST-MD5 / EXTERNAL / GSSAPI
 #auth.ldap.server.auth.user = cn=admin,dc=test,dc=com
 #auth.ldap.server.auth.password = admin
@@ -772,534 +636,391 @@ User provisioning setting controls whether external authentication automatically
 #auth.ldap.user.id-attribute = uid
 ```
 
-**Giải thích code:** LDAP configuration follows directory structure conventions (Distinguished Names). Server auth settings define Axelor's credentials to connect to LDAP server (service account). User base và filter describe where users stored và how to query (`{0}` placeholder replaced với username). Group base và filter enable group membership lookup (assign Axelor groups based on LDAP groups). ID attribute specifies which LDAP attribute maps to Axelor username (uid, sAMAccountName, mail depending on directory schema). STARTTLS setting should be enabled (true) for production - encrypts LDAP traffic preventing password sniffing.
+**Giải thích mã nguồn:** Cấu hình LDAP tuân theo quy ước cấu trúc thư mục (Tên phân biệt - Distinguished Name). Thiết lập xác thực máy chủ định nghĩa thông tin đăng nhập của Axelor để kết nối máy chủ LDAP (tài khoản dịch vụ). Cơ sở và bộ lọc người dùng mô tả nơi lưu trữ người dùng và cách truy vấn (chỗ giữ chỗ `{0}` được thay thế bằng tên đăng nhập). Cơ sở và bộ lọc nhóm cho phép tra cứu thành viên nhóm (gán nhóm Axelor dựa trên nhóm LDAP). Thuộc tính mã định danh chỉ định thuộc tính LDAP nào ánh xạ sang tên đăng nhập Axelor (uid, sAMAccountName, mail tùy lược đồ thư mục). Thiết lập STARTTLS nên được bật (true) cho sản xuất — mã hóa lưu lượng LDAP ngăn đánh cắp mật khẩu. [Từ source code]
 
-**CAS integration for legacy SSO:**
-
-**Bằng chứng từ code - CAS configuration:**
+**Bằng chứng từ mã nguồn - Cấu hình CAS:**
 ```properties
 #auth.provider.cas.login-url = https://localhost:8443/cas/login
 #auth.provider.cas.prefix-url = https://localhost:8443/cas
 #auth.provider.cas.protocol = CAS30       # CAS10 / CAS20 / CAS20_PROXY / CAS30 / CAS30_PROXY / SAML
 ```
 
-**Giải thích code:** CAS (Central Authentication Service) là older SSO protocol developed by Yale University, still used in academic institutions và legacy enterprise environments. Protocol version selection important - CAS 3.0 supports attribute release (user metadata beyond username), CAS 1.0/2.0 only provide username. Proxy variants enable service-to-service authentication (Axelor can obtain tickets to call other CAS-protected services on user's behalf). SAML option enables CAS server act as SAML IdP. Organizations migrating from CAS to modern OAuth/SAML can run both temporarily during transition.
+**Giải thích mã nguồn:** CAS (Dịch vụ xác thực tập trung - Central Authentication Service) là giao thức SSO cũ do Đại học Yale phát triển, vẫn được dùng trong tổ chức học thuật và môi trường doanh nghiệp kế thừa. Lựa chọn phiên bản giao thức quan trọng — CAS 3.0 hỗ trợ phát hành thuộc tính (siêu dữ liệu người dùng ngoài tên đăng nhập), CAS 1.0/2.0 chỉ cung cấp tên đăng nhập. Biến thể proxy cho phép xác thực dịch vụ-sang-dịch vụ (Axelor có thể lấy vé để gọi dịch vụ khác được CAS bảo vệ thay mặt người dùng). Tổ chức đang chuyển từ CAS sang OAuth/SAML hiện đại có thể chạy đồng thời cả hai trong thời gian chuyển đổi. [Từ source code]
 
-**Logout configuration for session termination:**
-
-**Bằng chứng từ code - Logout settings:**
+**Bằng chứng từ mã nguồn - Cấu hình đăng xuất:**
 ```properties
-#auth.logout.default-url =                # Redirect after logout
-#auth.logout.url-pattern =                # URL pattern triggering logout
-#auth.logout.local = true                 # Remove profiles from session
-#auth.logout.central = false              # Call IdP logout endpoint (SSO logout)
+#auth.logout.default-url =                # Chuyển hướng sau đăng xuất
+#auth.logout.url-pattern =                # Mẫu URL kích hoạt đăng xuất
+#auth.logout.local = true                 # Xóa hồ sơ khỏi phiên
+#auth.logout.central = false              # Gọi điểm cuối đăng xuất IdP (đăng xuất SSO)
 ```
 
-**Giải thích code:** Local logout (default) only clears Axelor session, IdP sessions remain active - user can immediately re-login without re-entering password. Central logout calls IdP's logout endpoint (SAML Single Logout, OAuth revocation), terminating SSO session globally - user logged out from all applications. Trade-off: central logout provides better security (user intentionally logged out, session should be terminated everywhere) but complex to implement (requires IdP support, reliable logout propagation) và có thể frustrate users (logging out from one app logs out from email, calendar, everything).
+**Giải thích mã nguồn:** Đăng xuất cục bộ (mặc định) chỉ xóa phiên Axelor, phiên IdP vẫn hoạt động — người dùng có thể đăng nhập lại ngay mà không cần nhập lại mật khẩu. Đăng xuất tập trung gọi điểm cuối đăng xuất của IdP (Đăng xuất đơn SAML, thu hồi OAuth), kết thúc phiên SSO toàn cục — người dùng bị đăng xuất khỏi tất cả ứng dụng. Đánh đổi: đăng xuất tập trung bảo mật hơn (người dùng cố ý đăng xuất, phiên nên được kết thúc ở mọi nơi) nhưng phức tạp trong triển khai (đòi hỏi IdP hỗ trợ, truyền đăng xuất đáng tin cậy) và có thể gây bất tiện cho người dùng (đăng xuất khỏi một ứng dụng đăng xuất luôn email, lịch, mọi thứ). [Từ source code]
 
 ---
 
-### 11. MULTI-TENANCY VÀ DATA ISOLATION
+### 11. ĐA THUÊ BAO VÀ CÁCH LY DỮ LIỆU
 
-**File nguồn:** `/src/main/resources/axelor-config.properties` [Từ source code]
+**Tệp nguồn:** `/src/main/resources/axelor-config.properties` [Từ source code]
 
-Multi-tenancy configuration option tồn tại trong Axelor config files nhưng implementation details largely absent từ analyzed application source code - suggesting feature implemented primarily trong framework core layer rather than application layer. Configuration property `application.multi-tenancy` controls enabling/disabling, với default value `false` indicating multi-tenancy opt-in feature (must be explicitly enabled).
+Tùy chọn cấu hình đa thuê bao (multi-tenancy) tồn tại trong tệp cấu hình Axelor nhưng chi tiết triển khai hầu như không có trong mã nguồn ứng dụng đã phân tích — cho thấy tính năng được triển khai chủ yếu ở tầng lõi bộ khung thay vì tầng ứng dụng. Thuộc tính cấu hình `application.multi-tenancy` kiểm soát bật/tắt, với giá trị mặc định `false` chỉ ra đa thuê bao là tính năng tùy chọn (phải bật tường minh).
 
-**Bằng chứng từ code - Multi-tenancy configuration:**
+**Bằng chứng từ mã nguồn - Cấu hình đa thuê bao:**
 ```properties
-# Enable multi-tenancy
+# Bật đa thuê bao
 #application.multi-tenancy = false
 ```
 
-**Giải thích code:** Commented-out configuration với default `false` suggests most Axelor deployments run single-tenant mode. Multi-tenancy complexity (tenant isolation, cross-tenant queries, tenant-specific customizations) requires substantial infrastructure - enabling only when needed reduces operational complexity. Absence of additional multi-tenancy config (tenant resolution strategy, tenant database mapping, tenant customization paths) suggests either minimal configuration required (framework handles internally) or feature underdeveloped (basic implementation without advanced options).
+**Giải thích mã nguồn:** Cấu hình ở dạng ghi chú với giá trị mặc định `false` gợi ý hầu hết triển khai Axelor chạy chế độ đơn thuê bao. Độ phức tạp đa thuê bao (cách ly thuê bao, truy vấn xuyên thuê bao, tùy chỉnh riêng thuê bao) đòi hỏi hạ tầng đáng kể — chỉ bật khi cần giúp giảm phức tạp vận hành. Sự thiếu vắng cấu hình đa thuê bao bổ sung (chiến lược xác định thuê bao, ánh xạ cơ sở dữ liệu thuê bao, đường dẫn tùy chỉnh thuê bao) gợi ý hoặc yêu cầu cấu hình tối thiểu (bộ khung xử lý nội bộ) hoặc tính năng chưa phát triển đầy đủ. [Từ source code]
 
-**Missing implementation details:** [Không tìm thấy trong source code]
-Analyzed axelor-open-suite source code does NOT contain:
-- Tenant resolver classes (how framework determines current tenant from HTTP request)
-- Tenant context management (thread-local tenant storage, context propagation)
-- Tenant filter interceptors (automatic query filtering by tenant ID)
-- Tenant-specific schema customizations (different fields/entities per tenant)
+**Chi tiết triển khai không tìm thấy:** [Không tìm thấy trong mã nguồn]
 
-**Inferred multi-tenancy approach:** [Suy luận từ existing features]
-Given User entity có `activeCompany` field và permissions support `self.company = ?` với `__user__.activeCompany` conditions, likely multi-tenancy implementation is **soft multi-tenancy** (shared schema, row-level filtering) rather than **hard multi-tenancy** (separate schemas per tenant). Rationale:
+Mã nguồn axelor-open-suite đã phân tích KHÔNG chứa: lớp giải quyết thuê bao (cách bộ khung xác định thuê bao hiện tại từ yêu cầu HTTP), quản lý ngữ cảnh thuê bao (lưu trữ thuê bao theo luồng cục bộ, truyền ngữ cảnh), bộ chặn lọc thuê bao (lọc truy vấn tự động theo mã thuê bao), tùy chỉnh lược đồ riêng thuê bao (trường/thực thể khác nhau mỗi thuê bao).
 
-1. **Company as tenant discriminator**: User's activeCompany acts as tenant context
-2. **Automatic query filtering**: Permission conditions inject company filters into queries
-3. **Shared database schema**: All tenants' data in same tables, distinguished by company foreign key
-4. **Application-level isolation**: Framework code ensures user only sees/modifies their company's data
+**Cách tiếp cận đa thuê bao suy luận:** [Suy luận từ tính năng hiện có]
 
-**Soft multi-tenancy trade-offs:**
-- **Pros**: Simple deployment (single database), easy cross-tenant queries (for super-admins), efficient resource usage (shared infrastructure)
-- **Cons**: Weaker isolation (application bug could expose tenant data), harder compliance (data physically commingled), complex query optimization (every query needs company filter)
+Xét thực thể User có trường `activeCompany` và quyền hỗ trợ `self.company = ?` với `__user__.activeCompany`, cách triển khai đa thuê bao có thể là **đa thuê bao mềm** (lược đồ chung, lọc cấp dòng) thay vì **đa thuê bao cứng** (lược đồ riêng mỗi thuê bao). Lý do: (1) Công ty đóng vai trò bộ phân biệt thuê bao — ngữ cảnh công ty đang hoạt động của người dùng đóng vai trò ngữ cảnh thuê bao; (2) lọc truy vấn tự động — điều kiện quyền chèn bộ lọc công ty vào truy vấn; (3) lược đồ cơ sở dữ liệu chung — dữ liệu mọi thuê bao trong cùng bảng, phân biệt bằng khóa ngoại công ty; (4) cách ly ở tầng ứng dụng — mã bộ khung đảm bảo người dùng chỉ thấy/sửa dữ liệu công ty mình.
 
-**Hard multi-tenancy alternative** (not observed trong code) would use separate schemas or databases per tenant - stronger isolation but operational complexity (backup/restore multiplied by tenants, schema changes must propagate to all tenants).
+Đánh đổi đa thuê bao mềm: **Ưu điểm** gồm triển khai đơn giản (một cơ sở dữ liệu), truy vấn xuyên thuê bao dễ dàng (cho siêu quản trị), sử dụng tài nguyên hiệu quả (hạ tầng chung). **Nhược điểm** gồm cách ly yếu hơn (lỗi ứng dụng có thể lộ dữ liệu thuê bao), tuân thủ khó hơn (dữ liệu trộn lẫn vật lý), tối ưu truy vấn phức tạp (mọi truy vấn cần bộ lọc công ty). [Suy luận]
 
 ---
 
-### 12. PERMISSION RESOLUTION FLOW VÀ RUNTIME EVALUATION
+### 12. LUỒNG GIẢI QUYẾT QUYỀN HẠN VÀ ĐÁNH GIÁ KHI CHẠY
 
-**File nguồn:** Analysis of entity relationships và service logic [Suy luận từ code patterns]
+**Tệp nguồn:** Phân tích quan hệ thực thể và logic dịch vụ [Suy luận từ các mẫu mã]
 
-Permission resolution flow represents runtime process khi user attempts operation, framework determines whether to allow or deny. Flow not explicitly documented trong analyzed code (implementation trong framework core) nhưng can be inferred từ entity relationships và permission service patterns. Understanding này critical cho debugging permission issues và designing effective permission schemes.
+Luồng giải quyết quyền hạn biểu diễn quy trình khi chạy khi người dùng thực hiện thao tác và bộ khung quyết định cho phép hay từ chối. Luồng không được mô tả tường minh trong mã đã phân tích (triển khai trong lõi bộ khung) nhưng có thể suy luận từ quan hệ thực thể và mẫu dịch vụ quyền. Hiểu luồng này rất quan trọng cho gỡ lỗi vấn đề quyền hạn và thiết kế sơ đồ phân quyền hiệu quả.
 
-**Inferred resolution flow:**
+**Luồng giải quyết suy luận:**
 
 ```
-1. User Authentication
+1. Xác thực người dùng
    ↓
-2. Load User Entity
-   - Query User by username/email
-   - Eager load Group (many-to-one relationship)
-   - Lazy load Roles (many-to-many relationship, loaded on demand)
+2. Tải thực thể User
+   - Truy vấn User theo tên đăng nhập/email
+   - Tải háo hức (eager load) Nhóm (quan hệ nhiều-một)
+   - Tải lười (lazy load) Vai trò (quan hệ nhiều-nhiều, tải khi cần)
    ↓
-3. Aggregate Object Permissions
-   - Query Permission entities owned by User's Group
-   - Query Permission entities owned by User's Roles
-   - Union all permissions (grant-based merging)
+3. Tổng hợp quyền cấp đối tượng
+   - Truy vấn thực thể Permission thuộc Nhóm của người dùng
+   - Truy vấn thực thể Permission thuộc các Vai trò của người dùng
+   - Hợp nhất tất cả quyền (phép hợp dựa trên cấp phép)
    ↓
-4. Aggregate Field Permissions
-   - Query MetaPermission entities owned by User's Group
-   - Query MetaPermission entities owned by User's Roles
-   - For each MetaPermission, load associated MetaPermissionRules
-   - Union all field rules (grant-based merging)
+4. Tổng hợp quyền cấp trường
+   - Truy vấn thực thể MetaPermission thuộc Nhóm của người dùng
+   - Truy vấn thực thể MetaPermission thuộc các Vai trò của người dùng
+   - Với mỗi MetaPermission, tải các MetaPermissionRule liên quan
+   - Hợp nhất tất cả quy tắc trường (phép hợp dựa trên cấp phép)
    ↓
-5. Cache Permission Results
-   - Store aggregated permissions in user session
-   - Subsequent requests use cached permissions (no re-query)
-   - Cache invalidation on permission changes or session timeout
+5. Đệm kết quả quyền
+   - Lưu quyền đã tổng hợp trong phiên người dùng
+   - Yêu cầu sau dùng quyền đã đệm (không truy vấn lại)
+   - Vô hiệu bộ đệm khi quyền thay đổi hoặc phiên hết hạn
    ↓
-6. Runtime Permission Check (on each operation)
-   - Determine target object and operation (READ/WRITE/CREATE/REMOVE/EXPORT)
-   - Lookup permission in cache: does user have permission for this object+operation?
-   - If NO direct permission, check wildcard permissions (package-level)
-   - If permission found with condition, evaluate condition
+6. Kiểm tra quyền khi chạy (mỗi thao tác)
+   - Xác định đối tượng đích và thao tác (ĐỌC/GHI/TẠO/XÓA/XUẤT)
+   - Tra cứu quyền trong bộ đệm: người dùng có quyền cho đối tượng+thao tác?
+   - Nếu không có quyền trực tiếp, kiểm tra quyền ký tự đại diện (cấp gói)
+   - Nếu quyền có điều kiện, đánh giá điều kiện
    ↓
-7. Condition Evaluation (if applicable)
-   - Parse conditionParams, resolve __user__ variables
-   - Inject condition into query WHERE clause
-   - Execute filtered query (database returns only matching records)
+7. Đánh giá điều kiện (nếu có)
+   - Phân tích conditionParams, giải quyết biến __user__
+   - Chèn điều kiện vào mệnh đề WHERE của truy vấn
+   - Thực thi truy vấn đã lọc (cơ sở dữ liệu chỉ trả dòng khớp)
    ↓
-8. Field Permission Enforcement (for UI rendering)
-   - For each field in form/grid, check MetaPermissionRule
-   - Apply canRead: hide field entirely if false
-   - Apply canWrite: make field readonly if false
-   - Evaluate readonlyIf/hideIf expressions dengan record context
-   - Render final UI với appropriate field visibility/editability
+8. Áp dụng quyền trường (cho hiển thị giao diện)
+   - Với mỗi trường trong biểu mẫu/lưới, kiểm tra MetaPermissionRule
+   - Áp dụng canRead: ẩn trường hoàn toàn nếu false
+   - Áp dụng canWrite: đặt trường chỉ đọc nếu false
+   - Đánh giá biểu thức readonlyIf/hideIf với ngữ cảnh bản ghi
+   - Hiển thị giao diện cuối cùng với trường hiển thị/chỉnh sửa phù hợp
    ↓
-9. Return Filtered Results
-   - User sees only records matching permission conditions
-   - User sees only fields allowed by field permissions
-   - User can only perform operations granted by permissions
+9. Trả kết quả đã lọc
+   - Người dùng chỉ thấy bản ghi khớp điều kiện quyền
+   - Người dùng chỉ thấy trường được phép bởi quyền trường
+   - Người dùng chỉ thực hiện được thao tác được cấp phép
 ```
 
-**Permission precedence và merging strategy:** [Suy luận từ grant-based pattern]
+**Ưu tiên quyền và chiến lược hợp nhất:** [Suy luận từ mẫu dựa trên cấp phép]
 
-When user belongs to Group với certain permissions AND has Roles với additional permissions, effective permissions are **union** (logical OR):
-- If Group grants canRead, user has canRead (even if Roles don't grant)
-- If Role grants canWrite, user has canWrite (even if Group doesn't grant)
-- No explicit DENY rules observed - denial via absence of grant
+Khi người dùng thuộc Nhóm có một số quyền VÀ có Vai trò với quyền bổ sung, quyền hiệu lực là **phép hợp** (phép HOẶC logic): nếu Nhóm cấp canRead, người dùng có canRead (dù Vai trò không cấp); nếu Vai trò cấp canWrite, người dùng có canWrite (dù Nhóm không cấp). Không quan sát thấy quy tắc TỪ CHỐI tường minh — từ chối thông qua sự vắng mặt của cấp phép. [Suy luận]
 
-Precedence order likely: User-specific permissions (if implemented) > Role permissions > Group permissions > Default (deny all)
+**Cân nhắc hiệu năng:** [Suy luận về chiến lược tối ưu]
 
-**Performance considerations:** [Suy luận về optimization strategies]
-
-Permission checking on every database query could severely impact performance if not optimized. Framework likely implements:
-1. **Session-level caching**: Load permissions once per login, reuse until logout
-2. **Query plan caching**: Compile condition expressions once, reuse for multiple queries
-3. **Batch permission checks**: Check permissions for collection of objects together, not individually
-4. **Lazy evaluation**: Only check permissions when actually needed (not speculatively)
-
-**Failure modes và fallbacks:** [Suy luận về error handling]
-
-What happens when permission system encounters errors?
-- **Missing permission entity**: Deny by default (safe failure)
-- **Malformed condition expression**: Deny access or ignore condition (depending on configuration)
-- **Circular permission dependencies**: Framework must detect và prevent infinite loops
-- **Cache inconsistency**: Periodic cache refresh hoặc pessimistic locking ensures consistency
+Kiểm tra quyền trên mỗi truy vấn cơ sở dữ liệu có thể ảnh hưởng nghiêm trọng đến hiệu năng nếu không được tối ưu. Bộ khung có thể triển khai: (1) đệm cấp phiên — tải quyền một lần mỗi lần đăng nhập, tái sử dụng đến khi đăng xuất; (2) đệm kế hoạch truy vấn — biên dịch biểu thức điều kiện một lần, tái sử dụng cho nhiều truy vấn; (3) kiểm tra quyền theo lô — kiểm tra quyền cho tập hợp đối tượng cùng lúc, không kiểm tra riêng lẻ; (4) đánh giá lười — chỉ kiểm tra quyền khi thực sự cần (không kiểm tra đầu cơ). [Suy luận]
 
 ---
 
-### 13. CONTEXT VARIABLES VÀ DYNAMIC PERMISSION PARAMETERS
+### 13. BIẾN NGỮ CẢNH VÀ THAM SỐ QUYỀN ĐỘNG
 
-**File nguồn:** PermissionAssistantService.java line 326 [Từ source code]
+**Tệp nguồn:** PermissionAssistantService.java dòng 326 [Từ source code]
 
-Context variables trong permission conditions enable dynamic authorization decisions based on current user's attributes - transforming static permission rules thành adaptive access control. Magic variable pattern `__user__.{fieldName}` provides direct access to logged-in user's entity fields, với framework handling runtime resolution và type conversion transparently.
+Biến ngữ cảnh trong điều kiện quyền cho phép đưa ra quyết định phân quyền động dựa trên thuộc tính của người dùng hiện tại — biến đổi quy tắc quyền tĩnh thành kiểm soát truy cập thích ứng. Mẫu biến đặc biệt `__user__.{tenTruong}` cung cấp truy cập trực tiếp đến các trường thực thể của người dùng đang đăng nhập, bộ khung xử lý giải quyết khi chạy và chuyển đổi kiểu một cách trong suốt.
 
-**Documented context variable pattern:**
+**Mẫu biến ngữ cảnh được ghi nhận:**
 ```
-__user__.{fieldName}
+__user__.{tenTruong}
 ```
 
-Where `{fieldName}` can be any field on User entity, including:
-- Direct fields: `__user__.code`, `__user__.name`, `__user__.language`
-- Related entities: `__user__.activeCompany`, `__user__.activeTeam`, `__user__.group`, `__user__.partner`
-- Collections: `__user__.companySet`, `__user__.teamSet`
-- Nested paths: `__user__.partner.company`, `__user__.group.technicalStaff`, `__user__.activeCompany.currency`
+Trong đó `{tenTruong}` có thể là bất kỳ trường nào trên thực thể User, bao gồm:
+- Trường trực tiếp: `__user__.code`, `__user__.name`, `__user__.language`
+- Thực thể liên quan: `__user__.activeCompany`, `__user__.activeTeam`, `__user__.group`, `__user__.partner`
+- Tập hợp: `__user__.companySet`, `__user__.teamSet`
+- Đường dẫn lồng nhau: `__user__.partner.company`, `__user__.group.technicalStaff`, `__user__.activeCompany.currency`
 
-**Bằng chứng từ code - Variable construction:**
+**Bằng chứng từ mã nguồn - Xây dựng biến:**
 ```java
-// File: PermissionAssistantService.java, line 326
+// Tệp: PermissionAssistantService.java, dòng 326
 String conditionParams = "__user__." + userField.getName();
 ```
 
-**Giải thích code:** Simple string concatenation builds magic variable reference. Framework runtime must parse string, split on dot (`.`), navigate object graph from User entity through specified path, extract final value. Implementation likely uses reflection or property accessors to traverse relationships dynamically. Error handling critical: what if path invalid (typo in field name) or null values encountered (user.partner null because user not linked to partner)? Framework must return null gracefully or throw clear error.
+**Giải thích mã nguồn:** Phép nối chuỗi đơn giản xây dựng tham chiếu biến đặc biệt. Khi chạy, bộ khung phải phân tích chuỗi, tách theo dấu chấm (`.`), duyệt đồ thị đối tượng từ thực thể User qua đường dẫn được chỉ định, trích xuất giá trị cuối cùng. Triển khai có thể dùng phản chiếu (reflection) hoặc bộ truy cập thuộc tính (property accessor) để duyệt quan hệ một cách động. Xử lý lỗi rất quan trọng: nếu đường dẫn không hợp lệ (lỗi chính tả tên trường) hoặc gặp giá trị null (user.partner là null vì người dùng chưa liên kết đối tác), bộ khung phải trả về null một cách nhẹ nhàng hoặc ném lỗi rõ ràng. [Từ source code]
 
-**Example usage scenarios demonstrating versatility:**
+**Các kịch bản sử dụng minh họa tính linh hoạt:**
 
-**Scenario 1: Single-value equality**
+**Kịch bản 1: So sánh đơn giá trị**
 ```
-Condition: "self.createdBy = ?"
-Params: "__user__"
-→ SQL: WHERE created_by_id = {current user's ID}
-Use case: Users see only records they created
-```
-
-**Scenario 2: Foreign key filtering**
-```
-Condition: "self.company = ?"
-Params: "__user__.activeCompany"
-→ SQL: WHERE company_id = {user's active company ID}
-Use case: Multi-company data isolation
+Điều kiện: "self.createdBy = ?"
+Tham số: "__user__"
+→ SQL: WHERE created_by_id = {mã người dùng hiện tại}
+Trường hợp sử dụng: Người dùng chỉ thấy bản ghi do mình tạo
 ```
 
-**Scenario 3: Collection membership (IN clause)**
+**Kịch bản 2: Lọc theo khóa ngoại**
 ```
-Condition: "self.assignedTeam in (?)"
-Params: "__user__.teamSet"
-→ SQL: WHERE assigned_team_id IN (1,2,3)  -- user's teams
-Use case: Team-based record visibility
-```
-
-**Scenario 4: Nested path traversal**
-```
-Condition: "self.currency = ?"
-Params: "__user__.activeCompany.currency"
-→ SQL: WHERE currency_id = {user's company's currency ID}
-Use case: Currency-specific records matching user's company currency
+Điều kiện: "self.company = ?"
+Tham số: "__user__.activeCompany"
+→ SQL: WHERE company_id = {mã công ty đang hoạt động của người dùng}
+Trường hợp sử dụng: Cách ly dữ liệu đa công ty
 ```
 
-**Scenario 5: Boolean flag check**
+**Kịch bản 3: Thuộc tập hợp (mệnh đề IN)**
 ```
-Condition: "self.confidential = false OR ? = true"
-Params: "__user__.group.technicalStaff"
-→ SQL: WHERE (confidential = false OR {is technical staff})
-Use case: Confidential records visible only to technical staff
+Điều kiện: "self.assignedTeam in (?)"
+Tham số: "__user__.teamSet"
+→ SQL: WHERE assigned_team_id IN (1,2,3)  -- các nhóm của người dùng
+Trường hợp sử dụng: Hiển thị bản ghi theo nhóm làm việc
 ```
 
-**Type conversion and value resolution:** [Suy luận về implementation]
+**Kịch bản 4: Duyệt đường dẫn lồng nhau**
+```
+Điều kiện: "self.currency = ?"
+Tham số: "__user__.activeCompany.currency"
+→ SQL: WHERE currency_id = {mã tiền tệ của công ty người dùng}
+Trường hợp sử dụng: Bản ghi theo tiền tệ khớp tiền tệ công ty người dùng
+```
 
-Framework must handle type conversions when resolving context variables:
-- **Entity references**: Convert to ID (User object → user.id Long value)
-- **Collections**: Expand to ID list (Set<Team> → List<Long> team IDs)
-- **Primitives**: Use directly (String, Integer, Boolean)
-- **Nulls**: Handle gracefully (null company → condition excludes all records OR throws error)
-- **Enums**: Convert to underlying value (if enum fields used)
+**Kịch bản 5: Kiểm tra cờ boolean**
+```
+Điều kiện: "self.confidential = false OR ? = true"
+Tham số: "__user__.group.technicalStaff"
+→ SQL: WHERE (confidential = false OR {là nhân viên kỹ thuật})
+Trường hợp sử dụng: Bản ghi mật chỉ hiển thị với nhân viên kỹ thuật
+```
 
-**Security implications of context variables:**
+**Chuyển đổi kiểu và giải quyết giá trị:** [Suy luận về triển khai]
 
-Context variables powerful but must be used carefully:
-- **Information leakage**: Conditions referencing `__user__` fields inadvertently expose those fields in debug logs/error messages
-- **Privilege escalation**: Malformed conditions could accidentally grant access (e.g., typo `self.company != ?` instead of `self.company = ?` inverts filter)
-- **Performance**: Complex nested paths (`__user__.partner.company.parent.currency`) require multiple JOINs, slow queries
-- **Maintenance**: Renaming User entity fields breaks conditions referencing those fields (no compile-time checking for condition strings)
+Bộ khung phải xử lý chuyển đổi kiểu khi giải quyết biến ngữ cảnh: tham chiếu thực thể chuyển sang mã định danh (đối tượng User → giá trị user.id kiểu Long); tập hợp mở rộng thành danh sách mã định danh (Set<Team> → List<Long> mã nhóm); kiểu nguyên thủy dùng trực tiếp (String, Integer, Boolean); giá trị null xử lý nhẹ nhàng (công ty null → điều kiện loại trừ mọi bản ghi HOẶC ném lỗi).
+
+**Ý nghĩa bảo mật của biến ngữ cảnh:** Biến ngữ cảnh mạnh mẽ nhưng cần sử dụng cẩn thận: rò rỉ thông tin — điều kiện tham chiếu trường `__user__` có thể vô tình lộ trường đó trong nhật ký gỡ lỗi/thông báo lỗi; leo thang đặc quyền — điều kiện sai định dạng có thể vô tình cấp quyền truy cập (ví dụ lỗi chính tả `self.company != ?` thay vì `self.company = ?` đảo ngược bộ lọc); hiệu năng — đường dẫn lồng sâu (`__user__.partner.company.parent.currency`) đòi hỏi nhiều phép nối, truy vấn chậm; bảo trì — đổi tên trường thực thể User làm hỏng điều kiện tham chiếu trường đó (không có kiểm tra khi biên dịch cho chuỗi điều kiện). [Suy luận]
 
 ---
 
-### 14. PERMISSION CACHING VÀ PERFORMANCE OPTIMIZATION
+### 14. ĐỆM QUYỀN HẠN VÀ TỐI ƯU HIỆU NĂNG
 
-**File nguồn:** Permission.xml, Group.xml entity definitions [Từ source code]
+**Tệp nguồn:** Permission.xml, Group.xml — định nghĩa thực thể [Từ source code]
 
-Permission và Group entities marked `cacheable="true"` - critical performance optimization given permission checks occur extremely frequently throughout application execution. Caching strategy reduces database load (permissions queried once per session rather than per operation) và improves response times (cache hits measured in microseconds versus database queries in milliseconds).
+Các thực thể Permission và Group được đánh dấu `cacheable="true"` — tối ưu hiệu năng then chốt vì kiểm tra quyền xảy ra cực kỳ thường xuyên trong suốt quá trình thực thi ứng dụng. Chiến lược đệm giảm tải cơ sở dữ liệu (quyền được truy vấn một lần mỗi phiên thay vì mỗi thao tác) và cải thiện thời gian phản hồi (truy cập bộ đệm tính bằng micro giây so với truy vấn cơ sở dữ liệu tính bằng mili giây).
 
-**Bằng chứng từ code - Cacheable entity declarations:**
+**Bằng chứng từ mã nguồn - Khai báo thực thể có đệm:**
 ```xml
 <entity name="Permission" cacheable="true">
 <entity name="Group" cacheable="true">
 ```
 
-**Giải thích code:** Cacheable attribute instructs Hibernate to store entity instances trong second-level (L2) cache - shared cache across all sessions (not just single user). L2 cache configured globally với mode `ENABLE_SELECTIVE` (từ STEP1 findings), meaning only entities explicitly marked cacheable are cached (prevents cache pollution from infrequently accessed entities).
+**Giải thích mã nguồn:** Thuộc tính cacheable hướng dẫn Hibernate lưu phiên bản thực thể trong bộ đệm cấp hai (L2 cache) — bộ đệm chia sẻ giữa tất cả phiên (không chỉ một người dùng). Bộ đệm cấp hai được cấu hình toàn cục với chế độ `ENABLE_SELECTIVE` (từ phát hiện BƯỚC 1), nghĩa là chỉ thực thể được đánh dấu cacheable tường minh mới được đệm (ngăn ô nhiễm bộ đệm từ thực thể ít truy cập). [Từ source code]
 
-**Hibernate L2 cache configuration:** [Từ STEP1 analysis]
-```properties
-hibernate.cache.use_second_level_cache = ENABLE_SELECTIVE
-hibernate.cache.region.factory_class = org.hibernate.cache.jcache.JCacheRegionFactory
-```
+**Lợi ích đệm cho hệ thống quyền:**
 
-Cache implementation likely uses JCache (JSR-107) provider like EHCache or Caffeine. L2 cache stores entity instances by primary key - when code queries `Permission.findById(123)`, Hibernate checks L2 cache before hitting database.
+1. **Giảm tải truy vấn**: Kiểm tra quyền trên mỗi yêu cầu HTTP, đệm ngăn hàng nghìn truy vấn cơ sở dữ liệu mỗi giây
+2. **Cải thiện độ trễ**: Truy cập bộ đệm ~0.1ms so với truy vấn cơ sở dữ liệu ~10-50ms — nhanh hơn 100-500 lần
+3. **Khả năng mở rộng**: Máy chủ ứng dụng có thể mở rộng ngang mà không quá tải cơ sở dữ liệu với truy vấn quyền
+4. **Nhất quán**: Tất cả máy chủ ứng dụng chia sẻ cùng dữ liệu quyền (nếu dùng bộ đệm phân tán)
 
-**Caching benefits for permission system:**
+**Thách thức vô hiệu bộ đệm:**
 
-1. **Reduced query load**: Permission checks on every HTTP request, caching prevents thousands of database queries per second
-2. **Improved latency**: Cache hits ~0.1ms versus database queries ~10-50ms - 100-500x faster
-3. **Scalability**: Application servers can scale horizontally without overwhelming database with permission queries
-4. **Consistency**: All application servers share same permission data (if distributed cache used)
+Bộ đệm cấp hai đặt ra thách thức nhất quán — khi quyền bị sửa đổi, làm sao đảm bảo tất cả bản sao đệm được cập nhật? Các chiến lược: (1) hết hạn theo thời gian — mục bộ đệm hết hạn sau N phút, buộc làm mới — đơn giản nhưng có thể phục vụ quyền cũ; (2) vô hiệu dựa trên sự kiện — khi thực thể Permission được cập nhật, bộ khung phát sự kiện vô hiệu đến tất cả bộ đệm — phức tạp nhưng đảm bảo nhất quán; (3) vô hiệu dựa trên phiên bản — Hibernate phát hiện thay đổi phiên bản và vô hiệu tự động — có hỗ trợ sẵn. Axelor có thể dùng kết hợp: vô hiệu tự động của Hibernate (dựa trên phiên bản) cộng tổng hợp quyền cấp phiên (quyền tải một lần mỗi đăng nhập, đệm trong phiên HTTP). [Suy luận]
 
-**Cache invalidation challenges:**
+**Tổng hợp quyền cấp phiên:** [Suy luận về chiến lược đệm]
 
-L2 cache introduces consistency challenges - when permission modified, how to ensure all cached copies updated? Strategies:
-
-1. **Time-based expiration**: Cache entries expire after N minutes, forcing refresh - simple but may serve stale permissions
-2. **Event-based invalidation**: When Permission entity updated, framework broadcasts invalidation event to all caches - complex but ensures consistency
-3. **Version-based invalidation**: Hibernate detects version changes và invalidates automatically - built-in support
-
-Axelor likely uses combination: Hibernate's automatic invalidation (version-based) plus session-based permission aggregation (permissions loaded once per login, cached in HTTP session).
-
-**Session-level permission aggregation:** [Suy luận về caching strategy]
-
-Beyond entity-level L2 cache, application likely performs **session-level permission aggregation**:
-
-```java
-// Pseudo-code for session permission loading
-public class UserSession {
-  private Map<String, ObjectPermission> objectPermissions;  // Indexed by object name
-  private Map<String, FieldPermissions> fieldPermissions;   // Indexed by object.field
-
-  public void loadPermissions(User user) {
-    // Query all permissions from user's group
-    List<Permission> groupPerms = user.getGroup().getPermissions();
-
-    // Query all permissions from user's roles
-    List<Permission> rolePerms = user.getRoles().stream()
-        .flatMap(role -> role.getPermissions().stream())
-        .collect(Collectors.toList());
-
-    // Merge permissions (union)
-    objectPermissions = mergePermissions(groupPerms, rolePerms);
-
-    // Similarly load field permissions
-    fieldPermissions = loadFieldPermissions(user);
-
-    // Cache in HTTP session (valid until logout or session timeout)
-  }
-}
-```
-
-Session-level cache ideal vì permissions rarely change during single user session - load once at login, reuse for all subsequent requests. Trade-off: permission changes not effective until user logs out/in or session expires.
-
-**Cache warming strategies:** [Suy luận về optimization]
-
-For high-traffic systems, proactive cache warming prevents "cold start" penalty:
-- Preload common permissions at application startup
-- Background job refreshes permission cache periodically
-- Login process preloads user's permissions before redirecting to home page
-
-**Monitoring và tuning:**
-
-Production systems should monitor:
-- Cache hit ratio (target >95% for permission entities)
-- Cache size (prevent unbounded growth)
-- Cache eviction rate (high eviction suggests cache too small or high churn)
-- Permission query count (should be minimal if caching effective)
+Ngoài bộ đệm cấp hai ở mức thực thể, ứng dụng có thể thực hiện **tổng hợp quyền cấp phiên**: tải tất cả quyền từ nhóm và vai trò của người dùng một lần khi đăng nhập, đệm kết quả đã hợp nhất trong phiên HTTP, tái sử dụng cho mọi yêu cầu tiếp theo. Bộ đệm cấp phiên lý tưởng vì quyền hiếm khi thay đổi trong một phiên người dùng. Đánh đổi: thay đổi quyền không có hiệu lực cho đến khi người dùng đăng xuất/đăng nhập lại hoặc phiên hết hạn. [Suy luận]
 
 ---
 
-### 15. SECURITY CONFIG OPTIONS VÀ HARDENING
+### 15. TÙY CHỌN CẤU HÌNH BẢO MẬT VÀ GIA CỐ
 
-**File nguồn:** `/src/main/resources/axelor-config.properties` [Từ source code]
+**Tệp nguồn:** `/src/main/resources/axelor-config.properties` [Từ source code]
 
-Security configuration extends beyond authentication/authorization to include password policies, permission controls, và injection protection. Properties provide defense-in-depth approach - multiple security layers protecting against different attack vectors.
+Cấu hình bảo mật mở rộng ra ngoài phạm vi xác thực/phân quyền, bao gồm chính sách mật khẩu, kiểm soát quyền hạn, và bảo vệ chống tiêm mã (injection). Các thuộc tính cung cấp cách tiếp cận phòng thủ nhiều lớp (defense-in-depth) — nhiều tầng bảo mật bảo vệ trước các hướng tấn công khác nhau.
 
-**Password policy enforcement:**
+**Áp dụng chính sách mật khẩu:**
 
-**Bằng chứng từ code - Password regex pattern:**
+**Bằng chứng từ mã nguồn - Mẫu biểu thức chính quy mật khẩu:**
 ```properties
 user.password.pattern = (((?=.*[a-z])(?=.*[A-Z])(?=.*\\d))|((?=.*[a-z])(?=.*[A-Z])(?=.*\\W))|((?=.*[a-z])(?=.*\\d)(?=.*\\W))|((?=.*[A-Z])(?=.*\\d)(?=.*\\W))).{8,}
 
 #user.password.pattern-title = Custom password requirements message
 ```
 
-**Giải thích code:** Complex regex enforces password strength requirements: minimum 8 characters AND at least 3 of 4 character types (lowercase, uppercase, digit, special character). Pattern broken down:
-- `(?=.*[a-z])` - positive lookahead for lowercase letter
-- `(?=.*[A-Z])` - positive lookahead for uppercase letter
-- `(?=.*\\d)` - positive lookahead for digit
-- `(?=.*\\W)` - positive lookahead for special character
-- `.{8,}` - minimum 8 characters total
+**Giải thích mã nguồn:** Biểu thức chính quy phức tạp áp dụng yêu cầu độ mạnh mật khẩu: tối thiểu 8 ký tự VÀ ít nhất 3 trong 4 loại ký tự (chữ thường, chữ hoa, chữ số, ký tự đặc biệt). Chi tiết mẫu: `(?=.*[a-z])` — nhìn trước tích cực cho chữ thường; `(?=.*[A-Z])` — cho chữ hoa; `(?=.*\\d)` — cho chữ số; `(?=.*\\W)` — cho ký tự đặc biệt; `.{8,}` — tối thiểu 8 ký tự. Các nhóm biểu thức chính quy kết hợp bằng phép HOẶC (`|`) yêu cầu bất kỳ 3 trong 4 loại. Cách tiếp cận cân bằng bảo mật (ngăn mật khẩu yếu như "password123") với tính tiện dụng (không yêu cầu cả 4 loại cho phép linh hoạt). Thuộc tính `password-pattern-title` tùy chọn cung cấp thông báo lỗi tùy chỉnh hiển thị cho người dùng khi mật khẩu bị từ chối. [Từ source code]
 
-Regex grouped with OR (`|`) requiring any 3 of 4 types: (lower+upper+digit) OR (lower+upper+special) OR (lower+digit+special) OR (upper+digit+special). Approach balances security (preventing weak passwords like "password123") versus usability (not requiring all 4 types allows flexibility).
+**Kiểm soát hệ thống quyền (nguy hiểm!):**
 
-Optional `password-pattern-title` property provides custom error message shown to users when password rejected - helps users understand requirements without decoding regex.
-
-**Permission system controls (dangerous!):**
-
-**Bằng chứng từ code - Permission bypass options:**
+**Bằng chứng từ mã nguồn - Tùy chọn bỏ qua quyền:**
 ```properties
-# Disable action permission checks (DANGEROUS!)
+# Tắt kiểm tra quyền hành động (NGUY HIỂM!)
 #application.permission.disable-action = false
 
-# Disable relational field permission checks
+# Tắt kiểm tra quyền trường quan hệ
 #application.permission.disable-relational-field = false
 ```
 
-**Giải thích code:** Properties allow completely disabling permission checks - intended for testing/development environments where permission setup overhead undesirable. WARNING: enabling these in production (setting to `true`) creates security vulnerabilities - any user can perform any action. Properties commented by default (safe) but developers might uncomment during testing và forget to re-enable before production deployment. Security audit checklist must verify these remain `false` (or commented) in production configs.
+**Giải thích mã nguồn:** Các thuộc tính cho phép tắt hoàn toàn kiểm tra quyền — dành cho môi trường kiểm thử/phát triển nơi thiết lập quyền gây phiền phức. CẢNH BÁO: bật trong sản xuất (đặt thành `true`) tạo lỗ hổng bảo mật — bất kỳ người dùng nào đều thực hiện được bất kỳ hành động nào. Các thuộc tính ở dạng ghi chú theo mặc định (an toàn) nhưng lập trình viên có thể bỏ ghi chú trong kiểm thử rồi quên bật lại trước khi triển khai sản xuất. Danh sách kiểm tra kiểm toán bảo mật phải xác minh các thuộc tính này vẫn là `false` (hoặc ở dạng ghi chú) trong cấu hình sản xuất. [Từ source code]
 
-Use cases for disabling permissions:
-- **Development**: Faster iteration without configuring permissions for every test scenario
-- **Automated testing**: Tests can focus on business logic without permission setup complexity
-- **Emergency access**: When permission system misconfigured và admin locked out, temporarily disable to regain access
+**Bảo vệ chống tiêm SQL:**
 
-**SQL injection protection:**
-
-**Bằng chứng từ code - Domain expression filtering:**
+**Bằng chứng từ mã nguồn - Lọc biểu thức miền:**
 ```properties
-# Blocklist pattern for domain expressions
+# Mẫu danh sách chặn cho biểu thức miền
 #application.domain-blocklist-pattern = (\\(\\s*(SELECT|DELETE|UPDATE)\\s+)|query_to_xml|some_another_function
 ```
 
-**Giải thích code:** Regex pattern blocks dangerous SQL fragments from appearing trong domain filter expressions (permission conditions). Pattern specifically blocks:
-- `(\\(\\s*(SELECT|DELETE|UPDATE)\\s+)` - Subqueries starting với SELECT/DELETE/UPDATE (potential SQL injection)
-- `query_to_xml` - PostgreSQL function that could leak schema information
-- `some_another_function` - Placeholder for adding custom dangerous functions
-
-Protection critical vì permission conditions allow administrators write SQL-like expressions - malicious/accidental dangerous expressions could compromise database. Example blocked injection: `self.id = 1 OR (SELECT password FROM auth_user LIMIT 1) IS NOT NULL` - this would bypass permission filtering AND leak passwords.
-
-Regex must balance security (block real attacks) versus usability (allow legitimate complex conditions). Too strict blocks valid use cases, too lenient allows attacks.
-
-**Additional security best practices:** [Suy luận về hardening]
-
-Beyond config properties, production Axelor deployments should implement:
-
-1. **HTTPS enforcement**: All traffic encrypted, `session.cookie.secure=true` enabled
-2. **CSP headers**: Content Security Policy prevents XSS attacks
-3. **Rate limiting**: Prevent brute-force password attacks, API abuse
-4. **Audit logging**: Log all authentication attempts, permission changes, data access
-5. **Database encryption**: Encrypt sensitive data at rest (passwords, API keys)
-6. **Regular updates**: Apply framework security patches promptly
-7. **Penetration testing**: Regular security audits to identify vulnerabilities
-8. **Least privilege**: Default deny permissions, grant only what needed
+**Giải thích mã nguồn:** Mẫu biểu thức chính quy chặn các đoạn SQL nguy hiểm xuất hiện trong biểu thức lọc miền (điều kiện quyền). Mẫu cụ thể chặn: truy vấn con bắt đầu bằng SELECT/DELETE/UPDATE (tiềm ẩn tiêm SQL), hàm `query_to_xml` của PostgreSQL (có thể rò rỉ thông tin lược đồ), chỗ giữ chỗ cho thêm hàm nguy hiểm tùy chỉnh. Bảo vệ rất quan trọng vì điều kiện quyền cho phép quản trị viên viết biểu thức dạng SQL — biểu thức nguy hiểm do cố ý hoặc vô tình có thể xâm phạm cơ sở dữ liệu. Ví dụ bị chặn: `self.id = 1 OR (SELECT password FROM auth_user LIMIT 1) IS NOT NULL` — điều này sẽ vượt qua lọc quyền VÀ rò rỉ mật khẩu. [Từ source code]
 
 ---
 
-### 16. NHỮNG ĐIỀU KHÔNG TÌM THẤY TRONG SOURCE CODE
+### 16. NHỮNG ĐIỀU KHÔNG TÌM THẤY TRONG MÃ NGUỒN
 
-Sau quá trình phân tích sâu security và authorization code, một số features phổ biến trong enterprise security systems **KHÔNG** xuất hiện hoặc không rõ ràng trong Axelor codebase. Việc document những "absent features" giúp set realistic expectations và identify potential limitations:
+Sau quá trình phân tích sâu mã bảo mật và phân quyền, một số tính năng phổ biến trong hệ thống bảo mật doanh nghiệp **KHÔNG** xuất hiện hoặc không rõ ràng trong mã nguồn Axelor. Ghi nhận những "tính năng vắng mặt" giúp thiết lập kỳ vọng thực tế và nhận diện hạn chế tiềm năng:
 
-**1. Spring Security hoặc Apache Shiro integration** [Không tìm thấy]
-Xác nhận Axelor **KHÔNG** sử dụng established Java security frameworks - implements custom security layer instead. Implications: cannot leverage Spring Security's extensive ecosystem (OAuth resource servers, method security, security testing utilities), must rely on Axelor's proprietary APIs.
+**1. Tích hợp Spring Security hoặc Apache Shiro** [Không tìm thấy]
+Xác nhận Axelor **KHÔNG** sử dụng các bộ khung bảo mật Java phổ biến — thay vào đó triển khai tầng bảo mật tùy chỉnh. Hệ quả: không thể tận dụng hệ sinh thái rộng lớn của Spring Security (máy chủ tài nguyên OAuth, bảo mật cấp phương thức, tiện ích kiểm thử bảo mật), phải dựa vào API riêng của Axelor.
 
-**2. Multi-tenancy implementation details** [Không rõ]
-Configuration option exists (`application.multi-tenancy`) nhưng implementation code absent từ analyzed files. Không tìm thấy: TenantResolver, TenantContext classes, tenant-specific schema customization, cross-tenant query APIs. Likely implemented trong framework core, không exposed to application layer.
+**2. Chi tiết triển khai đa thuê bao** [Không rõ]
+Tùy chọn cấu hình tồn tại (`application.multi-tenancy`) nhưng mã triển khai không có trong tệp đã phân tích. Không tìm thấy: lớp TenantResolver, TenantContext, tùy chỉnh lược đồ riêng thuê bao, API truy vấn xuyên thuê bao. Có thể được triển khai trong lõi bộ khung, không tiếp cận được ở tầng ứng dụng.
 
-**3. User password hashing algorithm** [Không rõ]
-Password field không visible trong analyzed User.xml extension (must be in core framework). Không biết algorithm used: BCrypt (industry standard)? PBKDF2? SCrypt? Argon2? Hash iteration count? Salt generation? Critical for assessing password security but not documented trong accessible code.
+**3. Thuật toán băm mật khẩu** [Không rõ]
+Trường mật khẩu không hiển thị trong XML mở rộng User đã phân tích (phải nằm trong lõi bộ khung). Không biết thuật toán sử dụng: BCrypt (tiêu chuẩn ngành)? PBKDF2? SCrypt? Argon2? Số vòng lặp băm? Cơ chế sinh muối (salt)? Quan trọng để đánh giá bảo mật mật khẩu nhưng không có tài liệu trong mã tiếp cận được.
 
-**4. Session storage mechanism** [Không rõ]
-Configuration sets session timeout nhưng không specify storage: in-memory (lost on restart)? Database (persistent)? Redis (distributed)? For clustered deployments, distributed session storage essential - unclear nếu Axelor supports này out-of-box or requires custom configuration.
+**4. Cơ chế lưu trữ phiên** [Không rõ]
+Cấu hình đặt thời gian hết phiên nhưng không chỉ định lưu trữ: trong bộ nhớ (mất khi khởi động lại)? cơ sở dữ liệu (bền vững)? Redis (phân tán)? Cho triển khai cụm, lưu trữ phiên phân tán là thiết yếu — không rõ Axelor hỗ trợ sẵn hay cần cấu hình tùy chỉnh.
 
-**5. Permission priority rules khi conflicts** [Không rõ]
-Khi user's Group grants canRead nhưng Role denies (hypothetically), which wins? No explicit deny rules observed, suggesting pure grant-based merging (no conflicts possible). But what if future version adds deny rules? Priority order undefined trong code.
+**5. Quy tắc ưu tiên quyền khi xung đột** [Không rõ]
+Khi Nhóm cấp canRead nhưng Vai trò từ chối (giả thuyết), bên nào thắng? Không quan sát thấy quy tắc từ chối tường minh, gợi ý hợp nhất thuần dựa trên cấp phép (không có xung đột). Nhưng nếu phiên bản tương lai thêm quy tắc từ chối, thứ tự ưu tiên chưa được định nghĩa trong mã.
 
-**6. Two-factor authentication (2FA)** [Không tìm thấy]
-No configuration or code for 2FA, TOTP, SMS verification, security keys. Modern security best practice especially for administrative accounts, nhưng must be implemented as custom extension if needed.
+**6. Xác thực hai yếu tố (2FA)** [Không tìm thấy]
+Không có cấu hình hoặc mã cho 2FA, TOTP, xác minh SMS, khóa bảo mật. Thực hành bảo mật hiện đại đặc biệt cho tài khoản quản trị, nhưng phải triển khai dưới dạng phần mở rộng tùy chỉnh nếu cần.
 
-**7. API authentication (JWT, API keys)** [Không rõ]
-REST API authentication mechanism unclear. Basic auth mentioned (`auth.local.basic-auth`) nhưng no JWT token generation, API key management, OAuth 2.0 client credentials flow. API clients may need session cookies (không ideal for programmatic access).
+**7. Xác thực API (JWT, khóa API)** [Không rõ]
+Cơ chế xác thực API REST không rõ ràng. Xác thực cơ bản (Basic Auth) được đề cập nhưng không có sinh mã thông báo JWT, quản lý khóa API, luồng thông tin khách OAuth 2.0. Máy khách API có thể cần cookie phiên (không lý tưởng cho truy cập lập trình).
 
-**8. Permission inheritance hoặc hierarchy** [Không rõ]
-Can groups have parent groups (organizational hierarchy)? Can roles inherit from other roles (role hierarchy)? No evidence trong code - appears flat structure. Enterprise orgs often need hierarchical permissions (e.g., Manager role inherits all permissions of Employee role plus additional).
+**8. Kế thừa hoặc phân cấp quyền** [Không rõ]
+Nhóm có thể có nhóm cha (phân cấp tổ chức) không? Vai trò có thể kế thừa từ vai trò khác (phân cấp vai trò) không? Không có bằng chứng trong mã — có vẻ là cấu trúc phẳng. Tổ chức doanh nghiệp thường cần quyền phân cấp (ví dụ: vai trò Quản lý kế thừa mọi quyền của vai trò Nhân viên cộng thêm quyền bổ sung).
 
-**9. Audit trail cho security events** [Không đầy đủ]
-Tracking system logs entity changes nhưng không rõ liệu có log: login attempts (successful/failed), logout events, permission checks (denied access attempts), session creation/destruction, password changes. Security audits và incident response require comprehensive security event logging.
+**9. Nhật ký kiểm toán cho sự kiện bảo mật** [Không đầy đủ]
+Hệ thống theo dõi ghi nhật ký thay đổi thực thể nhưng không rõ có ghi: nỗ lực đăng nhập (thành công/thất bại), sự kiện đăng xuất, kiểm tra quyền (nỗ lực truy cập bị từ chối), tạo/hủy phiên, thay đổi mật khẩu hay không. Kiểm toán bảo mật và ứng phó sự cố đòi hỏi ghi nhật ký sự kiện bảo mật toàn diện.
 
-**10. OAuth/OIDC token management** [Không rõ]
-Pac4j integration handles OAuth authentication nhưng không rõ: where access/refresh tokens stored? How refresh tokens rotated? Token revocation support? Offline access (refresh tokens with extended lifetime)? Critical cho production OAuth deployments.
+**10. Quản lý mã thông báo OAuth/OIDC** [Không rõ]
+Tích hợp Pac4j xử lý xác thực OAuth nhưng không rõ: mã thông báo truy cập/làm mới (access/refresh token) lưu ở đâu? Mã thông báo làm mới được xoay vòng như thế nào? Hỗ trợ thu hồi mã thông báo? Truy cập ngoại tuyến (mã thông báo làm mới với thời hạn kéo dài)? Quan trọng cho triển khai OAuth trong sản xuất.
 
 ---
 
 ### 17. CÂU HỎI MỞ VÀ ĐIỂM CẦN NGHIÊN CỨU THÊM
 
-Analysis của security system raises several questions requiring deeper investigation hoặc documentation review:
+Phân tích hệ thống bảo mật đặt ra nhiều câu hỏi đòi hỏi nghiên cứu sâu hơn hoặc rà soát tài liệu:
 
-**1. Permission resolution performance:**
-What is cache hit rate trong production? How many database queries per request attributed to permission checks? Is there N+1 query problem khi loading permissions for multiple objects? Performance profiling needed.
+**1. Hiệu năng giải quyết quyền:** Tỉ lệ trúng bộ đệm trong sản xuất là bao nhiêu? Mỗi yêu cầu có bao nhiêu truy vấn cơ sở dữ liệu thuộc về kiểm tra quyền? Có vấn đề N+1 truy vấn khi tải quyền cho nhiều đối tượng không? Cần đo hiệu năng thực tế.
 
-**2. Dynamic permission updates:**
-Khi administrator modifies permissions, when do changes take effect? Immediately for all users? Only after logout/login? Does framework broadcast invalidation events trong clustered deployments? Real-time permission updates critical for security incidents (immediately revoke access to compromised account).
+**2. Cập nhật quyền động:** Khi quản trị viên sửa quyền, thay đổi có hiệu lực khi nào? Ngay lập tức cho mọi người dùng? Chỉ sau đăng xuất/đăng nhập? Bộ khung có phát sự kiện vô hiệu trong triển khai cụm không? Cập nhật quyền thời gian thực rất quan trọng cho sự cố bảo mật (thu hồi truy cập ngay cho tài khoản bị xâm phạm).
 
-**3. Condition expression language details:**
-Fields `readonlyIf`, `hideIf` use what expression language exactly? Groovy? JavaScript? Custom DSL? What variables/functions available trong expression context? Are expressions compiled or interpreted? Compilation provides better performance, interpretation more flexible.
+**3. Chi tiết ngôn ngữ biểu thức điều kiện:** Các trường `readonlyIf`, `hideIf` dùng ngôn ngữ biểu thức gì chính xác? Groovy? JavaScript? DSL tùy chỉnh? Biến/hàm nào khả dụng trong ngữ cảnh biểu thức? Biểu thức được biên dịch hay thông dịch?
 
-**4. Cross-tenant queries và data sharing:**
-In multi-tenancy mode, can super-admins query across all tenants? Can tenants share certain data (common product catalog) while keeping transactional data isolated? Are there tenant-specific customizations (different fields per tenant)?
+**4. Truy vấn xuyên thuê bao và chia sẻ dữ liệu:** Trong chế độ đa thuê bao, siêu quản trị có thể truy vấn xuyên mọi thuê bao không? Thuê bao có thể chia sẻ dữ liệu nhất định (danh mục sản phẩm chung) trong khi giữ dữ liệu giao dịch cách ly không?
 
-**5. External authorization integration:**
-Can Axelor integrate với external authorization services (AWS IAM, Azure AD conditional access, OPA)? Use case: corporate policies enforced externally (e.g., block access from certain IPs, require MFA for sensitive operations).
+**5. Tích hợp phân quyền bên ngoài:** Axelor có thể tích hợp với dịch vụ phân quyền bên ngoài (AWS IAM, truy cập có điều kiện Azure AD, OPA) không?
 
-**6. API security beyond basic auth:**
-For REST API clients, what's recommended authentication? Are there rate limits? How to implement API keys for service accounts? OAuth 2.0 client credentials flow support?
+**6. Bảo mật API ngoài xác thực cơ bản:** Cho máy khách API REST, phương thức xác thực nào được khuyến nghị? Có giới hạn tốc độ (rate limit) không? Làm sao triển khai khóa API cho tài khoản dịch vụ?
 
-**7. Default permissions for new entities:**
-When module installed with new entities, what default permissions applied? Are all entities denied by default (secure) or granted to all users (convenient)? Automated permission scaffolding would help initial setup.
+**7. Quyền mặc định cho thực thể mới:** Khi mô-đun cài đặt với thực thể mới, quyền mặc định nào được áp dụng? Mọi thực thể bị từ chối mặc định (an toàn) hay cấp cho tất cả người dùng (tiện lợi)?
 
-**8. Permission testing utilities:**
-Are there tools to test permission configurations? Simulate user with specific group/roles và verify they can/cannot access certain objects/fields? Testing framework critical for complex permission schemes.
+**8. Tiện ích kiểm thử quyền:** Có công cụ kiểm thử cấu hình quyền không? Mô phỏng người dùng với nhóm/vai trò cụ thể và xác minh họ có/không thể truy cập đối tượng/trường nhất định?
 
-**9. Permission migration và version control:**
-When entities renamed or packages refactored, how to migrate permissions? Are there scripts? CSV export/import helps but doesn't automate structural changes. Schema evolution của permission system needs tooling support.
+**9. Di chuyển quyền và kiểm soát phiên bản:** Khi thực thể đổi tên hoặc gói bị tái cấu trúc, làm sao di chuyển quyền? Có kịch bản hỗ trợ không? Nhập/xuất CSV giúp ích nhưng không tự động hóa thay đổi cấu trúc.
 
-**10. Federation và cross-application SSO:**
-Can multiple Axelor instances share authentication (SSO)? Can Axelor participate trong enterprise SSO federation với non-Axelor applications? SAML/OAuth enable này theoretically, but practical setup unclear.
+**10. Liên kết và SSO xuyên ứng dụng:** Nhiều phiên bản Axelor có thể chia sẻ xác thực (SSO) không? Axelor có thể tham gia liên kết SSO doanh nghiệp với ứng dụng ngoài Axelor không? SAML/OAuth cho phép điều này về lý thuyết, nhưng thiết lập thực tế chưa rõ.
 
-These questions represent areas nơi hands-on testing, framework documentation review, hoặc direct communication với Axelor community would provide clarity.
+Những câu hỏi này đại diện cho các lĩnh vực cần kiểm thử thực tế, rà soát tài liệu bộ khung, hoặc trao đổi trực tiếp với cộng đồng Axelor để làm rõ.
 
 ---
 
 ## TÓM TẮT KIẾN TRÚC BẢO MẬT
 
-Sau quá trình phân tích chi tiết từ source code, kiến trúc bảo mật của Axelor có thể tóm lược qua các điểm sau:
+Sau quá trình phân tích chi tiết từ mã nguồn, kiến trúc bảo mật của Axelor có thể tóm lược qua các điểm sau:
 
-### Layered Security Architecture
+### Kiến trúc bảo mật nhiều tầng
 
-Axelor implements **comprehensive multi-layer security** spanning authentication, authorization (object/field/record levels), và audit trail. Architecture không rely on standard frameworks (Spring Security/Shiro) nhưng builds custom solution tightly integrated với framework core. Decision này provides deep integration với Axelor's model-driven approach (permissions defined in XML, CSV-manageable) nhưng sacrifices ecosystem compatibility (third-party security tools designed for Spring Security won't work directly).
+Axelor triển khai **bảo mật đa tầng toàn diện** trải dài từ xác thực, phân quyền (cấp đối tượng/trường/bản ghi), đến nhật ký kiểm toán. Kiến trúc không dựa vào bộ khung tiêu chuẩn (Spring Security/Shiro) mà xây dựng giải pháp tùy chỉnh tích hợp chặt với lõi bộ khung. Quyết định này mang lại tích hợp sâu với cách tiếp cận hướng mô hình của Axelor (quyền định nghĩa trong XML, quản lý qua CSV) nhưng hy sinh tính tương thích hệ sinh thái (công cụ bảo mật bên thứ ba thiết kế cho Spring Security không hoạt động trực tiếp).
 
-### Authentication: Pac4j Multi-Provider Support
+### Xác thực: Hỗ trợ đa nhà cung cấp Pac4j
 
-Authentication layer powered by **Pac4j 5.7.7**, supporting six authentication providers: local (username/password), Google OAuth, Keycloak, SAML 2.0, LDAP, và CAS. Provider-agnostic architecture enables mixing providers (corporate employees via LDAP, partners via Google OAuth) trong single deployment. User provisioning (auto-create, link, or deny unknown users) configurable per deployment security requirements. Session management via servlet container với configurable timeout (default 8 hours).
+Tầng xác thực được cung cấp bởi **Pac4j 5.7.7**, hỗ trợ sáu nhà cung cấp xác thực: nội bộ (tên đăng nhập/mật khẩu), Google OAuth, Keycloak, SAML 2.0, LDAP, và CAS. Kiến trúc không phụ thuộc nhà cung cấp cho phép kết hợp (nhân viên doanh nghiệp qua LDAP, đối tác qua Google OAuth) trong cùng triển khai. Cấp phát tài khoản người dùng (tự tạo, liên kết, hoặc từ chối người dùng chưa biết) có thể cấu hình theo yêu cầu bảo mật của từng triển khai.
 
-### Authorization: Three-Tier Hierarchy
+### Phân quyền: Phân cấp ba tầng
 
-Authorization model follows **User → Group/Role → Permissions** hierarchy. Users belong to one Group (organizational unit) và multiple Roles (functional capabilities). Permissions aggregate from both Group và all Roles using grant-based merging (any permission source granting access = allowed). Dual Group/Role system separates organizational context (groups) từ functional permissions (roles), enabling flexible permission assignment without complex matrix maintenance.
+Mô hình phân quyền tuân theo phân cấp **Người dùng → Nhóm/Vai trò → Quyền hạn**. Người dùng thuộc một Nhóm (đơn vị tổ chức) và nhiều Vai trò (năng lực chức năng). Quyền tổng hợp từ cả Nhóm và mọi Vai trò bằng hợp nhất dựa trên cấp phép (bất kỳ nguồn quyền nào cấp = cho phép). Hệ thống kép Nhóm/Vai trò tách biệt ngữ cảnh tổ chức (nhóm) khỏi quyền chức năng (vai trò), cho phép gán quyền linh hoạt mà không cần bảo trì ma trận phức tạp.
 
-### Object-Level Permissions: CRUD + Export
+### Quyền cấp đối tượng: CRUD + Xuất
 
-Permission entity controls access to entire entity classes (SaleOrder, Invoice, Product) với five operations: canRead, canWrite, canCreate, canRemove, canExport. Wildcard support enables package-level permissions (`com.axelor.apps.sale.*`) reducing configuration burden. Permission naming convention (`perm.{Object}.{GroupOrRole}`) provides structure. Validation against JPA metamodel prevents orphaned permissions.
+Thực thể Permission kiểm soát truy cập vào toàn bộ lớp thực thể (SaleOrder, Invoice, Product) với năm thao tác: canRead, canWrite, canCreate, canRemove, canExport. Hỗ trợ ký tự đại diện cho phép quyền cấp gói (`com.axelor.apps.sale.*`) giảm gánh nặng cấu hình. Kiểm tra đối chiếu siêu mô hình JPA ngăn quyền mồ côi.
 
-### Record-Level Security: Domain Filters
+### Bảo mật cấp bản ghi: Bộ lọc miền
 
-Most sophisticated authorization feature: **conditional permissions** via SQL-like WHERE clauses injected into queries. Magic variables (`__user__.{field}`) enable dynamic filtering based on current user's attributes. Examples: `self.company = ?` + `__user__.activeCompany` implements multi-company isolation, `self.assignedTeam in (?)` + `__user__.teamSet` enables team-based visibility. Conditions evaluated at database level (not application), ensuring security và performance.
+Tính năng phân quyền tinh vi nhất: **quyền có điều kiện** thông qua mệnh đề WHERE dạng SQL được chèn vào truy vấn. Biến đặc biệt (`__user__.{trường}`) cho phép lọc động dựa trên thuộc tính người dùng hiện tại. Ví dụ: `self.company = ?` + `__user__.activeCompany` triển khai cách ly đa công ty; `self.assignedTeam in (?)` + `__user__.teamSet` cho phép hiển thị theo nhóm làm việc. Điều kiện được đánh giá ở tầng cơ sở dữ liệu (không phải ứng dụng), đảm bảo cả bảo mật lẫn hiệu năng.
 
-### Field-Level Permissions: Fine-Grained Control
+### Quyền cấp trường: Kiểm soát chi tiết
 
-MetaPermission và MetaPermissionRule entities provide field-level authorization: hide sensitive fields (costPrice) from certain groups, make fields readonly based on workflow state (`readonlyIf="statusSelect > 2"`). Conditional expressions (`hideIf`, `readonlyIf`) enable context-aware UI - same field visible to some users, hidden to others, readonly based on record state.
+Thực thể MetaPermission và MetaPermissionRule cung cấp phân quyền cấp trường: ẩn trường nhạy cảm (costPrice) khỏi nhóm nhất định, đặt trường chỉ đọc dựa trên trạng thái quy trình (`readonlyIf="statusSelect > 2"`). Biểu thức có điều kiện (`hideIf`, `readonlyIf`) cho phép giao diện nhạy ngữ cảnh — cùng trường hiển thị với một số người dùng, ẩn với người khác, chỉ đọc dựa trên trạng thái bản ghi.
 
-### CSV-Based Permission Management
+### Quản lý quyền dựa trên CSV
 
-Permission Assistant tool enables bulk permission configuration via CSV export/import. Administrators leverage spreadsheet tools (Excel formulas, pivot tables, conditional formatting) to rapidly configure hundreds of permissions. Transactional import ensures consistency. CSV approach dramatically more efficient than UI-based permission-by-permission configuration for large permission matrices.
+Công cụ Trợ lý quyền hạn cho phép cấu hình quyền hàng loạt qua nhập/xuất CSV. Quản trị viên tận dụng công cụ bảng tính (công thức Excel, bảng tổng hợp, định dạng có điều kiện) để cấu hình nhanh hàng trăm quyền. Nhập theo giao dịch đảm bảo nhất quán. Cách tiếp cận CSV hiệu quả hơn đáng kể so với cấu hình quyền từng cái qua giao diện cho ma trận quyền lớn.
 
-### Performance Optimization: Multi-Level Caching
+### Tối ưu hiệu năng: Đệm nhiều cấp
 
-Permission entities marked `cacheable="true"` leverage Hibernate L2 cache. Session-level permission aggregation (load once at login, cache for session duration) prevents repeated database queries. Caching critical vì permission checks occur on every operation - without caching, system would be database-bound.
+Thực thể quyền được đánh dấu `cacheable="true"` tận dụng bộ đệm cấp hai Hibernate. Tổng hợp quyền cấp phiên (tải một lần khi đăng nhập, đệm suốt phiên) ngăn truy vấn cơ sở dữ liệu lặp lại. Đệm rất quan trọng vì kiểm tra quyền xảy ra trên mọi thao tác — không có đệm, hệ thống sẽ bị nghẽn cơ sở dữ liệu.
 
-### Security Hardening Options
+### Tùy chọn gia cố bảo mật
 
-Password policy regex enforces strong passwords (8+ chars, 3 of 4 types). SQL injection protection blocks dangerous expressions trong permission conditions. Permission system can be disabled for testing (dangerous if left enabled trong production). HTTPS enforcement, CSRF protection, XSS prevention expected (not explicitly configured trong analyzed files).
+Biểu thức chính quy chính sách mật khẩu áp dụng mật khẩu mạnh (8+ ký tự, 3 trong 4 loại). Bảo vệ chống tiêm SQL chặn biểu thức nguy hiểm trong điều kiện quyền. Hệ thống quyền có thể tắt cho kiểm thử (nguy hiểm nếu để bật trong sản xuất).
 
-### Gaps và Limitations
+### Thiếu sót và hạn chế
 
-Notable absences: no two-factor authentication, unclear API authentication (beyond basic auth), no permission inheritance/hierarchy, minimal audit logging of security events, multi-tenancy configuration exists but implementation unclear. Password hashing algorithm và session storage mechanism not documented trong accessible code. Permission priority rules trong conflict scenarios undefined.
+Các vắng mặt đáng chú ý: không có xác thực hai yếu tố; xác thực API không rõ (ngoài xác thực cơ bản); không có kế thừa/phân cấp quyền; ghi nhật ký sự kiện bảo mật tối thiểu; cấu hình đa thuê bao tồn tại nhưng triển khai không rõ. Thuật toán băm mật khẩu và cơ chế lưu trữ phiên không có tài liệu trong mã tiếp cận được. Quy tắc ưu tiên quyền trong kịch bản xung đột chưa được định nghĩa.
 
-### Architecture Philosophy
+### Triết lý kiến trúc
 
-Axelor prioritizes **configurability over programmatic security** - permissions defined in XML/CSV rather than annotations, enabling business users configure security without code changes. Trade-off: less compile-time safety (typos in permission conditions only caught at runtime), more operational flexibility. Suitable for environments where security requirements evolve frequently và non-developers need manage permissions.
+Axelor ưu tiên **khả năng cấu hình hơn bảo mật lập trình** — quyền được định nghĩa trong XML/CSV thay vì chú thích, cho phép người dùng nghiệp vụ cấu hình bảo mật mà không cần thay đổi mã. Đánh đổi: kém an toàn khi biên dịch (lỗi chính tả trong điều kiện quyền chỉ bị bắt khi chạy), linh hoạt hơn trong vận hành. Phù hợp cho môi trường nơi yêu cầu bảo mật thay đổi thường xuyên và người không phải lập trình viên cần quản lý quyền hạn.
 
 ---
 
-**Tổng số lines code/config analyzed:**
-- Domain entities: 4 files (User, Group, Role, Permission)
-- Service implementations: 2 files (PermissionServiceImpl, PermissionAssistantService)
-- Configuration: axelor-config.properties (auth sections)
+**Tổng số dòng mã/cấu hình đã phân tích:**
+- Thực thể miền: 4 tệp (User, Group, Role, Permission)
+- Mã dịch vụ: 2 tệp (PermissionServiceImpl, PermissionAssistantService)
+- Cấu hình: axelor-config.properties (phần xác thực)
 
-**Nguồn:** Tất cả findings từ direct source code analysis, supplemented với suy luận based on standard security patterns, JPA/Hibernate behaviors, và enterprise application best practices.
+**Nguồn:** Tất cả phát hiện từ phân tích mã nguồn trực tiếp, bổ sung bằng suy luận dựa trên mẫu bảo mật tiêu chuẩn, hành vi JPA/Hibernate, và thực hành tốt nhất ứng dụng doanh nghiệp.
 
 ---
 
 *Kết thúc RESEARCH_STEP3_SECURITY.md*
+

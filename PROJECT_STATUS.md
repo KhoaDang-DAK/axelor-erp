@@ -1,27 +1,71 @@
 # AXELOR OPEN SUITE - PROJECT STATUS & CONTEXT
 
-**Last Updated:** 2026-02-02
+**Last Updated:** 2026-02-02 (cập nhật lần 3 — Phase 3 còn 1 file cuối)
 **Project:** Nghiên cứu và phân tích Axelor Open Suite ERP (Java-based)
 **Version:** 8.5.10
 **Repository:** axelor-erp (local analysis)
 
 ---
 
-## 📋 PROJECT OVERVIEW
+## 🔥 CÔNG VIỆC HIỆN TẠI — PHASE 3: VIẾT LẠI TIẾNG VIỆT THUẦN
 
-### Mục tiêu
-Nghiên cứu sâu về kiến trúc và implementation của Axelor Open Suite để:
-- Hiểu rõ architecture patterns (multi-module, MVC, ORM, security, BPM)
-- Đánh giá khả năng no-code/low-code
-- Phân tích performance và scalability
-- So sánh với các ERP frameworks khác (đặc biệt là Odoo)
+### Mô tả
+Viết lại toàn bộ 6 file RESEARCH_STEP*.md từ kiểu "Vinglish" (trộn lẫn tiếng Anh-Việt trong câu) sang **tiếng Việt thuần túy, mạch lạc**. Thuật ngữ kỹ thuật: tiếng Việt trước, tiếng Anh trong ngoặc lần đầu xuất hiện, sau đó dùng tiếng Việt.
 
-### Phương pháp
-- Phân tích source code trực tiếp từ repository
-- Đọc configuration files (axelor-config.properties, domain XMLs, view XMLs)
-- Trace code execution flow qua controllers, services, repositories
-- Suy luận patterns từ code structure và naming conventions
-- Phân biệt rõ: [Từ source code] vs [Suy luận]
+### Quy tắc viết lại
+1. **Thuật ngữ:** Tiếng Việt + (tiếng Anh) lần đầu → sau đó chỉ tiếng Việt
+   - "Bộ khung (framework)" → lần sau: "bộ khung"
+   - "Bộ đệm (cache)" → lần sau: "bộ đệm"
+   - "Phiên làm việc (session)" → lần sau: "phiên"
+2. **Giải thích:** Viết đoạn văn tiếng Việt tự nhiên, 3-5 câu tối thiểu
+3. **Code snippets:** Giữ nguyên — chỉ viết lại phần giải thích
+4. **Đánh dấu:** Giữ `[Từ source code]` và `[Suy luận]`
+
+### Bảng thuật ngữ chính
+| Tiếng Anh | Tiếng Việt |
+|-----------|------------|
+| Framework | Bộ khung (framework) |
+| Cache | Bộ đệm (cache) |
+| Session | Phiên làm việc |
+| Entity | Thực thể (entity) |
+| Trade-off | Đánh đổi (trade-off) |
+| Record-level security | Bảo mật cấp bản ghi |
+| Connection pool | Nhóm kết nối |
+| Lazy loading | Tải lười |
+| Batch processing | Xử lý hàng loạt |
+| Multi-tenancy | Đa thuê bao |
+
+### Tiến độ Phase 3
+
+| # | File | Trạng thái | Ghi chú |
+|---|------|-----------|---------|
+| 1 | RESEARCH_STEP1_STRUCTURE.md | ❌ **CHƯA LÀM** | Cần viết lại tiếp |
+| 2 | RESEARCH_STEP2_DATABASE.md | ✅ Hoàn thành | Đã viết lại tiếng Việt thuần |
+| 3 | RESEARCH_STEP3_SECURITY.md | ✅ Hoàn thành | Đã viết lại tiếng Việt thuần |
+| 4 | RESEARCH_STEP4_BPM.md | ✅ Hoàn thành | Đã viết lại tiếng Việt thuần |
+| 5 | RESEARCH_STEP5_NOCODE.md | ✅ Hoàn thành | Đã viết lại tiếng Việt thuần |
+| 6 | RESEARCH_STEP6_PERFORMANCE.md | ✅ Hoàn thành | Đã viết lại tiếng Việt thuần (~1538 dòng) |
+
+### Trạng thái STEP1
+- File đã được đọc hoàn toàn (859 dòng), chưa bắt đầu viết lại
+- File gốc đã viết tiếng Việt khá tốt nhưng vẫn còn nhiều đoạn trộn lẫn tiếng Anh
+- Gồm 10 mục chính + sơ đồ kiến trúc + câu hỏi mở
+
+### Hướng dẫn tiếp tục
+1. Mở Claude Code trong thư mục `axelor-erp`
+2. Nói: **"Đọc PROJECT_STATUS.md và tiếp tục viết lại STEP1 sang tiếng Việt thuần"**
+3. Claude sẽ:
+   - Đọc file RESEARCH_STEP1_STRUCTURE.md hiện tại (859 dòng, đọc 1 lần là đủ)
+   - Viết lại hoàn toàn bằng tiếng Việt theo quy tắc ở trên
+   - Giữ nguyên code snippets, chỉ viết lại phần giải thích
+   - Sau khi xong, dừng lại đưa tóm tắt để review
+   - **Đây là file cuối cùng — xong là hoàn thành Phase 3**
+
+### Quy trình cho mỗi STEP
+1. Đọc toàn bộ file gốc (có thể cần chia chunk nếu file lớn)
+2. Viết lại hoàn toàn bằng Write tool (một lần)
+3. Dừng lại, đưa bảng tóm tắt + gợi ý review
+4. Chờ user xác nhận trước khi làm step tiếp
 
 ---
 
@@ -39,6 +83,10 @@ Nghiên cứu sâu về kiến trúc và implementation của Axelor Open Suite 
 ### Phase 2: Detailed Analysis Rewrite (✅ COMPLETED 2026-02-02)
 
 Đã viết lại TOÀN BỘ 6 files với phong cách mới chi tiết hơn:
+
+### Phase 3: Vietnamese Pure Rewrite (🔄 ĐANG LÀM — 5/6 hoàn thành)
+
+Viết lại từ Vinglish sang tiếng Việt thuần. Đã xong STEP 2-6, còn STEP 1:
 
 #### ✅ STEP 1: STRUCTURE - 859 dòng
 **File:** RESEARCH_STEP1_STRUCTURE.md
@@ -398,4 +446,4 @@ hibernate.hikari.leakDetectionThreshold = 60000
 
 **Note:** This is a living document. Update as research progresses or new insights discovered.
 
-**Last Activity:** Completed full rewrite of all 6 RESEARCH_STEP files với detailed Vietnamese explanations (2026-02-02)
+**Last Activity:** Phase 3 — đã xong 5/6 file (STEP2-6), còn lại STEP1 chưa viết lại (2026-02-02)

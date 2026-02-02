@@ -1,55 +1,55 @@
-# BƯỚC 2: PHÂN TÍCH KIẾN TRÚC DATABASE & MODEL - Phân Tích Từ Source Code
+# BƯỚC 2: PHÂN TÍCH KIẾN TRÚC CƠ SỞ DỮ LIỆU VÀ MÔ HÌNH DỮ LIỆU - Phân Tích Từ Mã Nguồn
 
 ## Phương pháp phân tích
 
-Quá trình nghiên cứu database và model architecture được thực hiện bằng cách phân tích trực tiếp domain XML files từ nhiều modules khác nhau, kiểm tra generated Java code, và đọc custom repository implementations. Phạm vi nghiên cứu bao gồm:
+Quá trình nghiên cứu kiến trúc cơ sở dữ liệu và mô hình dữ liệu được thực hiện bằng cách phân tích trực tiếp các tệp XML định nghĩa thực thể (domain XML) từ nhiều mô-đun khác nhau, kiểm tra mã Java được sinh tự động, và đọc các lớp kho lưu trữ tùy chỉnh (custom repository). Phạm vi nghiên cứu bao gồm:
 
-**Domain XML files phân tích:**
-- `/modules/axelor-open-suite/axelor-base/src/main/resources/domains/Address.xml` - Entity đơn giản với geolocation
-- `/modules/axelor-open-suite/axelor-base/src/main/resources/domains/Company.xml` - Entity với caching và tracking
-- `/modules/axelor-open-suite/axelor-base/src/main/resources/domains/Partner.xml` - Entity phức tạp với JSON fields
-- `/modules/axelor-open-suite/axelor-sale/src/main/resources/domains/SaleOrder.xml` - Entity với nhiều relationships và business logic
-- `/modules/axelor-open-suite/axelor-account/src/main/resources/domains/Account.xml` - Entity kế toán với constraints
-- `/modules/axelor-open-suite/axelor-project/src/main/resources/domains/MetaJsonField.xml` - Extension của core entity
+**Các tệp XML định nghĩa thực thể đã phân tích:**
+- `/modules/axelor-open-suite/axelor-base/src/main/resources/domains/Address.xml` - Thực thể đơn giản có định vị địa lý
+- `/modules/axelor-open-suite/axelor-base/src/main/resources/domains/Company.xml` - Thực thể có bộ đệm và theo dõi thay đổi
+- `/modules/axelor-open-suite/axelor-base/src/main/resources/domains/Partner.xml` - Thực thể phức tạp có trường JSON
+- `/modules/axelor-open-suite/axelor-sale/src/main/resources/domains/SaleOrder.xml` - Thực thể có nhiều quan hệ và logic nghiệp vụ
+- `/modules/axelor-open-suite/axelor-account/src/main/resources/domains/Account.xml` - Thực thể kế toán có ràng buộc
+- `/modules/axelor-open-suite/axelor-project/src/main/resources/domains/MetaJsonField.xml` - Mở rộng thực thể lõi
 
-**Generated code inspection:**
-- `/modules/axelor-open-suite/axelor-base/build/src-gen/java/com/axelor/apps/base/db/Product.java` - Generated JPA entity
-- `/modules/axelor-open-suite/axelor-base/build/src-gen/java/com/axelor/apps/base/db/repo/ProductRepository.java` - Generated repository
+**Mã được sinh tự động đã kiểm tra:**
+- `/modules/axelor-open-suite/axelor-base/build/src-gen/java/com/axelor/apps/base/db/Product.java` - Thực thể JPA được sinh tự động
+- `/modules/axelor-open-suite/axelor-base/build/src-gen/java/com/axelor/apps/base/db/repo/ProductRepository.java` - Kho lưu trữ được sinh tự động
 
-**Custom repository implementations:**
-- `/modules/axelor-open-suite/axelor-base/src/main/java/com/axelor/apps/base/db/repo/ProductBaseRepository.java` - Custom business logic layer
+**Kho lưu trữ tùy chỉnh:**
+- `/modules/axelor-open-suite/axelor-base/src/main/java/com/axelor/apps/base/db/repo/ProductBaseRepository.java` - Tầng logic nghiệp vụ tùy chỉnh
 
-**Configuration analysis:**
-- `/src/main/resources/axelor-config.properties` - Hibernate DDL strategy và database settings
+**Cấu hình:**
+- `/src/main/resources/axelor-config.properties` - Chiến lược tạo bảng tự động của Hibernate và cài đặt cơ sở dữ liệu
 
 ---
 
 ## Kết quả chi tiết
 
-### 1. CƠ CHẾ ĐỊNH NGHĨA ENTITY BẰNG XML - MODEL-DRIVEN DEVELOPMENT
+### 1. CƠ CHẾ ĐỊNH NGHĨA THỰC THỂ BẰNG XML - PHÁT TRIỂN HƯỚNG MÔ HÌNH
 
-**File nguồn:** Tất cả domain XML files trong các modules [Từ source code]
+**Tệp nguồn:** Tất cả tệp XML định nghĩa thực thể trong các mô-đun [Từ mã nguồn]
 
-Axelor áp dụng một approach độc đáo trong Java ecosystem: thay vì định nghĩa JPA entities trực tiếp bằng Java code với annotations (như cách làm truyền thống của Hibernate hoặc Spring Data JPA), Axelor sử dụng **Domain XML files** như single source of truth. Đây là một implementation của Model-Driven Development (MDD) - một paradigm trong đó developers làm việc ở mức abstraction cao hơn (XML schema) thay vì viết boilerplate code. Quyết định thiết kế này mang lại nhiều lợi ích: (1) Business analysts không cần biết Java có thể đọc và review entity definitions, (2) Code generator có thể đảm bảo consistency trong việc generate getters/setters/equals/hashCode, (3) XML có thể được validate bằng XSD schema trước khi compile, phát hiện lỗi sớm, (4) Dễ dàng generate documentation từ XML, và (5) Cho phép platform evolve mà không breaking existing entity definitions.
+Axelor áp dụng một cách tiếp cận độc đáo trong hệ sinh thái Java: thay vì định nghĩa các thực thể JPA trực tiếp bằng mã Java với chú thích (annotation) như cách làm truyền thống của Hibernate hoặc Spring Data JPA, Axelor sử dụng **tệp XML định nghĩa thực thể** (Domain XML) làm nguồn sự thật duy nhất (single source of truth). Đây là một hiện thực hóa của mô hình phát triển hướng mô hình (Model-Driven Development - MDD), trong đó lập trình viên làm việc ở mức trừu tượng cao hơn thông qua lược đồ XML thay vì viết mã khuôn mẫu lặp đi lặp lại (boilerplate). Quyết định thiết kế này mang lại nhiều lợi ích: thứ nhất, những người phân tích nghiệp vụ không cần biết Java vẫn có thể đọc và rà soát định nghĩa thực thể; thứ hai, bộ sinh mã đảm bảo tính nhất quán trong việc tạo các phương thức truy xuất (getter/setter), so sánh (equals/hashCode); thứ ba, XML có thể được kiểm tra bằng lược đồ XSD trước khi biên dịch, giúp phát hiện lỗi sớm; thứ tư, dễ dàng sinh tài liệu tự động từ XML; và cuối cùng, cho phép nền tảng phát triển mà không làm hỏng các định nghĩa thực thể hiện có.
 
-Domain XML tuân theo một schema chuẩn được định nghĩa trong file XSD `domain-models_7.4.xsd`, với namespace `http://axelor.com/xml/ns/domain-models`. Con số 7.4 trong schema version khớp với Axelor framework version, cho thấy schema có thể evolve theo thời gian. Mỗi domain XML file bắt đầu với một `<module>` declaration chỉ định module name và target package cho generated code - ví dụ `<module name="base" package="com.axelor.apps.base.db"/>` nghĩa là tất cả entities trong file này sẽ được generate vào package `com.axelor.apps.base.db`. Một file XML có thể chứa nhiều entity definitions, giúp organize related entities together (ví dụ: SaleOrder và SaleOrderLine trong cùng một file).
+Tệp XML định nghĩa thực thể tuân theo một lược đồ chuẩn được khai báo trong tệp XSD `domain-models_7.4.xsd`, với không gian tên (namespace) `http://axelor.com/xml/ns/domain-models`. Con số 7.4 trong phiên bản lược đồ khớp với phiên bản khung ứng dụng (framework) Axelor, cho thấy lược đồ có thể phát triển theo thời gian. Mỗi tệp XML bắt đầu với một khai báo `<module>` chỉ định tên mô-đun và gói đích (target package) cho mã được sinh - ví dụ `<module name="base" package="com.axelor.apps.base.db"/>` nghĩa là tất cả thực thể trong tệp này sẽ được sinh vào gói `com.axelor.apps.base.db`. Một tệp XML có thể chứa nhiều định nghĩa thực thể, giúp tổ chức các thực thể liên quan cùng nhau (ví dụ: SaleOrder và SaleOrderLine trong cùng một tệp).
 
-**Bằng chứng từ code - Cấu trúc XML cơ bản:**
+**Bằng chứng từ mã nguồn - Cấu trúc XML cơ bản:**
 ```xml
 <domain-models xmlns="http://axelor.com/xml/ns/domain-models">
   <module name="base" package="com.axelor.apps.base.db"/>
 
   <entity name="EntityName" [attributes]>
-    <!-- Field definitions -->
+    <!-- Định nghĩa các trường -->
   </entity>
 </domain-models>
 ```
 
-**Giải thích code:** Block `<domain-models>` là root element, chứa namespace declaration để XML parser có thể validate cú pháp. Element `<module>` không chỉ là documentation - nó thực sự control việc code generation, xác định package structure và class naming. Một file có thể define nhiều modules (ví dụ: extending entities từ core framework), nhưng best practice là một module per file.
+**Giải thích mã nguồn:** Khối `<domain-models>` là phần tử gốc, chứa khai báo không gian tên để trình phân tích XML có thể kiểm tra cú pháp. Phần tử `<module>` không chỉ là tài liệu mô tả - nó thực sự điều khiển quá trình sinh mã, xác định cấu trúc gói và cách đặt tên lớp. Một tệp có thể khai báo nhiều mô-đun (ví dụ khi mở rộng thực thể từ khung ứng dụng lõi), nhưng cách làm tốt nhất là mỗi tệp chỉ chứa một mô-đun.
 
-Entity-level attributes cung cấp metadata quan trọng ảnh hưởng đến cả generated code và database schema. Attribute `cacheable="true"` bật second-level cache (L2 cache) của Hibernate cho entity này - một quyết định quan trọng về hiệu năng (performance). Entities được cache thường là những entities "hot" (frequently accessed) và ít thay đổi như Company, Currency, Country. Việc cache Company entity có ý nghĩa lớn vì hầu hết transactions (invoices, orders, payments) đều reference đến company, nếu không cache sẽ phải query database hàng nghìn lần mỗi ngày. Tuy nhiên, caching cũng có trade-offs: cache invalidation phức tạp, tốn memory, và có thể gây stale data nếu không careful.
+Các thuộc tính cấp thực thể (entity-level attributes) cung cấp siêu dữ liệu (metadata) quan trọng, ảnh hưởng đến cả mã được sinh và lược đồ cơ sở dữ liệu. Thuộc tính `cacheable="true"` bật bộ đệm cấp hai (L2 cache) của Hibernate cho thực thể này - một quyết định quan trọng về hiệu năng. Các thực thể được đưa vào bộ đệm thường là những thực thể được truy cập thường xuyên và ít thay đổi như Company, Currency, Country. Việc đưa thực thể Company vào bộ đệm có ý nghĩa lớn vì hầu hết các giao dịch (hóa đơn, đơn hàng, thanh toán) đều tham chiếu đến công ty - nếu không dùng bộ đệm, hệ thống sẽ phải truy vấn cơ sở dữ liệu hàng nghìn lần mỗi ngày. Tuy nhiên, bộ đệm cũng có những đánh đổi: việc vô hiệu hóa bộ đệm (cache invalidation) phức tạp, tốn bộ nhớ, và có thể gây ra dữ liệu cũ (stale data) nếu không quản lý cẩn thận.
 
-**Bằng chứng từ code - Entity với caching:**
+**Bằng chứng từ mã nguồn - Thực thể có bộ đệm:**
 ```xml
 <entity name="Account" cacheable="true">
   <string name="name" title="Name" required="true"/>
@@ -58,11 +58,11 @@ Entity-level attributes cung cấp metadata quan trọng ảnh hưởng đến c
 </entity>
 ```
 
-**Giải thích code:** Entity Account được đánh dấu `cacheable="true"`, nghĩa là khi Hibernate load một Account instance, nó sẽ cache object đó trong L2 cache. Subsequent queries cho cùng Account (by primary key) sẽ hit cache thay vì database. Attribute `equalsInclude="true"` trên field `code` có ý nghĩa đặc biệt: field này sẽ được include trong generated `equals()` và `hashCode()` methods. Normally, Axelor chỉ dùng `id` field cho equals/hashCode, nhưng đôi khi business logic cần so sánh entities based on business keys (như code) thay vì technical keys (như id).
+**Giải thích mã nguồn:** Thực thể Account được đánh dấu `cacheable="true"`, nghĩa là khi Hibernate tải một đối tượng Account, nó sẽ lưu đối tượng đó vào bộ đệm cấp hai. Các truy vấn tiếp theo cho cùng Account (theo khóa chính) sẽ lấy từ bộ đệm thay vì từ cơ sở dữ liệu. Thuộc tính `equalsInclude="true"` trên trường `code` có ý nghĩa đặc biệt: trường này sẽ được đưa vào các phương thức `equals()` và `hashCode()` được sinh tự động. Thông thường, Axelor chỉ dùng trường `id` để so sánh, nhưng đôi khi logic nghiệp vụ cần so sánh các thực thể dựa trên khóa nghiệp vụ (business key) như mã code thay vì khóa kỹ thuật như id.
 
-Attribute `implements` cho phép generated entity class implement các Java interfaces, enabling polymorphism và contract-based programming. Điều này đặc biệt powerful trong business applications nơi nhiều entities share common behaviors - ví dụ: SaleOrder, PurchaseOrder, Invoice đều có giá tiền (PricedOrder interface), đều có currency (Currenciable interface), đều có shipping info (ShippableOrder interface). Bằng cách declare interfaces trong XML, generator sẽ tự động thêm interface implementations và có thể generate stub methods nếu cần.
+Thuộc tính `implements` cho phép lớp thực thể được sinh tự động triển khai (implement) các giao diện Java (interface), từ đó hỗ trợ tính đa hình (polymorphism) và lập trình dựa trên hợp đồng (contract-based programming). Điều này đặc biệt hữu ích trong các ứng dụng nghiệp vụ, nơi nhiều thực thể chia sẻ các hành vi chung - ví dụ: SaleOrder, PurchaseOrder, Invoice đều có giá tiền (giao diện PricedOrder), đều có tiền tệ (giao diện Currenciable), đều có thông tin vận chuyển (giao diện ShippableOrder). Bằng cách khai báo giao diện trong XML, bộ sinh mã sẽ tự động thêm phần triển khai giao diện vào lớp.
 
-**Bằng chứng từ code - Entity implementing multiple interfaces:**
+**Bằng chứng từ mã nguồn - Thực thể triển khai nhiều giao diện:**
 ```xml
 <entity name="SaleOrder"
   implements="com.axelor.apps.base.interfaces.PricedOrder,
@@ -73,60 +73,60 @@ Attribute `implements` cho phép generated entity class implement các Java inte
 </entity>
 ```
 
-**Giải thích code:** SaleOrder implements bốn interfaces cùng lúc. PricedOrder interface có thể define methods như `getTotalAmount()`, `getSubTotal()`; Currenciable có thể có `getCurrency()`, `getExchangeRate()`; ShippableOrder có shipping-related methods; GlobalDiscounter handle discount logic. Việc này cho phép service layer viết generic code: một method nhận `PricedOrder` có thể xử lý cả SaleOrder, PurchaseOrder, Invoice mà không cần biết concrete type. Đây là application của Interface Segregation Principle (ISP) trong SOLID principles.
+**Giải thích mã nguồn:** Thực thể SaleOrder triển khai bốn giao diện cùng lúc. Giao diện PricedOrder có thể định nghĩa các phương thức như `getTotalAmount()`, `getSubTotal()`; Currenciable có thể có `getCurrency()`, `getExchangeRate()`; ShippableOrder chứa các phương thức liên quan đến vận chuyển; GlobalDiscounter xử lý logic chiết khấu. Việc này cho phép tầng dịch vụ (service layer) viết mã tổng quát: một phương thức nhận `PricedOrder` có thể xử lý cả SaleOrder, PurchaseOrder, và Invoice mà không cần biết kiểu cụ thể. Đây là ứng dụng của Nguyên tắc Phân tách Giao diện (Interface Segregation Principle - ISP) trong bộ nguyên tắc SOLID.
 
-Attribute `table` cho phép customize database table name thay vì dùng naming convention mặc định. Axelor default convention là `{MODULE}_{ENTITY_NAME}` uppercase (ví dụ: `BASE_PRODUCT`, `SALE_SALE_ORDER`), nhưng đôi khi cần override - ví dụ: khi extend core framework entities, muốn keep existing table name để backward compatibility, hoặc khi integrate với legacy database có table names không theo convention.
+Thuộc tính `table` cho phép tùy chỉnh tên bảng trong cơ sở dữ liệu thay vì dùng quy ước đặt tên mặc định. Quy ước mặc định của Axelor là `{MODULE}_{TÊN_THỰC_THỂ}` viết hoa (ví dụ: `BASE_PRODUCT`, `SALE_SALE_ORDER`), nhưng đôi khi cần ghi đè - ví dụ khi mở rộng thực thể từ khung ứng dụng lõi và muốn giữ nguyên tên bảng để đảm bảo tương thích ngược, hoặc khi tích hợp với cơ sở dữ liệu cũ có tên bảng không theo quy ước.
 
-**Bằng chứng từ code - Custom table name:**
+**Bằng chứng từ mã nguồn - Tùy chỉnh tên bảng:**
 ```xml
 <entity name="MetaJsonField" table="META_JSON_FIELD">
-  <!-- Extends core MetaJsonField entity -->
+  <!-- Mở rộng thực thể MetaJsonField từ lõi -->
 </entity>
 ```
 
-**Giải thích code:** MetaJsonField entity được mapped to table `META_JSON_FIELD` thay vì default `BASE_META_JSON_FIELD`. Đây có thể là entity được extend từ axelor-core framework, và developer muốn giữ nguyên table name để không break existing data. Case này cũng cho thấy Axelor cho phép modules extend entities từ core framework - một pattern quan trọng cho extensibility.
+**Giải thích mã nguồn:** Thực thể MetaJsonField được ánh xạ tới bảng `META_JSON_FIELD` thay vì tên mặc định `BASE_META_JSON_FIELD`. Đây có thể là thực thể được mở rộng từ khung ứng dụng lõi, và lập trình viên muốn giữ nguyên tên bảng để không làm hỏng dữ liệu hiện có. Trường hợp này cũng cho thấy Axelor cho phép các mô-đun mở rộng thực thể từ khung lõi - một mẫu thiết kế (pattern) quan trọng cho khả năng mở rộng.
 
 ---
 
-### 2. FIELD TYPES VÀ RICH ATTRIBUTES SYSTEM
+### 2. CÁC KIỂU TRƯỜNG VÀ HỆ THỐNG THUỘC TÍNH PHONG PHÚ
 
-**File nguồn:** Tất cả domain XML files đã phân tích [Từ source code]
+**Tệp nguồn:** Tất cả tệp XML định nghĩa thực thể đã phân tích [Từ mã nguồn]
 
-Axelor cung cấp một hệ thống field types phong phú với hàng chục attributes, cho phép developers express complex business rules và UI behaviors ngay trong entity definition mà không cần viết Java code. Sức mạnh của approach này là consolidation: thay vì scatter business logic across entity classes, service classes, và view controllers, một phần đáng kể logic được centralized trong domain XML và được enforce ở cả database level (qua constraints), application level (qua validation), và UI level (qua view rendering).
+Axelor cung cấp một hệ thống kiểu trường phong phú với hàng chục thuộc tính, cho phép lập trình viên biểu diễn các quy tắc nghiệp vụ phức tạp và hành vi giao diện ngay trong định nghĩa thực thể mà không cần viết mã Java. Sức mạnh của cách tiếp cận này nằm ở sự tập trung hóa: thay vì phân tán logic nghiệp vụ khắp các lớp thực thể, lớp dịch vụ, và bộ điều khiển giao diện, một phần đáng kể logic được tập trung trong tệp XML và được áp dụng ở cả cấp cơ sở dữ liệu (qua ràng buộc - constraint), cấp ứng dụng (qua kiểm tra hợp lệ - validation), và cấp giao diện (qua hiển thị - rendering).
 
-**Primitive field types** map trực tiếp tới SQL data types: `<string>` thành VARCHAR, `<integer>` thành INTEGER, `<decimal>` thành NUMERIC với configurable precision/scale, `<boolean>` thành BOOLEAN, `<date>` thành DATE, `<datetime>` thành TIMESTAMP, `<binary>` thành BLOB. Điểm đặc biệt là Axelor đã abstraction away differences giữa database vendors - developer chỉ cần dùng `<decimal precision="20" scale="3">` và Hibernate sẽ generate đúng SQL type cho PostgreSQL (NUMERIC(20,3)), MySQL (DECIMAL(20,3)), hoặc Oracle (NUMBER(20,3)).
+**Các kiểu trường cơ bản** ánh xạ trực tiếp tới các kiểu dữ liệu SQL: `<string>` thành VARCHAR, `<integer>` thành INTEGER, `<decimal>` thành NUMERIC với độ chính xác và thang đo cấu hình được, `<boolean>` thành BOOLEAN, `<date>` thành DATE, `<datetime>` thành TIMESTAMP, `<binary>` thành BLOB. Điểm đặc biệt là Axelor đã trừu tượng hóa sự khác biệt giữa các nhà cung cấp cơ sở dữ liệu - lập trình viên chỉ cần dùng `<decimal precision="20" scale="3">` và Hibernate sẽ sinh đúng kiểu SQL cho PostgreSQL (NUMERIC(20,3)), MySQL (DECIMAL(20,3)), hoặc Oracle (NUMBER(20,3)).
 
-Field-level attributes được chia làm nhiều categories phục vụ các purposes khác nhau. **Constraint attributes** như `required="true"` (NOT NULL constraint), `unique="true"` (UNIQUE constraint), `min`/`max` (range validation for numbers) được enforce ở cả database level và application level. **UI attributes** như `readonly="true"`, `hidden="true"`, `multiline="true"` control việc render trong web interface - readonly fields vẫn writable trong code nhưng displayed as readonly trong form, hidden fields không hiển thị nhưng vẫn có trong model. **Behavior attributes** như `copy="false"` (exclude field khi duplicate record), `massUpdate="true"` (allow bulk update operation), `index="false"` (disable automatic index creation) fine-tune application behavior without code changes.
+Các thuộc tính cấp trường được chia làm nhiều nhóm phục vụ các mục đích khác nhau. **Nhóm thuộc tính ràng buộc** (constraint attributes) như `required="true"` (ràng buộc NOT NULL), `unique="true"` (ràng buộc UNIQUE), `min`/`max` (kiểm tra phạm vi cho số) được áp dụng ở cả cấp cơ sở dữ liệu và cấp ứng dụng. **Nhóm thuộc tính giao diện** (UI attributes) như `readonly="true"`, `hidden="true"`, `multiline="true"` điều khiển cách hiển thị trên giao diện web - trường chỉ đọc (readonly) vẫn có thể ghi trong mã nhưng hiển thị dạng chỉ đọc trên biểu mẫu, trường ẩn (hidden) không hiển thị nhưng vẫn tồn tại trong mô hình. **Nhóm thuộc tính hành vi** (behavior attributes) như `copy="false"` (loại trừ trường khi sao chép bản ghi), `massUpdate="true"` (cho phép cập nhật hàng loạt), `index="false"` (tắt tạo chỉ mục tự động) giúp tinh chỉnh hành vi ứng dụng mà không cần viết mã.
 
-**Bằng chứng từ code - Decimal field với precision/scale:**
+**Bằng chứng từ mã nguồn - Trường số thập phân với độ chính xác:**
 ```xml
 <decimal name="exTaxTotal" title="Total W.T." scale="3" precision="20" readonly="true"/>
 ```
 
-**Giải thích code:** Field này define một số thập phân (decimal) với precision 20 và scale 3, nghĩa là total 20 digits trong đó 3 digits là phần thập phân - có thể lưu số lớn như 99,999,999,999,999,999.999. Precision cao này cần thiết cho financial calculations nơi rounding errors có thể tích lũy thành significant discrepancies. Attribute `readonly="true"` cho biết đây là computed field (tính toán từ order lines) không được user nhập trực tiếp - UI sẽ render as disabled input, và application code sẽ ignore attempts to set value trực tiếp. Title "Total W.T." là "Without Tax" (Total chưa thuế), sẽ được dùng làm label trong UI.
+**Giải thích mã nguồn:** Trường này định nghĩa một số thập phân với độ chính xác 20 và thang đo 3, nghĩa là tổng cộng 20 chữ số trong đó 3 chữ số là phần thập phân - có thể lưu số lớn như 99.999.999.999.999.999,999. Độ chính xác cao này cần thiết cho các phép tính tài chính, nơi sai số làm tròn có thể tích lũy thành chênh lệch đáng kể. Thuộc tính `readonly="true"` cho biết đây là trường được tính toán (từ các dòng đơn hàng), người dùng không nhập trực tiếp - giao diện sẽ hiển thị dạng ô nhập bị vô hiệu hóa. Tiêu đề "Total W.T." là viết tắt của "Without Tax" (Tổng chưa thuế), sẽ được dùng làm nhãn trên giao diện.
 
-Attribute đặc biệt `selection` biến một integer field thành enum-like field, tham chiếu đến một selection definition (có thể trong XML riêng hoặc trong database). Đây là cách Axelor implement enums mà vẫn maintain flexibility - thay vì hard-code enum trong Java code (khó thay đổi), selections có thể được configure hoặc even managed qua UI trong Axelor Studio. Selection values thường là integers để efficient storage và indexing, nhưng có display labels cho từng value.
+Thuộc tính đặc biệt `selection` biến một trường số nguyên thành trường có dạng liệt kê (enum-like), tham chiếu đến một định nghĩa danh sách lựa chọn (có thể trong tệp XML riêng hoặc trong cơ sở dữ liệu). Đây là cách Axelor triển khai kiểu liệt kê mà vẫn giữ được tính linh hoạt - thay vì mã hóa cứng (hardcode) kiểu liệt kê trong mã Java (khó thay đổi), danh sách lựa chọn có thể được cấu hình hoặc thậm chí quản lý qua giao diện trong Axelor Studio. Giá trị lựa chọn thường là số nguyên để lưu trữ và đánh chỉ mục hiệu quả, nhưng có nhãn hiển thị cho từng giá trị.
 
-**Bằng chứng từ code - Integer field với selection (enum-like):**
+**Bằng chứng từ mã nguồn - Trường số nguyên với danh sách lựa chọn:**
 ```xml
 <integer name="statusSelect" title="Status"
   selection="sale.order.status.select" readonly="true"/>
 ```
 
-**Giải thích code:** Field `statusSelect` là integer nhưng hành xử như enum. Selection key `"sale.order.status.select"` reference đến một selection definition có thể chứa values như `{1: "Draft", 2: "Confirmed", 3: "Completed", 4: "Cancelled"}`. Trong database lưu integer (1,2,3,4) nhưng UI hiển thị human-readable labels. Readonly attribute nghĩa là status changes phải qua business logic (workflow methods) không phải direct field update, preventing invalid state transitions.
+**Giải thích mã nguồn:** Trường `statusSelect` là số nguyên nhưng hoạt động như kiểu liệt kê. Khóa danh sách `"sale.order.status.select"` tham chiếu đến một định nghĩa có thể chứa các giá trị như `{1: "Bản nháp", 2: "Đã xác nhận", 3: "Hoàn thành", 4: "Đã hủy"}`. Trong cơ sở dữ liệu lưu số nguyên (1, 2, 3, 4) nhưng giao diện hiển thị nhãn dễ đọc. Thuộc tính chỉ đọc nghĩa là việc thay đổi trạng thái phải thông qua logic nghiệp vụ (các phương thức quy trình làm việc), không phải cập nhật trực tiếp trường, ngăn chặn các chuyển trạng thái không hợp lệ.
 
-**JSON fields** là một innovation quan trọng của Axelor để support dynamic/custom fields. Với attribute `json="true"`, một string field sẽ store JSON-serialized data thay vì plain text. Điều này cho phép Axelor Studio tạo custom fields mà không cần ALTER TABLE statements - tất cả custom fields serialized thành JSON và lưu trong one column duy nhất. Trade-off rõ ràng: extreme flexibility (có thể add/remove custom fields without downtime) versus query performance (không thể index fields inside JSON, không thể efficiently filter/sort by custom fields). Use case chính là khi business users cần frequently add custom fields mà không muốn involve developers.
+**Trường JSON** là một cải tiến quan trọng của Axelor để hỗ trợ các trường tùy chỉnh/động. Với thuộc tính `json="true"`, một trường chuỗi sẽ lưu dữ liệu được nối tiếp hóa (serialize) dạng JSON thay vì văn bản thuần. Điều này cho phép Axelor Studio tạo trường tùy chỉnh mà không cần câu lệnh ALTER TABLE - tất cả trường tùy chỉnh được nối tiếp hóa thành JSON và lưu trong một cột duy nhất. Đánh đổi rõ ràng: tính linh hoạt cực cao (có thể thêm/xóa trường tùy chỉnh mà không cần dừng hệ thống) so với hiệu năng truy vấn (không thể đánh chỉ mục các trường bên trong JSON, không thể lọc/sắp xếp hiệu quả theo trường tùy chỉnh).
 
-**Bằng chứng từ code - JSON field cho custom attributes:**
+**Bằng chứng từ mã nguồn - Trường JSON cho thuộc tính tùy chỉnh:**
 ```xml
 <string name="partnerAttrs" title="Fields" json="true"/>
 ```
 
-**Giải thích code:** Field `partnerAttrs` lưu JSON string chứa custom attributes của Partner entity. Trong database, column có thể chứa value như `{"customField1": "value", "vatExempt": true, "loyaltyPoints": 1500}`. Axelor framework có serialization/deserialization mechanism để convert giữa JSON string và Java Map objects. Business users qua Axelor Studio có thể define custom fields ("VAT Exempt?", "Loyalty Points") và chúng được lưu trong JSON object này. Limitation: không thể query `SELECT * FROM partner WHERE partnerAttrs->>'vatExempt' = 'true'` efficiently (mặc dù PostgreSQL 9.4+ support JSON operators, nhưng performance không tốt và không có indexes).
+**Giải thích mã nguồn:** Trường `partnerAttrs` lưu chuỗi JSON chứa các thuộc tính tùy chỉnh của thực thể Partner. Trong cơ sở dữ liệu, cột có thể chứa giá trị như `{"customField1": "value", "vatExempt": true, "loyaltyPoints": 1500}`. Khung ứng dụng Axelor có cơ chế nối tiếp hóa/giải nối tiếp hóa (serialization/deserialization) để chuyển đổi giữa chuỗi JSON và đối tượng Map trong Java. Người dùng nghiệp vụ thông qua Axelor Studio có thể định nghĩa trường tùy chỉnh ("Miễn thuế VAT?", "Điểm thưởng") và chúng được lưu trong đối tượng JSON này. Hạn chế: không thể truy vấn hiệu quả kiểu `SELECT * FROM partner WHERE partnerAttrs->>'vatExempt' = 'true'` (mặc dù PostgreSQL 9.4 trở lên hỗ trợ toán tử JSON, nhưng hiệu năng kém và không có chỉ mục).
 
-**Transient fields** (với attribute `transient="true"`) là computed fields không được persist vào database. Chúng được tính toán on-the-fly từ các fields khác hoặc từ business logic. Use case: display-only fields như `fullName = firstName + " " + lastName`, hoặc derived values như `age = today - birthDate`. Transient fields không tốn database storage và không có stale data issues, nhưng không thể query/filter by transient fields.
+**Trường tạm thời** (transient) với thuộc tính `transient="true"` là các trường được tính toán, không được lưu vào cơ sở dữ liệu. Chúng được tính toán tức thời từ các trường khác hoặc từ logic nghiệp vụ. Trường hợp sử dụng: các trường chỉ hiển thị như `fullName = firstName + " " + lastName`, hoặc giá trị dẫn xuất (derived) như `age = ngàyHiệnTại - ngàySinh`. Trường tạm thời không tốn dung lượng cơ sở dữ liệu và không gặp vấn đề dữ liệu cũ, nhưng không thể truy vấn hay lọc theo trường tạm thời.
 
-**Bằng chứng từ code - Transient computed field:**
+**Bằng chứng từ mã nguồn - Trường tạm thời được tính toán:**
 ```xml
 <many-to-one name="companyCurrency" transient="true"
   ref="com.axelor.apps.base.db.Currency">
@@ -136,11 +136,11 @@ Attribute đặc biệt `selection` biến một integer field thành enum-like 
 </many-to-one>
 ```
 
-**Giải thích code:** Field `companyCurrency` là many-to-one relationship với Currency entity nhưng không có foreign key column trong database (vì transient). CDATA block chứa Java/Groovy expression để compute value: nếu có company thì return company's currency, otherwise null. Expression này executed mỗi khi field được accessed (getter called). Use case ở đây là convenience: thay vì viết `order.getCompany().getCurrency()` trong code (với risk NullPointerException nếu company null), có thể viết `order.getCompanyCurrency()` và null check được handle sẵn.
+**Giải thích mã nguồn:** Trường `companyCurrency` là quan hệ nhiều-một (many-to-one) với thực thể Currency nhưng không có cột khóa ngoại trong cơ sở dữ liệu (vì là trường tạm thời). Khối CDATA chứa biểu thức Java/Groovy để tính giá trị: nếu có công ty thì trả về đơn vị tiền tệ của công ty đó, ngược lại trả về null. Biểu thức này được thực thi mỗi khi trường được truy cập (khi gọi phương thức getter). Trường hợp sử dụng ở đây là tiện lợi: thay vì viết `order.getCompany().getCurrency()` trong mã (có nguy cơ lỗi NullPointerException nếu company là null), có thể viết `order.getCompanyCurrency()` và việc kiểm tra null đã được xử lý sẵn.
 
-**Formula fields** (với attribute `formula="true"`) là database-level computed fields - chúng computed via SQL subquery thay vì Java code. Hibernate sẽ generate SQL với subquery trong SELECT statement để fetch formula field value. Use case chính là aggregations: tính tổng, đếm số lượng từ related entities. Formula fields có performance trade-off: không tốn storage (không có column), always fresh (không có stale data), nhưng mỗi query phải execute subquery (có thể chậm nếu subquery phức tạp).
+**Trường công thức** (formula) với thuộc tính `formula="true"` là các trường được tính toán ở cấp cơ sở dữ liệu thông qua truy vấn con (subquery) trong SQL. Hibernate sẽ sinh câu SQL có truy vấn con trong mệnh đề SELECT để lấy giá trị trường công thức. Trường hợp sử dụng chính là các phép tổng hợp (aggregation): tính tổng, đếm số lượng từ các thực thể liên quan. Trường công thức có đánh đổi về hiệu năng: không tốn dung lượng lưu trữ (không có cột), luôn cập nhật (không có dữ liệu cũ), nhưng mỗi truy vấn phải thực thi truy vấn con (có thể chậm nếu truy vấn con phức tạp).
 
-**Bằng chứng từ code - Formula field với SQL subquery:**
+**Bằng chứng từ mã nguồn - Trường công thức với truy vấn con SQL:**
 ```xml
 <decimal name="exTaxTotalOrdered" title="Total ordered W.T." formula="true"
   precision="20" scale="10">
@@ -151,21 +151,21 @@ Attribute đặc biệt `selection` biến một integer field thành enum-like 
 </decimal>
 ```
 
-**Giải thích code:** Field `exTaxTotalOrdered` compute tổng amount của tất cả orders originated từ quotation này. SQL subquery sử dụng correlation: `WHERE self.origin_sale_quotation = id` - `id` here references primary key của quotation hiện tại (outer query). Hibernate sẽ generate SQL như: `SELECT q.*, (SELECT SUM(o.ex_tax_total) FROM sale_sale_order o WHERE o.origin_sale_quotation = q.id) AS exTaxTotalOrdered FROM sale_quotation q WHERE ...`. Subquery executed cho mỗi row, có thể slow nếu result set lớn. Alternative approach là eager compute và cache value, nhưng then phải handle cache invalidation khi child orders change.
+**Giải thích mã nguồn:** Trường `exTaxTotalOrdered` tính tổng giá trị của tất cả đơn hàng bắt nguồn từ báo giá hiện tại. Truy vấn con SQL sử dụng tương quan: `WHERE self.origin_sale_quotation = id` - `id` ở đây tham chiếu đến khóa chính của báo giá hiện tại (truy vấn ngoài). Hibernate sẽ sinh SQL dạng: `SELECT q.*, (SELECT SUM(o.ex_tax_total) FROM sale_sale_order o WHERE o.origin_sale_quotation = q.id) AS exTaxTotalOrdered FROM sale_quotation q WHERE ...`. Truy vấn con được thực thi cho mỗi dòng, có thể chậm nếu tập kết quả lớn. Cách tiếp cận thay thế là tính toán trước và lưu giá trị vào bộ đệm, nhưng khi đó phải xử lý việc vô hiệu hóa bộ đệm khi các đơn hàng con thay đổi.
 
-Attribute `namecolumn="true"` đánh dấu field này là "display name" của entity, sẽ được dùng trong `toString()` method và khi hiển thị entity trong dropdowns/references. Combined với `search` attribute (comma-separated field names), Axelor biết phải search trong những fields nào khi user type vào search box. Ví dụ: Address entity có `fullName` là namecolumn và search trong `addressL2, addressL3, addressL4, addressL5, addressL6` - khi user search "New York", system sẽ search across all these fields.
+Thuộc tính `namecolumn="true"` đánh dấu trường này là "tên hiển thị" của thực thể, sẽ được dùng trong phương thức `toString()` và khi hiển thị thực thể trong danh sách thả xuống (dropdown) hoặc tham chiếu. Kết hợp với thuộc tính `search` (danh sách tên trường phân cách bằng dấu phẩy), Axelor biết phải tìm kiếm trong những trường nào khi người dùng gõ vào ô tìm kiếm.
 
-**Bằng chứng từ code - Namecolumn với search fields:**
+**Bằng chứng từ mã nguồn - Cột tên với các trường tìm kiếm:**
 ```xml
 <string name="fullName" namecolumn="true"
   search="addressL2,addressL3,addressL4,addressL5,addressL6" title="Address"/>
 ```
 
-**Giải thích code:** Field `fullName` là display name của Address entity. Khi user select address trong dropdown, họ sẽ thấy fullName value ("123 Main St, New York, NY 10001") thay vì technical ID (12345). Attribute `search` define rằng khi user search addresses, system phải search trong các fields: addressL2 (line 2), addressL3 (line 3), etc. Axelor sẽ generate query như: `WHERE fullName LIKE '%keyword%' OR addressL2 LIKE '%keyword%' OR addressL3 LIKE '%keyword%' ...`. Điều này crucial cho user experience - users không nhớ exact fullName nhưng có thể nhớ một fragment ở bất kỳ address line nào.
+**Giải thích mã nguồn:** Trường `fullName` là tên hiển thị của thực thể Address. Khi người dùng chọn địa chỉ trong danh sách thả xuống, họ sẽ thấy giá trị fullName ("123 Main St, New York, NY 10001") thay vì mã kỹ thuật (12345). Thuộc tính `search` định nghĩa rằng khi người dùng tìm kiếm địa chỉ, hệ thống phải tìm trong các trường: addressL2 (dòng 2), addressL3 (dòng 3), v.v. Axelor sẽ sinh truy vấn dạng: `WHERE fullName LIKE '%từkhóa%' OR addressL2 LIKE '%từkhóa%' OR addressL3 LIKE '%từkhóa%' ...`. Điều này quan trọng cho trải nghiệm người dùng - người dùng không nhớ chính xác fullName nhưng có thể nhớ một phần ở bất kỳ dòng địa chỉ nào.
 
-Một pattern thú vị là **computed namecolumn** - namecolumn field có thể là computed field với CDATA expression thay vì static field. Điều này cho phép construct display names dynamically với business logic, ví dụ: include company code trong display name nếu multi-company, exclude company code nếu single-company.
+Một mẫu thiết kế thú vị là **cột tên được tính toán** - trường cột tên có thể là trường được tính toán với biểu thức CDATA thay vì trường tĩnh. Điều này cho phép xây dựng tên hiển thị linh hoạt với logic nghiệp vụ, ví dụ: bao gồm mã công ty trong tên hiển thị nếu hệ thống đa công ty, loại bỏ mã công ty nếu chỉ có một công ty.
 
-**Bằng chứng từ code - Computed namecolumn với conditional logic:**
+**Bằng chứng từ mã nguồn - Cột tên được tính toán với logic điều kiện:**
 ```xml
 <string name="label" namecolumn="true" search="code,name,company" title="Full name">
   <![CDATA[
@@ -177,155 +177,142 @@ Một pattern thú vị là **computed namecolumn** - namecolumn field có thể
 </string>
 ```
 
-**Giải thích code:** Field `label` computed dynamically based on whether entity has company association. Nếu có company, label format là `CODE_COMPANYCODE - Name` (ví dụ: `PROD001_NYC - Laptop`), nếu không có company thì đơn giản hơn `CODE - Name` (ví dụ: `PROD001 - Laptop`). Pattern này hữu ích trong multi-company environments nơi cùng code có thể exist across different companies - include company code trong display name helps disambiguate. CDATA block chứa Java/Groovy code sẽ được generated thành getter method body.
+**Giải thích mã nguồn:** Trường `label` được tính toán linh hoạt dựa trên việc thực thể có liên kết với công ty hay không. Nếu có công ty, định dạng nhãn là `MÃ_MÃCÔNGTY - Tên` (ví dụ: `PROD001_NYC - Laptop`), nếu không có thì đơn giản hơn `MÃ - Tên` (ví dụ: `PROD001 - Laptop`). Mẫu thiết kế này hữu ích trong môi trường đa công ty, nơi cùng một mã có thể tồn tại ở các công ty khác nhau - việc đưa mã công ty vào tên hiển thị giúp phân biệt. Khối CDATA chứa mã Java/Groovy sẽ được sinh thành thân phương thức getter.
 
 ---
 
-### 3. RELATIONSHIP MAPPING VÀ FOREIGN KEY STRATEGIES
+### 3. ÁNH XẠ QUAN HỆ VÀ CHIẾN LƯỢC KHÓA NGOẠI
 
-**File nguồn:** SaleOrder.xml, Partner.xml, Account.xml, Company.xml [Từ source code]
+**Tệp nguồn:** SaleOrder.xml, Partner.xml, Account.xml, Company.xml [Từ mã nguồn]
 
-Axelor hỗ trợ đầy đủ bốn loại relationships mà JPA định nghĩa: many-to-one (foreign key), one-to-many (reverse relationship), many-to-many (join table), và one-to-one (shared primary key hoặc unique foreign key). Mỗi relationship type có trade-offs riêng về database normalization, query performance, và memory usage. Hiểu rõ khi nào dùng relationship nào là fundamental cho database design.
+Axelor hỗ trợ đầy đủ bốn loại quan hệ mà JPA định nghĩa: nhiều-một (many-to-one, sử dụng khóa ngoại), một-nhiều (one-to-many, quan hệ ngược), nhiều-nhiều (many-to-many, bảng trung gian), và một-một (one-to-one, khóa ngoại duy nhất hoặc khóa chính chia sẻ). Mỗi loại quan hệ có những đánh đổi riêng về chuẩn hóa cơ sở dữ liệu (normalization), hiệu năng truy vấn, và mức sử dụng bộ nhớ. Hiểu rõ khi nào dùng loại quan hệ nào là nền tảng cho thiết kế cơ sở dữ liệu.
 
-#### 3.1. Many-to-One: Foreign Key Relationships
+#### 3.1. Nhiều-Một (Many-to-One): Quan hệ Khóa Ngoại
 
-Many-to-one là relationship type phổ biến nhất, represent belongs-to associations: một SaleOrder belongs to một Company, một Employee belongs to một Department. Database implementation đơn giản: foreign key column trong "many" side table pointing to primary key của "one" side table. Hibernate default generate lazy-loaded proxies cho many-to-one fields - khi load entity, related entity không được load ngay (chỉ có ID), only when field được accessed (proxy sẽ trigger database query). Lazy loading tránh N+1 query problem trong một số scenarios nhưng có thể cause LazyInitializationException nếu entity đã detached.
+Nhiều-một là loại quan hệ phổ biến nhất, biểu diễn mối liên kết "thuộc về": một đơn hàng bán hàng (SaleOrder) thuộc về một công ty (Company), một nhân viên (Employee) thuộc về một phòng ban (Department). Cách triển khai trong cơ sở dữ liệu đơn giản: cột khóa ngoại ở bảng phía "nhiều" trỏ đến khóa chính của bảng phía "một". Hibernate mặc định sinh các đối tượng ủy nhiệm tải lười (lazy-loaded proxy) cho trường nhiều-một - khi tải thực thể, thực thể liên quan không được tải ngay (chỉ có ID), chỉ khi trường được truy cập thì đối tượng ủy nhiệm mới kích hoạt truy vấn cơ sở dữ liệu.
 
-**Bằng chứng từ code - Basic many-to-one relationships:**
+**Bằng chứng từ mã nguồn - Các quan hệ nhiều-một cơ bản:**
 ```xml
-<!-- Simple many-to-one -->
+<!-- Nhiều-một đơn giản -->
 <many-to-one name="company" ref="com.axelor.apps.base.db.Company"
   required="true" title="Company"/>
 
-<!-- Many-to-one với custom column name -->
+<!-- Nhiều-một với tên cột tùy chỉnh -->
 <many-to-one name="user" column="user_id" ref="com.axelor.auth.db.User"
   title="Assigned to" index="false" massUpdate="true"/>
 
-<!-- Self-referencing many-to-one (tree structure) -->
+<!-- Nhiều-một tự tham chiếu (cấu trúc cây) -->
 <many-to-one name="parentAccount" ref="Account" title="Parent Account"
   massUpdate="true"/>
 ```
 
-**Giải thích code:** Relationship đầu tiên là straightforward: mỗi entity phải belong to một company (`required="true"`). Generated SQL sẽ có column `company` (hoặc `company_id` depending on conventions) với FOREIGN KEY constraint. Attribute `ref="com.axelor.apps.base.db.Company"` specify full qualified class name của target entity - Axelor generator cần này để generate correct Java type.
+**Giải thích mã nguồn:** Quan hệ đầu tiên rất đơn giản: mỗi thực thể phải thuộc về một công ty (`required="true"`). Câu SQL được sinh sẽ có cột `company` (hoặc `company_id` tùy theo quy ước) với ràng buộc FOREIGN KEY. Thuộc tính `ref="com.axelor.apps.base.db.Company"` chỉ định tên đầy đủ của lớp thực thể đích - bộ sinh mã cần thông tin này để sinh đúng kiểu dữ liệu Java.
 
-Relationship thứ hai customize column name via `column="user_id"` (thay vì default `user`). Attribute `index="false"` disable automatic index creation - normally Hibernate tự động tạo index cho foreign keys vì queries often filter/join by FKs, nhưng đôi khi table quá nhỏ hoặc FK never được query riêng lẻ thì không cần index (save space và insert performance). Attribute `massUpdate="true"` cho phép bulk reassignment: admin có thể select nhiều records và assign hết cho user khác cùng lúc, useful cho scenario như "reassign all John's tasks to Mary when John leaves".
+Quan hệ thứ hai tùy chỉnh tên cột qua `column="user_id"` (thay vì mặc định `user`). Thuộc tính `index="false"` tắt việc tạo chỉ mục tự động - thông thường Hibernate tự động tạo chỉ mục cho khóa ngoại vì các truy vấn thường lọc/nối theo khóa ngoại, nhưng đôi khi bảng quá nhỏ hoặc khóa ngoại không bao giờ được truy vấn riêng lẻ thì không cần chỉ mục (tiết kiệm dung lượng và cải thiện tốc độ chèn). Thuộc tính `massUpdate="true"` cho phép gán lại hàng loạt: quản trị viên có thể chọn nhiều bản ghi và gán hết cho người dùng khác cùng lúc, hữu ích cho tình huống như "gán lại tất cả công việc của A cho B khi A nghỉ việc".
 
-Self-referencing relationship (`parentAccount`) implement tree structures trong SQL - cho phép build account hierarchy như Chart of Accounts trong accounting: Assets (parent) → Current Assets (child) → Cash (grandchild). Implementation đơn giản nhưng querying trees phức tạp: để get entire subtree cần recursive queries (Common Table Expressions trong PostgreSQL) hoặc iterative loading (nhiều queries). Axelor likely không có built-in tree query utilities, developers phải implement manually.
+Quan hệ tự tham chiếu (`parentAccount`) triển khai cấu trúc cây trong SQL - cho phép xây dựng hệ thống phân cấp tài khoản như Hệ thống tài khoản kế toán (Chart of Accounts): Tài sản (cha) → Tài sản ngắn hạn (con) → Tiền mặt (cháu). Cách triển khai đơn giản nhưng việc truy vấn cây phức tạp: để lấy toàn bộ cây con cần truy vấn đệ quy (Biểu thức Bảng Chung - Common Table Expressions trong PostgreSQL) hoặc tải lặp lại (nhiều truy vấn).
 
-**Database schema generated:** [Suy luận từ JPA patterns]
-- Column name: `{field_name}` hoặc custom `column` value
-- Column type: BIGINT (matching primary key type của target entity)
-- Constraints: FOREIGN KEY, NOT NULL nếu `required="true"`
-- Index: Automatic index unless `index="false"`
+#### 3.2. Một-Nhiều (One-to-Many): Quan hệ Tập hợp
 
-#### 3.2. One-to-Many: Collection Relationships
+Một-nhiều là mặt ngược của quan hệ nhiều-một, không tạo cột mới mà chỉ ánh xạ tới khóa ngoại đã có trong thực thể liên quan. Ví dụ: Công ty có nhiều Nhân viên (một-nhiều) là mặt ngược của Nhân viên thuộc về Công ty (nhiều-một). Thuộc tính `mappedBy` chỉ định tên trường ở phía "nhiều" chứa khóa ngoại - đây là "phía sở hữu" (owning side) của quan hệ. Hibernate chỉ lưu các thay đổi từ phía sở hữu; thay đổi ở phía không sở hữu (một-nhiều) chỉ ảnh hưởng tập hợp trong bộ nhớ, không kích hoạt câu lệnh SQL cập nhật trừ khi đã cấu hình lan truyền (cascade).
 
-One-to-many là reverse side của many-to-one relationship, không tạo column mới mà chỉ map to existing foreign key trong related entity. Ví dụ: Company has many Employees (one-to-many) inverse của Employee belongs to Company (many-to-one). Attribute `mappedBy` chỉ định field name ở "many" side chứa foreign key - đây là "owning side" của relationship. Hibernate chỉ persist changes từ owning side; changes ở non-owning side (one-to-many) chỉ affect in-memory collection không trigger SQL updates unless cascades configured.
+Các tập hợp một-nhiều mặc định được tải lười vì việc tải cả tập hợp có thể rất tốn kém (ví dụ: một Công ty có 10.000 nhân viên thì tải hết sẽ gây tràn bộ nhớ - OutOfMemoryError). Thuộc tính `orderBy` chỉ định thứ tự sắp xếp mặc định cho tập hợp - có thể tăng dần (`"sequence"`) hoặc giảm dần (`"-blockingToDate"` với dấu trừ phía trước).
 
-One-to-many collections default lazy-loaded vì load cả collection có thể expensive (ví dụ: một Company có 10,000 employees thì load hết sẽ OutOfMemoryError). Collections represented as proxied Lists/Sets mà chỉ fetch khi accessed. Attribute `orderBy` specify default ordering cho collection - có thể tăng dần (`"sequence"`) hoặc giảm dần (`"-blockingToDate"` với minus sign prefix).
-
-**Bằng chứng từ code - One-to-many relationships:**
+**Bằng chứng từ mã nguồn - Các quan hệ một-nhiều:**
 ```xml
-<!-- Basic one-to-many with ordered collection -->
+<!-- Một-nhiều cơ bản với tập hợp có thứ tự -->
 <one-to-many name="saleOrderLineList" ref="com.axelor.apps.sale.db.SaleOrderLine"
   mappedBy="saleOrder" title="Sale order lines" orderBy="sequence"/>
 
-<!-- One-to-many với descending order -->
+<!-- Một-nhiều với thứ tự giảm dần -->
 <one-to-many name="blockingList" ref="com.axelor.apps.base.db.Blocking"
   title="Blocking follow-up List" mappedBy="partner" orderBy="-blockingToDate"/>
 ```
 
-**Giải thích code:** Collection `saleOrderLineList` contains all order lines belonging to this sale order. Attribute `mappedBy="saleOrder"` indicates SaleOrderLine entity has many-to-one field named `saleOrder` pointing back to SaleOrder. Collection ordered by `sequence` field (ascending) - order lines typically có sequence number 1, 2, 3,... để maintain user-defined ordering. Without orderBy, collection order would be database-dependent (không deterministic), causing subtle bugs.
+**Giải thích mã nguồn:** Tập hợp `saleOrderLineList` chứa tất cả dòng đơn hàng thuộc về đơn hàng bán hàng này. Thuộc tính `mappedBy="saleOrder"` cho biết thực thể SaleOrderLine có trường nhiều-một tên `saleOrder` trỏ ngược về SaleOrder. Tập hợp được sắp xếp theo trường `sequence` (tăng dần) - các dòng đơn hàng thường có số thứ tự 1, 2, 3... để duy trì thứ tự do người dùng định nghĩa. Nếu không có orderBy, thứ tự tập hợp sẽ phụ thuộc vào cơ sở dữ liệu (không xác định), gây ra các lỗi khó phát hiện.
 
-Collection `blockingList` demonstrates descending order (`"-blockingToDate"`). Blocking records likely represent credit holds/blocks, và business wants see most recent blocks first (latest blockingToDate at top). Minus sign prefix is Axelor convention cho descending sort, similar to Django ORM. Generated SQL sẽ có `ORDER BY blockingToDate DESC`.
+Tập hợp `blockingList` minh họa thứ tự giảm dần (`"-blockingToDate"`). Các bản ghi chặn (blocking) có thể đại diện cho việc tạm ngưng tín dụng, và nghiệp vụ muốn hiển thị các lần chặn gần nhất trước (ngày chặn mới nhất ở trên cùng). Dấu trừ phía trước là quy ước của Axelor cho sắp xếp giảm dần, tương tự như Django ORM. Câu SQL được sinh sẽ có `ORDER BY blockingToDate DESC`.
 
-**Performance consideration:** [Suy luận về N+1 problem]
-Khi query một collection of entities, accessing one-to-many collections có thể trigger N+1 query problem: 1 query fetch N entities, then N additional queries fetch each entity's collection. Ví dụ: `SELECT * FROM company` (1 query) → for each company, `SELECT * FROM employee WHERE company_id = ?` (N queries). Solution là join fetch hoặc batch fetching, nhưng Axelor domain XML không expose cấu hình này - developers phải handle ở service layer.
+**Lưu ý về hiệu năng:** [Suy luận về vấn đề N+1]
+Khi truy vấn một tập hợp thực thể, việc truy cập các tập hợp một-nhiều có thể gây ra vấn đề truy vấn N+1: 1 truy vấn lấy N thực thể, sau đó N truy vấn bổ sung lấy tập hợp của mỗi thực thể. Ví dụ: `SELECT * FROM company` (1 truy vấn) → với mỗi công ty, `SELECT * FROM employee WHERE company_id = ?` (N truy vấn). Giải pháp là nối tải trước (join fetch) hoặc tải theo lô (batch fetching), nhưng tệp XML định nghĩa thực thể của Axelor không cung cấp cấu hình này - lập trình viên phải xử lý ở tầng dịch vụ.
 
-#### 3.3. Many-to-Many: Join Table Relationships
+#### 3.3. Nhiều-Nhiều (Many-to-Many): Quan hệ Bảng Trung Gian
 
-Many-to-many implement relationships where both sides có nhiều entities - ví dụ: một Product có nhiều Categories, một Category chứa nhiều Products. Database implementation requires join table (junction table) với hai foreign keys. Hibernate auto-generate join table name theo convention `{entity1}_{field_name}` - ví dụ: field `batchSet` trong Partner entity sẽ tạo table `partner_batch_set` với columns `partner_id` và `batch_id`.
+Nhiều-nhiều triển khai các quan hệ mà cả hai phía đều có nhiều thực thể - ví dụ: một Sản phẩm có nhiều Danh mục, một Danh mục chứa nhiều Sản phẩm. Cách triển khai trong cơ sở dữ liệu yêu cầu bảng trung gian (junction table) với hai khóa ngoại. Hibernate tự động sinh tên bảng trung gian theo quy ước `{thực_thể}_{tên_trường}` - ví dụ: trường `batchSet` trong thực thể Partner sẽ tạo bảng `partner_batch_set` với các cột `partner_id` và `batch_id`.
 
-Many-to-many có caveat quan trọng: không thể store additional data on the relationship itself. Nếu cần attributes trên association (ví dụ: Product-Category với `displayOrder` attribute), phải convert sang two many-to-one relationships với intermediate entity (ProductCategory). Axelor domain XML không có syntax cho association classes, developers phải manually create intermediate entities.
+Nhiều-nhiều có một hạn chế quan trọng: không thể lưu dữ liệu bổ sung trên chính quan hệ. Nếu cần thuộc tính trên liên kết (ví dụ: Product-Category với thuộc tính `displayOrder`), phải chuyển sang hai quan hệ nhiều-một với thực thể trung gian (ProductCategory). Tệp XML định nghĩa thực thể của Axelor không có cú pháp cho lớp liên kết (association class), lập trình viên phải tự tạo thực thể trung gian.
 
-**Bằng chứng từ code - Many-to-many relationships:**
+**Bằng chứng từ mã nguồn - Các quan hệ nhiều-nhiều:**
 ```xml
-<!-- Basic many-to-many -->
+<!-- Nhiều-nhiều cơ bản -->
 <many-to-many name="batchSet" ref="com.axelor.apps.base.db.Batch" title="Batchs"/>
 
-<!-- Self-referencing many-to-many (contacts network) -->
+<!-- Nhiều-nhiều tự tham chiếu (mạng lưới liên hệ) -->
 <many-to-many name="contactPartnerSet" ref="com.axelor.apps.base.db.Partner"
   title="Contacts"/>
 
-<!-- Business domain many-to-many -->
+<!-- Nhiều-nhiều trong miền nghiệp vụ -->
 <many-to-many name="compatibleAccountSet"
   ref="com.axelor.apps.account.db.Account" title="Compatible Accounts"/>
 ```
 
-**Giải thích code:** Field `batchSet` creates many-to-many giữa current entity và Batch entities. Join table `{entity}_batch_set` sẽ có columns `{entity}_id` và `batch_id` cùng với composite primary key trên cả hai columns (prevent duplicates). Hibernate manage join table automatically - khi add/remove items from Set, Hibernate insert/delete rows trong join table.
+**Giải thích mã nguồn:** Trường `batchSet` tạo quan hệ nhiều-nhiều giữa thực thể hiện tại và các thực thể Batch. Bảng trung gian `{thực_thể}_batch_set` sẽ có các cột `{thực_thể}_id` và `batch_id` cùng với khóa chính tổ hợp (composite primary key) trên cả hai cột để ngăn trùng lặp. Hibernate quản lý bảng trung gian tự động - khi thêm/xóa phần tử từ tập hợp, Hibernate chèn/xóa dòng trong bảng trung gian.
 
-Self-referencing many-to-many (`contactPartnerSet`) implement social network-like relationships: một Partner có thể có nhiều contact Partners, và mỗi contact Partner cũng có their own contacts. Join table `partner_contact_partner_set` map Partners to Partners. Relationship này typically symmetric (nếu A contacts B thì B contacts A) nhưng implementation ở đây không enforce symmetry - application logic must handle.
+Quan hệ nhiều-nhiều tự tham chiếu (`contactPartnerSet`) triển khai mối quan hệ kiểu mạng xã hội: một Đối tác (Partner) có thể có nhiều Đối tác liên hệ, và mỗi Đối tác liên hệ cũng có các liên hệ riêng. Bảng trung gian `partner_contact_partner_set` ánh xạ Đối tác đến Đối tác. Quan hệ này thường đối xứng (nếu A liên hệ B thì B liên hệ A) nhưng cách triển khai ở đây không bắt buộc tính đối xứng - logic ứng dụng phải tự xử lý.
 
-Field `compatibleAccountSet` demonstrates domain-specific many-to-many. Trong accounting, một Account có thể compatible với một set of other Accounts cho certain operations (ví dụ: transfer, reconciliation). Relationship này asymmetric: Account A compatible with B không nghĩa là B compatible with A. Business rules cho compatibility likely enforced ở service layer không phải database constraints.
+Trường `compatibleAccountSet` minh họa quan hệ nhiều-nhiều trong miền nghiệp vụ cụ thể. Trong kế toán, một Tài khoản có thể tương thích với một tập hợp Tài khoản khác cho một số thao tác nhất định (ví dụ: chuyển khoản, đối chiếu). Quan hệ này không đối xứng: Tài khoản A tương thích với B không có nghĩa B tương thích với A. Các quy tắc nghiệp vụ về tính tương thích có thể được áp dụng ở tầng dịch vụ thay vì ở ràng buộc cơ sở dữ liệu.
 
-**Database schema generated:** [Từ source code - Hibernate default behavior]
-- Join table: `{entity_lowercase}_{field_name_lowercase}`
-- Columns: `{entity_lowercase}_id`, `{target_entity_lowercase}_id`
-- Primary key: Composite PK trên cả hai columns
-- Foreign keys: FK to both entities
-- Indexes: Automatic indexes on both columns
+#### 3.4. Một-Một (One-to-One): Quan hệ Duy nhất
 
-#### 3.4. One-to-One: Unique Relationships
+Một-một là loại quan hệ ít dùng nhất trong bốn loại vì nó có thể được mô hình hóa bằng bảng riêng (với khóa ngoại duy nhất) hoặc bằng các trường nhúng trong cùng bảng. Trường hợp sử dụng cho bảng riêng một-một: (1) quan hệ tùy chọn có nhiều trường có thể null (tách bảng tiết kiệm dung lượng), (2) tải lười các trường nặng (ví dụ: User có một Profile với trường tiểu sử dài), (3) vòng đời/mẫu truy cập khác nhau.
 
-One-to-one là ít dùng nhất trong bốn relationship types vì nó có thể được modeled as either separate table (với unique foreign key) hoặc embedded fields trong same table. Use case cho separate table one-to-one: (1) optional relationship with many nullable fields (splitting table saves space), (2) lazy loading heavy fields (ví dụ: User has one Profile với large bio text), (3) different lifecycle/access patterns. Axelor hỗ trợ bidirectional one-to-one với attribute `mappedBy` specify reverse side.
-
-**Bằng chứng từ code - One-to-one relationships:**
+**Bằng chứng từ mã nguồn - Các quan hệ một-một:**
 ```xml
-<!-- Simple one-to-one (owning side) -->
+<!-- Một-một đơn giản (phía sở hữu) -->
 <one-to-one name="emailAddress" ref="com.axelor.message.db.EmailAddress"
   title="Email" unique="true"/>
 
-<!-- Bidirectional one-to-one (non-owning side) -->
+<!-- Một-một hai chiều (phía không sở hữu) -->
 <one-to-one name="linkedUser" ref="com.axelor.auth.db.User"
   title="User" mappedBy="partner"/>
 ```
 
-**Giải thích code:** Field `emailAddress` creates one-to-one relationship where current entity "owns" relationship (có foreign key column). Attribute `unique="true"` enforce database constraint preventing two entities từ sharing same EmailAddress - đây là điều distinguish one-to-one from many-to-one. Use case có thể là Partner có thể có one dedicated EmailAddress entity chứa email preferences, templates, signature.
+**Giải thích mã nguồn:** Trường `emailAddress` tạo quan hệ một-một trong đó thực thể hiện tại "sở hữu" quan hệ (có cột khóa ngoại). Thuộc tính `unique="true"` áp dụng ràng buộc cơ sở dữ liệu ngăn hai thực thể chia sẻ cùng một EmailAddress - đây là điều phân biệt một-một với nhiều-một.
 
-Field `linkedUser` là reverse side của bidirectional one-to-one. User entity (not shown) có field `partner` mapping back. Attribute `mappedBy="partner"` indicate relationship owned bởi User entity, không có foreign key column trong Partner table. Relationship này có thể represent: một Partner (company/contact) có thể linked to one system User, và một User có thể linked to one Partner. Bidirectional nature cho phép navigate cả hai hướng: từ Partner to User hoặc từ User to Partner.
+Trường `linkedUser` là mặt ngược của quan hệ một-một hai chiều. Thực thể User (không hiển thị ở đây) có trường `partner` ánh xạ ngược lại. Thuộc tính `mappedBy="partner"` cho biết quan hệ được sở hữu bởi thực thể User, không có cột khóa ngoại trong bảng Partner. Quan hệ này có thể biểu diễn: một Đối tác (công ty/liên hệ) có thể liên kết với một Người dùng hệ thống, và một Người dùng có thể liên kết với một Đối tác. Bản chất hai chiều cho phép điều hướng cả hai hướng: từ Đối tác tới Người dùng hoặc từ Người dùng tới Đối tác.
 
-**Lazy loading consideration:** [Suy luận từ Hibernate behavior]
-One-to-one relationships có tricky lazy loading behavior: nếu là non-owning side (có mappedBy), Hibernate phải query database để check whether related entity exists, making "lazy" loading không really lazy. Owning side có thể truly lazy vì chỉ cần check FK column (not null = entity exists). Performance-sensitive code should test whether one-to-one actually benefits from lazy loading.
+**Lưu ý về tải lười:** [Suy luận từ hành vi Hibernate]
+Quan hệ một-một có hành vi tải lười (lazy loading) phức tạp: nếu là phía không sở hữu (có mappedBy), Hibernate phải truy vấn cơ sở dữ liệu để kiểm tra xem thực thể liên quan có tồn tại không, khiến tải "lười" thực chất không thực sự lười. Phía sở hữu có thể tải lười thực sự vì chỉ cần kiểm tra cột khóa ngoại (không null = thực thể tồn tại). Mã nguồn nhạy cảm về hiệu năng nên kiểm tra xem một-một có thực sự được lợi từ tải lười hay không.
 
 ---
 
-### 4. CONSTRAINTS, INDEXES VÀ DATABASE SCHEMA CONTROL
+### 4. RÀNG BUỘC, CHỈ MỤC VÀ KIỂM SOÁT LƯỢC ĐỒ CƠ SỞ DỮ LIỆU
 
-**File nguồn:** SaleOrder.xml, Account.xml, Company.xml [Từ source code]
+**Tệp nguồn:** SaleOrder.xml, Account.xml, Company.xml [Từ mã nguồn]
 
-Database constraints và indexes là critical cho data integrity và query performance, nhưng chúng có trade-offs. Constraints (unique, not null, foreign key, check) enforce business rules at database level - last line of defense against bad data, thậm chí khi application bugs bypass validation. Indexes speed up queries exponentially (O(log n) instead of O(n)) nhưng slow down inserts/updates/deletes và consume disk space. Axelor domain XML cho phép declare constraints và có một số control về indexes, though less comprehensive than pure JPA annotations.
+Ràng buộc (constraint) và chỉ mục (index) trong cơ sở dữ liệu rất quan trọng cho tính toàn vẹn dữ liệu và hiệu năng truy vấn, nhưng chúng có những đánh đổi. Ràng buộc (duy nhất, không null, khóa ngoại, kiểm tra) áp dụng quy tắc nghiệp vụ ở cấp cơ sở dữ liệu - tuyến phòng thủ cuối cùng chống lại dữ liệu xấu, ngay cả khi lỗi ứng dụng bỏ qua bước kiểm tra hợp lệ. Chỉ mục tăng tốc truy vấn theo cấp số nhân (O(log n) thay vì O(n)) nhưng làm chậm thao tác chèn/cập nhật/xóa và tiêu tốn dung lượng đĩa. Tệp XML định nghĩa thực thể của Axelor cho phép khai báo ràng buộc và có một số quyền kiểm soát về chỉ mục, mặc dù không toàn diện bằng chú thích JPA thuần.
 
-#### 4.1. Unique Constraints: Single-Column và Composite
+#### 4.1. Ràng buộc Duy nhất: Đơn Cột và Tổ hợp
 
-Unique constraints prevent duplicate values, critical cho business keys (như order numbers, product codes, email addresses). SQL standard distinguish giữa NULL và non-NULL: unique constraint allow multiple NULLs vì NULL != NULL (unknown không equal unknown). Điều này có implications: nếu cần enforce "email must be unique INCLUDING NULLs" (no two users with NULL email), cần custom logic hoặc partial unique index.
+Ràng buộc duy nhất (unique constraint) ngăn chặn giá trị trùng lặp, rất quan trọng cho các khóa nghiệp vụ (như mã đơn hàng, mã sản phẩm, địa chỉ email). Theo chuẩn SQL, ràng buộc duy nhất cho phép nhiều giá trị NULL vì NULL khác NULL (giá trị không xác định không bằng giá trị không xác định).
 
-Axelor support single-column unique qua field attribute `unique="true"`, và composite unique qua `<unique-constraint>` element. Composite unique constraints enforce uniqueness across multiple columns - ví dụ: (saleOrderSeq, company) unique nghĩa là cùng một order number có thể exist trong different companies nhưng không được duplicate trong same company. Pattern này fundamental cho multi-company systems.
+Axelor hỗ trợ ràng buộc duy nhất đơn cột qua thuộc tính trường `unique="true"`, và ràng buộc duy nhất tổ hợp (composite) qua phần tử `<unique-constraint>`. Ràng buộc duy nhất tổ hợp áp dụng tính duy nhất trên nhiều cột - ví dụ: (saleOrderSeq, company) duy nhất nghĩa là cùng một mã đơn hàng có thể tồn tại ở các công ty khác nhau nhưng không được trùng trong cùng một công ty. Mẫu thiết kế này là nền tảng cho hệ thống đa công ty.
 
-**Bằng chứng từ code - Unique constraints:**
+**Bằng chứng từ mã nguồn - Các ràng buộc duy nhất:**
 ```xml
-<!-- Single column unique (in field attribute) -->
+<!-- Ràng buộc duy nhất đơn cột (trong thuộc tính trường) -->
 <string name="code" title="Code" required="true" unique="true"/>
 
-<!-- Multi-column unique constraints -->
+<!-- Ràng buộc duy nhất tổ hợp nhiều cột -->
 <unique-constraint columns="saleOrderSeq,company"/>
 <unique-constraint columns="code,company"/>
 ```
 
-**Giải thích code:** Field `code` có both `required="true"` và `unique="true"`, creating NOT NULL UNIQUE constraint - combination này equivalent to natural primary key (nhưng vẫn có surrogate ID for technical reasons). Business users typically search/reference by code thay vì ID, making this pattern common.
+**Giải thích mã nguồn:** Trường `code` có cả `required="true"` và `unique="true"`, tạo ra ràng buộc NOT NULL UNIQUE - sự kết hợp này tương đương với khóa chính tự nhiên (natural primary key), nhưng hệ thống vẫn có khóa thay thế (surrogate ID) vì lý do kỹ thuật. Người dùng nghiệp vụ thường tìm kiếm/tham chiếu theo mã thay vì ID, khiến mẫu thiết kế này rất phổ biến.
 
-Composite unique constraint `saleOrderSeq,company` crucial cho multi-company deployments. Sequence generator có thể independently generate sequences per company (SO0001, SO0002 in Company A and SO0001, SO0002 in Company B), hoặc globally unique sequences. Constraint này enforce former strategy. Second constraint `code,company` similar pattern for Account codes - cho phép reuse same account codes across companies (ví dụ: every company có "Cash" account với code "101").
+Ràng buộc duy nhất tổ hợp `saleOrderSeq,company` rất quan trọng cho môi trường triển khai đa công ty. Bộ sinh mã tuần tự có thể sinh mã độc lập theo từng công ty (SO0001, SO0002 ở Công ty A và SO0001, SO0002 ở Công ty B), hoặc sinh mã duy nhất toàn cục. Ràng buộc này áp dụng chiến lược trước. Ràng buộc thứ hai `code,company` tương tự cho mã tài khoản - cho phép tái sử dụng cùng mã tài khoản giữa các công ty (ví dụ: mọi công ty đều có tài khoản "Tiền mặt" với mã "101").
 
-**Generated JPA annotations:** [Từ source code generated Product.java]
+**Chú thích JPA được sinh:** [Từ mã nguồn - tệp Product.java được sinh]
 ```java
 @Entity
 @Table(
@@ -337,23 +324,23 @@ Composite unique constraint `saleOrderSeq,company` crucial cho multi-company dep
 public class SaleOrder extends AuditableModel { ... }
 ```
 
-**Giải thích code:** Hibernate translates domain XML unique constraints into `@UniqueConstraint` annotations trong `@Table`. Database DDL sẽ có `UNIQUE (saleOrderSeq, company)` constraint. Nếu application code attempts insert duplicate, database throws SQLException và Hibernate wraps thành ConstraintViolationException, bubbling up to service layer để handle gracefully (show error message to user thay vì crash).
+**Giải thích mã nguồn:** Hibernate chuyển đổi ràng buộc duy nhất từ XML thành chú thích `@UniqueConstraint` trong `@Table`. Câu lệnh DDL của cơ sở dữ liệu sẽ có `UNIQUE (saleOrderSeq, company)`. Nếu mã ứng dụng cố chèn bản ghi trùng lặp, cơ sở dữ liệu ném ra ngoại lệ SQLException và Hibernate bọc thành ConstraintViolationException, được đẩy lên tầng dịch vụ để xử lý thân thiện (hiển thị thông báo lỗi cho người dùng thay vì sập ứng dụng).
 
-#### 4.2. Indexes: Automatic, Disabled, và Performance Implications
+#### 4.2. Chỉ mục: Tự động, Tắt, và Ảnh hưởng Hiệu năng
 
-Hibernate default tự động create indexes cho foreign key columns vì joins/filters by FK are extremely common. Index dramatically speed up queries: `SELECT * FROM sale_order WHERE company_id = 123` với index on company_id takes microseconds (B-tree lookup), without index takes seconds (full table scan). However, indexes không phải free: mỗi index là separate B-tree structure occupying disk, và every INSERT/UPDATE/DELETE must update all indexes, slowing down writes.
+Hibernate mặc định tự động tạo chỉ mục cho các cột khóa ngoại vì các thao tác nối (join) và lọc (filter) theo khóa ngoại cực kỳ phổ biến. Chỉ mục tăng tốc truy vấn đáng kể: `SELECT * FROM sale_order WHERE company_id = 123` với chỉ mục trên company_id mất vài micro giây (tra cứu cây B-tree), không có chỉ mục mất vài giây (quét toàn bộ bảng). Tuy nhiên, chỉ mục không miễn phí: mỗi chỉ mục là một cấu trúc cây B-tree riêng biệt chiếm dung lượng đĩa, và mọi thao tác INSERT/UPDATE/DELETE đều phải cập nhật tất cả chỉ mục, làm chậm thao tác ghi.
 
-Axelor cho phép disable automatic indexes via `index="false"` attribute. Use cases: (1) FK column never queried/joined independently (always part of composite condition), (2) table very small (full scan fast enough), (3) write-heavy workload where insert speed more critical than query speed. Disabling unnecessary indexes có thể improve throughput đáng kể trong high-write systems.
+Axelor cho phép tắt chỉ mục tự động qua thuộc tính `index="false"`. Các trường hợp sử dụng: (1) cột khóa ngoại không bao giờ được truy vấn/nối độc lập (luôn là phần của điều kiện tổ hợp), (2) bảng rất nhỏ (quét toàn bộ đủ nhanh), (3) khối lượng ghi lớn, nơi tốc độ chèn quan trọng hơn tốc độ truy vấn.
 
-**Bằng chứng từ code - Index control:**
+**Bằng chứng từ mã nguồn - Kiểm soát chỉ mục:**
 ```xml
 <many-to-one name="user" column="user_id" ref="com.axelor.auth.db.User"
   title="Assigned to" index="false" massUpdate="true"/>
 ```
 
-**Giải thích code:** Foreign key `user_id` explicitly set `index="false"`, ngăn Hibernate tạo index. Decision này có thể based on analysis: nếu table never queries by user (ví dụ: always queries by primary key or other indexed columns), index trên user_id wasted space. However, cẩn thận: nếu add feature later filtering by user, queries sẽ slow và developers phải remember add index manually.
+**Giải thích mã nguồn:** Khóa ngoại `user_id` được đặt rõ ràng `index="false"`, ngăn Hibernate tạo chỉ mục. Quyết định này có thể dựa trên phân tích: nếu bảng không bao giờ được truy vấn theo người dùng (ví dụ: luôn truy vấn theo khóa chính hoặc các cột đã đánh chỉ mục khác), thì chỉ mục trên user_id lãng phí dung lượng. Tuy nhiên, cần cẩn thận: nếu sau này thêm tính năng lọc theo người dùng, truy vấn sẽ chậm và lập trình viên phải nhớ thêm chỉ mục thủ công.
 
-**Evidence từ generated code - Automatic indexes:**
+**Bằng chứng từ mã được sinh - Chỉ mục tự động:**
 ```java
 @Table(
   name = "BASE_PRODUCT",
@@ -362,44 +349,44 @@ Axelor cho phép disable automatic indexes via `index="false"` attribute. Use ca
     @Index(columnList = "picture"),
     @Index(columnList = "product_category"),
     @Index(columnList = "unit"),
-    // ... nhiều indexes cho foreign keys
+    // ... nhiều chỉ mục cho khóa ngoại
   }
 )
 ```
 
-**Giải thích code:** Generated Product entity có nhiều indexes được create automatically. Index trên `name` có thể for searches by product name (common user operation). Index trên FKs như `product_category`, `unit` for filtering products by category, by unit of measure. Hibernate generator adds these based on conventions và field types. Developers không có fine-grained control trong domain XML (không thể specify index type - B-tree vs Hash vs GIN, không thể composite indexes), phải rely on generator's defaults hoặc create indexes manually sau khi deployment.
+**Giải thích mã nguồn:** Thực thể Product được sinh có nhiều chỉ mục được tạo tự động. Chỉ mục trên `name` phục vụ tìm kiếm theo tên sản phẩm (thao tác phổ biến của người dùng). Chỉ mục trên các khóa ngoại như `product_category`, `unit` phục vụ lọc sản phẩm theo danh mục, theo đơn vị đo lường. Bộ sinh của Hibernate thêm các chỉ mục này dựa trên quy ước và kiểu trường. Lập trình viên không có quyền kiểm soát chi tiết trong tệp XML (không thể chỉ định loại chỉ mục - B-tree hay Hash hay GIN, không thể tạo chỉ mục tổ hợp), phải dựa vào giá trị mặc định của bộ sinh hoặc tạo chỉ mục thủ công sau khi triển khai.
 
-**Performance implications:** [Suy luận về index strategy]
-Optimal index strategy depends on workload. Read-heavy systems (nhiều queries, ít writes) benefit from generous indexing. Write-heavy systems (frequent inserts/updates) should minimize indexes. Multi-column composite indexes useful khi queries filter by multiple columns together (ví dụ: `WHERE company_id = ? AND date >= ?` benefits from index on (company_id, date)). Axelor không expose composite index definition trong XML, developers có thể need create these via migration scripts hoặc directly in database.
+**Ảnh hưởng hiệu năng:** [Suy luận về chiến lược chỉ mục]
+Chiến lược chỉ mục tối ưu phụ thuộc vào khối lượng công việc. Hệ thống đọc nhiều (nhiều truy vấn, ít ghi) được hưởng lợi từ việc đánh chỉ mục rộng rãi. Hệ thống ghi nhiều (chèn/cập nhật thường xuyên) nên giảm thiểu chỉ mục. Chỉ mục tổ hợp nhiều cột hữu ích khi truy vấn lọc theo nhiều cột cùng lúc (ví dụ: `WHERE company_id = ? AND date >= ?` được hưởng lợi từ chỉ mục trên (company_id, date)). Axelor không cho phép khai báo chỉ mục tổ hợp trong XML, lập trình viên có thể cần tạo chúng qua tập lệnh di trú (migration script) hoặc trực tiếp trong cơ sở dữ liệu.
 
 ---
 
-### 5. FINDER METHODS: DECLARATIVE QUERY GENERATION
+### 5. PHƯƠNG THỨC TÌM KIẾM: SINH TRUY VẤN KHAI BÁO
 
-**File nguồn:** SaleOrder.xml, Account.xml, Partner.xml [Từ source code]
+**Tệp nguồn:** SaleOrder.xml, Account.xml, Partner.xml [Từ mã nguồn]
 
-Finder methods là một convenience feature của Axelor cho phép developers declare common query patterns trong domain XML, và code generator tự động generate query methods trong Repository classes. Pattern này giảm boilerplate code đáng kể - thay vì manually write Query DSL in repository, chỉ cần declare `<finder-method name="findByCode" using="code"/>` và generator creates complete method with proper parameter binding, null checks, và error handling.
+Phương thức tìm kiếm (finder method) là một tính năng tiện lợi của Axelor cho phép lập trình viên khai báo các mẫu truy vấn phổ biến trong tệp XML, và bộ sinh mã tự động tạo các phương thức truy vấn trong lớp kho lưu trữ (Repository). Mẫu thiết kế này giảm đáng kể mã khuôn mẫu (boilerplate) - thay vì viết thủ công cú pháp truy vấn trong kho lưu trữ, chỉ cần khai báo `<finder-method name="findByCode" using="code"/>` và bộ sinh sẽ tạo phương thức hoàn chỉnh với ràng buộc tham số, kiểm tra null, và xử lý lỗi đúng cách.
 
-Syntax đơn giản nhưng powerful: `name` attribute specify method name (convention: `findBy{FieldNames}`), `using` attribute liệt kê fields used in query (comma-separated for multiple fields), và optional `all="true"` attribute indicate method returns List thay vì single entity. Generator translates these declarations thành Query DSL calls với proper JPQL filters và bind parameters.
+Cú pháp đơn giản nhưng hiệu quả: thuộc tính `name` chỉ định tên phương thức (quy ước: `findBy{TênTrường}`), thuộc tính `using` liệt kê các trường dùng trong truy vấn (phân cách bằng dấu phẩy nếu nhiều trường), và thuộc tính tùy chọn `all="true"` cho biết phương thức trả về danh sách (List) thay vì một thực thể duy nhất. Bộ sinh chuyển đổi các khai báo này thành các lời gọi DSL truy vấn với bộ lọc JPQL và tham số ràng buộc phù hợp.
 
-**Bằng chứng từ code - Finder method declarations:**
+**Bằng chứng từ mã nguồn - Khai báo phương thức tìm kiếm:**
 ```xml
-<!-- Single field finder -->
+<!-- Tìm kiếm theo một trường -->
 <finder-method name="findByPartnerSeq" using="partnerSeq"/>
 
-<!-- Multi-field finder -->
+<!-- Tìm kiếm theo nhiều trường -->
 <finder-method name="findBySaleOrderSeqAndCompany" using="saleOrderSeq,company"/>
 <finder-method name="findByCodeAndCompany" using="code,company"/>
 
-<!-- Find all matching records (returns List) -->
+<!-- Tìm tất cả bản ghi khớp (trả về danh sách) -->
 <finder-method name="findByAccountType" using="accountType" all="true"/>
 ```
 
-**Giải thích code:** Finder `findByPartnerSeq` generates method nhận String partnerSeq parameter và returns single Partner entity (or null nếu không tìm thấy). Use case: search partner by unique business key. Multi-field finder `findBySaleOrderSeqAndCompany` queries by composite business key - both orderSeq AND company phải match. Method signature sẽ là `findBySaleOrderSeqAndCompany(String orderSeq, Company company)` với two parameters.
+**Giải thích mã nguồn:** Phương thức `findByPartnerSeq` sinh ra phương thức nhận tham số String partnerSeq và trả về một thực thể Partner duy nhất (hoặc null nếu không tìm thấy). Trường hợp sử dụng: tìm đối tác theo khóa nghiệp vụ duy nhất. Phương thức tìm nhiều trường `findBySaleOrderSeqAndCompany` truy vấn theo khóa nghiệp vụ tổ hợp - cả mã đơn hàng VÀ công ty đều phải khớp. Chữ ký phương thức sẽ là `findBySaleOrderSeqAndCompany(String orderSeq, Company company)` với hai tham số.
 
-Finder `findByAccountType` có `all="true"`, generating method return type `List<Account>` instead of single Account. Use case: get all accounts of certain type (Asset accounts, Liability accounts, etc.). Without `all="true"`, method returns only first match (or null), với `all="true"` returns all matches (empty list nếu không tìm thấy).
+Phương thức `findByAccountType` có `all="true"`, sinh ra kiểu trả về `List<Account>` thay vì một Account duy nhất. Trường hợp sử dụng: lấy tất cả tài khoản thuộc một loại nhất định (tài khoản tài sản, tài khoản nợ phải trả, v.v.). Nếu không có `all="true"`, phương thức chỉ trả về kết quả đầu tiên khớp (hoặc null); với `all="true"` trả về tất cả kết quả khớp (danh sách rỗng nếu không tìm thấy).
 
-**Generated repository code evidence:**
+**Bằng chứng từ mã kho lưu trữ được sinh:**
 ```java
 public Product findByCode(String code) {
   return Query.of(Product.class)
@@ -416,24 +403,24 @@ public Product findByName(String name) {
 }
 ```
 
-**Giải thích code:** Generator translates finder declarations thành Query DSL calls. Method `findByCode` creates Query object for Product.class, adds filter with named parameter (`:code`), binds parameter value, và calls `fetchOne()` để get single result. Filter string `"self.code = :code"` uses Axelor convention: `self` alias current entity. Query DSL translates này thành JPQL: `SELECT self FROM Product self WHERE self.code = :code`. Named parameters (`:code`) safer than positional parameters (vì không thể mix up order) và more readable.
+**Giải thích mã nguồn:** Bộ sinh chuyển đổi các khai báo tìm kiếm thành các lời gọi DSL truy vấn. Phương thức `findByCode` tạo đối tượng Query cho lớp Product, thêm bộ lọc với tham số đặt tên (`:code`), ràng buộc giá trị tham số, và gọi `fetchOne()` để lấy một kết quả. Chuỗi bộ lọc `"self.code = :code"` sử dụng quy ước Axelor: `self` là bí danh (alias) cho thực thể hiện tại. DSL truy vấn chuyển đổi thành JPQL: `SELECT self FROM Product self WHERE self.code = :code`. Tham số đặt tên (`:code`) an toàn hơn tham số vị trí vì không thể nhầm lẫn thứ tự, và dễ đọc hơn.
 
-Method returns entity directly (not Optional) - null return indicates not found. This approach simpler than Java 8+ Optional pattern nhưng có risk NullPointerException nếu calling code không check null. Alternative design would return Optional<Product>, forcing explicit handling, nhưng Axelor chose simplicity over safety.
+Phương thức trả về thực thể trực tiếp (không phải Optional) - giá trị null nghĩa là không tìm thấy. Cách tiếp cận này đơn giản hơn mẫu Optional trong Java 8+, nhưng có nguy cơ lỗi NullPointerException nếu mã gọi không kiểm tra null.
 
-**Limitations:** [Suy luận về finder method capabilities]
-Finder methods chỉ support equality queries (`field = value`), không support ranges (`field > value`), LIKE queries (`field LIKE '%pattern%'`), OR conditions, ordering, hoặc pagination. Complex queries require manually written methods trong custom repository. Trade-off: declarative finders cover 80% common cases (get by ID, get by business key) với zero code, complex 20% still need custom code. Pattern này matches 80-20 rule well.
+**Hạn chế:** [Suy luận về khả năng phương thức tìm kiếm]
+Phương thức tìm kiếm chỉ hỗ trợ truy vấn bằng (equality query, `trường = giá_trị`), không hỗ trợ truy vấn phạm vi (`trường > giá_trị`), truy vấn LIKE (`trường LIKE '%mẫu%'`), điều kiện OR, sắp xếp, hoặc phân trang. Các truy vấn phức tạp yêu cầu phương thức viết thủ công trong kho lưu trữ tùy chỉnh. Đánh đổi: các phương thức tìm kiếm khai báo đáp ứng 80% trường hợp phổ biến (lấy theo ID, lấy theo khóa nghiệp vụ) mà không cần viết mã, 20% phức tạp còn lại vẫn cần mã tùy chỉnh.
 
 ---
 
-### 6. EXTRA CODE VÀ CONSTANTS: EMBEDDING JAVA IN XML
+### 6. MÃ NHÚNG BỔ SUNG VÀ HẰNG SỐ: NHÚNG JAVA VÀO XML
 
-**File nguồn:** SaleOrder.xml, Account.xml, Partner.xml, Company.xml [Từ source code]
+**Tệp nguồn:** SaleOrder.xml, Account.xml, Partner.xml, Company.xml [Từ mã nguồn]
 
-Một tính năng powerful của Axelor domain XML là ability to embed Java code directly trong entity definitions via `<extra-code>` và `<extra-imports>` elements. Cơ chế này cho phép generators create fully-functional entity classes với constants, helper methods, và business logic inline, không cần separate Java files. Primary use case là defining constants for enum-like integer fields (status codes, type codes) - these constants make code readable và refactor-safe.
+Một tính năng mạnh mẽ của tệp XML định nghĩa thực thể trong Axelor là khả năng nhúng mã Java trực tiếp vào định nghĩa thực thể qua các phần tử `<extra-code>` và `<extra-imports>`. Cơ chế này cho phép bộ sinh tạo ra các lớp thực thể hoạt động đầy đủ với hằng số, phương thức hỗ trợ, và logic nghiệp vụ nội tuyến (inline), mà không cần tệp Java riêng biệt. Trường hợp sử dụng chính là định nghĩa hằng số cho các trường số nguyên dạng liệt kê (mã trạng thái, mã loại) - các hằng số này giúp mã dễ đọc và an toàn khi tái cấu trúc (refactor).
 
-Pattern phổ biến: define integer selection fields (`statusSelect`, `typeSelect`) với corresponding constants trong extra-code. Application code sau đó reference constants (`SaleOrder.STATUS_CONFIRMED`) thay vì magic numbers (`3`), dramatically improving readability. When business changes status numbers (ví dụ: insert new status between existing ones), chỉ cần update constants, không cần hunt through codebase tìm magic numbers. Constants cũng benefit từ IDE features: autocomplete, find usages, refactoring.
+Mẫu thiết kế phổ biến: định nghĩa các trường danh sách lựa chọn số nguyên (`statusSelect`, `typeSelect`) cùng với các hằng số tương ứng trong khối mã bổ sung (extra-code). Mã ứng dụng sau đó tham chiếu hằng số (`SaleOrder.STATUS_CONFIRMED`) thay vì số ma thuật (magic number) (`3`), cải thiện đáng kể khả năng đọc hiểu. Khi nghiệp vụ thay đổi mã trạng thái (ví dụ: chèn trạng thái mới giữa các trạng thái hiện có), chỉ cần cập nhật hằng số, không cần tìm kiếm khắp mã nguồn.
 
-**Bằng chứng từ code - Extra imports và constants:**
+**Bằng chứng từ mã nguồn - Phần nhập bổ sung và hằng số:**
 ```xml
 <extra-imports>
   import com.axelor.apps.base.interfaces.GlobalDiscounterLine;
@@ -441,86 +428,58 @@ Pattern phổ biến: define integer selection fields (`statusSelect`, `typeSele
 
 <extra-code>
   <![CDATA[
-  // STATUS
+  // TRẠNG THÁI
   public static final int STATUS_DRAFT_QUOTATION = 1;
   public static final int STATUS_FINALIZED_QUOTATION = 2;
   public static final int STATUS_ORDER_CONFIRMED = 3;
   public static final int STATUS_ORDER_COMPLETED = 4;
   public static final int STATUS_CANCELED = 5;
 
-  // ORDERING STATUS
+  // TRẠNG THÁI ĐẶT HÀNG
   public static final int ORDERING_STATUS_PARTIALLY_ORDERED = 1;
   public static final int ORDERING_STATUS_CLOSED = 2;
   ]]>
 </extra-code>
 ```
 
-**Giải thích code:** Block `<extra-imports>` thêm imports sẽ appear ở top of generated Java file. Needed khi extra-code references classes from other packages. CDATA section trong `<extra-code>` chứa literal Java code được copy directly vào generated class body. Constants defined ở đây become part of generated entity class, accessible as `SaleOrder.STATUS_CONFIRMED`.
+**Giải thích mã nguồn:** Khối `<extra-imports>` thêm các câu lệnh nhập (import) sẽ xuất hiện ở đầu tệp Java được sinh. Cần thiết khi mã bổ sung tham chiếu các lớp từ gói khác. Phần CDATA trong `<extra-code>` chứa mã Java nguyên bản được sao chép trực tiếp vào thân lớp được sinh. Các hằng số định nghĩa ở đây trở thành thành viên tĩnh (static member) của lớp thực thể được sinh, có thể truy cập dạng `SaleOrder.STATUS_CONFIRMED`.
 
-Comment groups (`// STATUS`, `// ORDERING STATUS`) organize constants thành logical sections, improving maintainability. Pattern này particularly important cho entities với nhiều selection fields (10+ status constants, 5+ type constants, etc.) - comments help developers find relevant constant quickly. Some Axelor entities có 50+ constants trong extra-code section.
+Các chú thích nhóm (`// TRẠNG THÁI`, `// TRẠNG THÁI ĐẶT HÀNG`) tổ chức hằng số thành các phần logic, cải thiện khả năng bảo trì. Mẫu thiết kế này đặc biệt quan trọng cho các thực thể có nhiều trường danh sách lựa chọn (hơn 10 hằng số trạng thái, hơn 5 hằng số loại, v.v.).
 
-**Another example from Account.xml:**
+**Ví dụ khác từ Account.xml:**
 ```xml
 <extra-code><![CDATA[
-  // COMMON POSITION
+  // VỊ TRÍ THÔNG THƯỜNG
   public static final int COMMON_POSITION_NONE = 0;
   public static final int COMMON_POSITION_CREDIT = 1;
   public static final int COMMON_POSITION_DEBIT = 2;
 
-  // STATUS SELECT
+  // TRẠNG THÁI
   public static final int STATUS_INACTIVE = 0;
   public static final int STATUS_ACTIVE = 1;
 
-  // VAT SYSTEM
+  // HỆ THỐNG THUẾ GTGT
   public static final int VAT_SYSTEM_DEFAULT = 0;
   public static final int VAT_SYSTEM_GOODS = 1;
   public static final int VAT_SYSTEM_SERVICE = 2;
 ]]></extra-code>
 ```
 
-**Giải thích code:** Account entity có three groups of constants for different selection fields. VAT_SYSTEM constants distinguish between different VAT treatment rules (goods vs services have different VAT rates trong nhiều countries). COMMON_POSITION (credit/debit) fundamental trong double-entry bookkeeping. STATUS controls whether account active or archived. Each constant group corresponds to một selection field trong XML (not shown here nhưng có thể infer).
+**Giải thích mã nguồn:** Thực thể Account có ba nhóm hằng số cho các trường danh sách lựa chọn khác nhau. Hằng số VAT_SYSTEM phân biệt các quy tắc xử lý thuế giá trị gia tăng khác nhau (hàng hóa so với dịch vụ có thuế suất khác nhau ở nhiều quốc gia). COMMON_POSITION (nợ/có) là nền tảng trong kế toán kép (double-entry bookkeeping). STATUS kiểm soát tài khoản đang hoạt động hay đã lưu trữ.
 
-**Generated code integration:**
-```java
-public class SaleOrder extends AuditableModel {
-  // ... fields và getters/setters ...
-
-  // Extra code gets inserted here
-  public static final int STATUS_DRAFT_QUOTATION = 1;
-  public static final int STATUS_FINALIZED_QUOTATION = 2;
-  // ...
-}
-```
-
-**Giải thích code:** Generator inserts extra-code at class level, making constants accessible as static class members. Service layer code có thể use: `if (order.getStatusSelect() == SaleOrder.STATUS_CONFIRMED) { ... }`. This pattern significantly better than magic numbers: `if (order.getStatusSelect() == 3) { ... }` - impossible to understand without looking up status code meanings.
-
-**Constants trong Repository classes:** [Từ source code ProductRepository]
-```java
-// Constants được generate vào Repository class instead of Entity class
-public static final String PRODUCT_TYPE_SERVICE = "service";
-public static final String PRODUCT_TYPE_STORABLE = "storable";
-
-public static final int SALE_SUPPLY_FROM_STOCK = 1;
-public static final int SALE_SUPPLY_PURCHASE = 2;
-public static final int SALE_SUPPLY_PRODUCE = 3;
-```
-
-**Giải thích code:** Interesting observation: constants có thể appear trong Repository classes instead of Entity classes. Có thể đây là extra-code declared trong một repository-specific section (syntax chưa thấy trong domain XML) hoặc manually added trong custom repository. Pattern này useful khi constants chỉ relevant cho repository operations (query constants, status filters) thay vì entity logic.
-
-**Limitations và alternatives:** [Suy luận về design choices]
-Extra-code limited to class-level code (fields, methods, constants), không thể customize constructors, không thể add annotations. Complex business logic better placed trong service layer hoặc custom repository methods thay vì entity classes (following separation of concerns principle). Alternative approach: Java enums instead of integer constants, providing type safety và more features (methods, valueOf, etc.), nhưng Axelor chose integers for flexibility (enums hard to extend/modify trong deployed system).
+Tầng dịch vụ sử dụng hằng số dạng: `if (order.getStatusSelect() == SaleOrder.STATUS_CONFIRMED) { ... }`. Mẫu này tốt hơn đáng kể so với số ma thuật: `if (order.getStatusSelect() == 3) { ... }` - không thể hiểu được nếu không tra cứu ý nghĩa mã trạng thái.
 
 ---
 
-### 7. AUDIT TRACKING: BUILT-IN CHANGE HISTORY CHO GDPR COMPLIANCE
+### 7. THEO DÕI KIỂM TOÁN: LỊCH SỬ THAY ĐỔI TÍCH HỢP SẴN
 
-**File nguồn:** SaleOrder.xml, Account.xml, Partner.xml, Company.xml [Từ source code]
+**Tệp nguồn:** SaleOrder.xml, Account.xml, Partner.xml, Company.xml [Từ mã nguồn]
 
-Axelor cung cấp một comprehensive audit trail system được declare trực tiếp trong domain XML qua `<track>` element. System này automatically record WHO changed WHAT WHEN, creating immutable history log của mọi tracked fields. Feature này crucial cho compliance requirements (GDPR trong EU requires detailed audit logs of personal data access/modification), security (forensics khi có incident), và business (dispute resolution when questions arise về data changes).
+Axelor cung cấp một hệ thống dấu vết kiểm toán (audit trail) toàn diện được khai báo trực tiếp trong tệp XML qua phần tử `<track>`. Hệ thống này tự động ghi lại AI đã thay đổi CÁI GÌ vào KHI NÀO, tạo ra nhật ký lịch sử không thể sửa đổi cho mọi trường được theo dõi. Tính năng này rất quan trọng cho các yêu cầu tuân thủ (ví dụ: GDPR ở Liên minh Châu Âu yêu cầu nhật ký kiểm toán chi tiết về việc truy cập/sửa đổi dữ liệu cá nhân), bảo mật (điều tra pháp y khi có sự cố), và nghiệp vụ (giải quyết tranh chấp khi có câu hỏi về các thay đổi dữ liệu).
 
-Tracking mechanism có thể selective: track specific fields thay vì entire entity (reducing log volume), track only on CREATE hoặc only on UPDATE (fine-grained control), và even generate human-readable messages về state changes (ví dụ: "Order confirmed" when status changes to 3). Messages có thể conditional based on field values và có visual tags (important, info, success, warning) cho UI highlighting.
+Cơ chế theo dõi có thể chọn lọc: theo dõi các trường cụ thể thay vì toàn bộ thực thể (giảm khối lượng nhật ký), chỉ theo dõi khi TẠO hoặc chỉ khi CẬP NHẬT (kiểm soát chi tiết), và thậm chí sinh thông điệp dễ đọc về các thay đổi trạng thái (ví dụ: "Đơn hàng đã xác nhận" khi trạng thái thay đổi thành 3). Thông điệp có thể có điều kiện dựa trên giá trị trường và có nhãn trực quan (quan trọng, thông tin, thành công, cảnh báo) để tô sáng trên giao diện.
 
-**Bằng chứng từ code - Comprehensive tracking configuration:**
+**Bằng chứng từ mã nguồn - Cấu hình theo dõi toàn diện:**
 ```xml
 <track>
   <field name="saleOrderSeq"/>
@@ -538,123 +497,74 @@ Tracking mechanism có thể selective: track specific fields thay vì entire en
 </track>
 ```
 
-**Giải thích code:** Track configuration cho SaleOrder entity defines which fields are tracked và messages to generate. Fields `saleOrderSeq`, `clientPartner`, `statusSelect`, `inTaxTotal` tracked on both CREATE và UPDATE events (no `on` attribute means both). Field `creationDate` only tracked `on="CREATE"` - makes sense vì creation date only set once, subsequent changes would be bugs. Conversely, `confirmationDateTime` only tracked `on="UPDATE"` - field null khi create, only populated khi order confirmed later.
+**Giải thích mã nguồn:** Cấu hình theo dõi cho thực thể SaleOrder định nghĩa các trường nào được theo dõi và các thông điệp cần sinh. Các trường `saleOrderSeq`, `clientPartner`, `statusSelect`, `inTaxTotal` được theo dõi trên cả sự kiện TẠO và CẬP NHẬT (không có thuộc tính `on` nghĩa là cả hai). Trường `creationDate` chỉ theo dõi `on="CREATE"` - hợp lý vì ngày tạo chỉ được đặt một lần, các thay đổi tiếp theo sẽ là lỗi. Ngược lại, `confirmationDateTime` chỉ theo dõi `on="UPDATE"` - trường này null khi tạo, chỉ được điền khi đơn hàng được xác nhận sau đó.
 
-Messages section creates human-readable audit trail entries. First message `if="true"` always triggers on CREATE, logging "Quotation/sale order created". Subsequent messages conditional on statusSelect value: when status is 1, log "Draft quotation" với important tag (red/orange highlighting in UI), when status is 3, log "Order confirmed" với success tag (green highlighting). Tags purely presentational nhưng help users quickly scan audit log highlighting important events.
-
-**Generated JPA annotations:**
-```java
-@Track(
-  on = TrackEvent.UPDATE,
-  fields = {
-    @TrackField(name = "name"),
-    @TrackField(name = "code"),
-    @TrackField(name = "productCategory"),
-    // ...
-  }
-)
-public class Product extends AuditableModel { ... }
-```
-
-**Giải thích code:** Generator translates `<track>` declarations thành `@Track` annotation trên entity class. Hibernate entity listeners (configured globally) intercept lifecycle events (prePersist, preUpdate) và inspect @Track annotations to determine what to log. When tracked entity modified, listener serializes old values, new values, user info, timestamp into audit log records và inserts vào audit trail table.
-
-**Database schema cho audit trail:** [Suy luận từ common audit patterns]
-Audit logs likely stored trong separate table (`meta_audit_trail` hoặc similar) với schema:
-- `id` - Primary key
-- `entity_type` - Class name of tracked entity
-- `entity_id` - Primary key of tracked entity
-- `field_name` - Which field changed
-- `old_value` - Serialized old value
-- `new_value` - Serialized new value
-- `changed_by` - User who made change
-- `changed_on` - Timestamp
-- `event_type` - CREATE, UPDATE, DELETE
-- `message` - Human-readable message (from `<message>` declarations)
-
-Table này có thể grow very large trong production (millions of rows), requiring partitioning hoặc archival strategies. Indexes on entity_type, entity_id, changed_on critical cho query performance (ví dụ: "show me all changes to Order #12345").
-
-**GDPR compliance implications:** [Suy luận về regulatory requirements]
-GDPR Article 15 requires organizations provide individuals với complete history of personal data processing. Audit trail automatically satisfies này: khi customer requests data access report, query audit log cho all records where entity_type=Partner AND entity_id={customer_id}, export all changes ever made. Article 17 (right to erasure) complicates: nếu customer requests deletion, cần delete audit logs or anonymize (replace user references với "Deleted User"). Axelor audit system provides mechanism nhưng deletion logic must be custom implemented.
+Phần thông điệp tạo các mục nhật ký kiểm toán dễ đọc. Thông điệp đầu tiên `if="true"` luôn kích hoạt khi TẠO, ghi "Báo giá/đơn hàng đã được tạo". Các thông điệp tiếp theo có điều kiện theo giá trị statusSelect: khi trạng thái là 1, ghi "Bản nháp báo giá" với nhãn quan trọng (tô sáng đỏ/cam trên giao diện), khi trạng thái là 3, ghi "Đơn hàng đã xác nhận" với nhãn thành công (tô sáng xanh). Nhãn hoàn toàn phục vụ hiển thị nhưng giúp người dùng quét nhanh nhật ký kiểm toán, phát hiện các sự kiện quan trọng.
 
 ---
 
-### 8. ENTITY LISTENERS: LIFECYCLE HOOKS PATTERN
+### 8. BỘ LẮNG NGHE THỰC THỂ: MẪU MÓC NỐI VÒNG ĐỜI
 
-**File nguồn:** Account.xml [Từ source code]
+**Tệp nguồn:** Account.xml [Từ mã nguồn]
 
-JPA entity listeners provide hooks into entity lifecycle events (prePersist, preUpdate, postLoad, etc.), allowing custom logic execute at specific points without modifying entity class directly. Axelor exposes này qua `<entity-listener>` element trong domain XML, linking generated entity to listener class. Pattern này preferred over putting logic directly trong entity class vì: (1) entities chỉ nên contain state không logic (anemic domain model pattern), (2) listeners có thể inject services via DI (entities không nên có dependencies), (3) multiple listeners có thể added without modifying entity.
+Bộ lắng nghe thực thể JPA (entity listener) cung cấp các móc nối (hook) vào các sự kiện vòng đời của thực thể (trước khi lưu - prePersist, trước khi cập nhật - preUpdate, sau khi tải - postLoad, v.v.), cho phép chạy logic tùy chỉnh tại các thời điểm cụ thể mà không cần sửa đổi trực tiếp lớp thực thể. Axelor cho phép khai báo bộ lắng nghe qua phần tử `<entity-listener>` trong tệp XML, liên kết thực thể được sinh với lớp lắng nghe. Mẫu thiết kế này được ưu tiên hơn việc đặt logic trực tiếp trong lớp thực thể vì: (1) thực thể chỉ nên chứa trạng thái, không chứa logic (mẫu mô hình miền thiếu máu - anemic domain model), (2) bộ lắng nghe có thể tiêm dịch vụ (inject service) qua cơ chế tiêm phụ thuộc (dependency injection) trong khi thực thể không nên có phụ thuộc, (3) nhiều bộ lắng nghe có thể được thêm mà không sửa đổi thực thể.
 
-**Bằng chứng từ code - Entity listener declaration:**
+**Bằng chứng từ mã nguồn - Khai báo bộ lắng nghe thực thể:**
 ```xml
 <entity-listener
   class="com.axelor.apps.account.db.repo.listener.AccountListener"/>
 ```
 
-**Giải thích code:** Entity Account được linked to AccountListener class. Generator adds `@EntityListeners(AccountListener.class)` annotation to generated Account entity. AccountListener class phải implement JPA listener callbacks như:
+**Giải thích mã nguồn:** Thực thể Account được liên kết với lớp AccountListener. Bộ sinh thêm chú thích `@EntityListeners(AccountListener.class)` vào thực thể Account được sinh. Lớp AccountListener phải triển khai các phương thức hồi gọi (callback) của bộ lắng nghe JPA như:
 
 ```java
 public class AccountListener {
   @PrePersist
   public void prePersist(Account account) {
-    // Logic before INSERT
+    // Logic trước khi chèn (INSERT)
   }
 
   @PreUpdate
   public void preUpdate(Account account) {
-    // Logic before UPDATE
+    // Logic trước khi cập nhật (UPDATE)
   }
 
   @PostLoad
   public void postLoad(Account account) {
-    // Logic after SELECT
+    // Logic sau khi truy vấn (SELECT)
   }
 }
 ```
 
-**Use cases cho listeners:** [Suy luận về common patterns]
-- **Validation:** Complex business validation không thể express qua constraints (ví dụ: "debit accounts cannot have credit balance")
-- **Derived fields:** Compute fields before save (ví dụ: `fullName = firstName + lastName`, `total = unitPrice * quantity`)
-- **Audit logging:** Custom audit logic beyond built-in tracking
-- **External system integration:** Notify external systems when entity changes (webhook, message queue)
-- **Cache invalidation:** Clear caches khi entity modified
-- **Security checks:** Additional authorization checks before persistence
+**Trường hợp sử dụng cho bộ lắng nghe:** [Suy luận về các mẫu phổ biến]
+- **Kiểm tra hợp lệ:** Kiểm tra nghiệp vụ phức tạp không thể biểu diễn qua ràng buộc (ví dụ: "tài khoản nợ không được có số dư bên có")
+- **Trường dẫn xuất:** Tính toán trường trước khi lưu (ví dụ: `fullName = firstName + lastName`, `total = đơnGiá * sốLượng`)
+- **Ghi nhật ký kiểm toán tùy chỉnh:** Logic kiểm toán vượt quá khả năng theo dõi tích hợp sẵn
+- **Tích hợp hệ thống bên ngoài:** Thông báo hệ thống bên ngoài khi thực thể thay đổi (webhook, hàng đợi tin nhắn)
+- **Vô hiệu hóa bộ đệm:** Xóa bộ đệm khi thực thể bị sửa đổi
 
-**Limitations:** [Suy luận về performance và complexity]
-Listeners have performance cost - every entity lifecycle event must invoke listener methods, even khi no custom logic needed. Trong batch operations (inserting thousands of records), listener overhead can multiply. Alternative pattern: handle logic explicitly trong service layer methods, calling utility methods as needed, giving more control over when logic executes. Trade-off: explicit calls more verbose nhưng more transparent, listeners more DRY nhưng "magic" (harder to trace execution flow).
+**Hạn chế:** [Suy luận về hiệu năng và độ phức tạp]
+Bộ lắng nghe có chi phí hiệu năng - mọi sự kiện vòng đời thực thể đều phải gọi các phương thức lắng nghe, ngay cả khi không cần logic tùy chỉnh. Trong các thao tác hàng loạt (chèn hàng nghìn bản ghi), chi phí bộ lắng nghe có thể nhân lên. Cách tiếp cận thay thế: xử lý logic rõ ràng trong các phương thức tầng dịch vụ, gọi các phương thức tiện ích khi cần, cho nhiều quyền kiểm soát hơn về thời điểm logic được thực thi.
 
 ---
 
-### 9. CODE GENERATION MECHANISM: TỪ DOMAIN XML ĐẾN JPA ENTITIES
+### 9. CƠ CHẾ SINH MÃ: TỪ XML ĐỊNH NGHĨA ĐẾN THỰC THỂ JPA
 
-**File nguồn:** `settings.gradle` (Gradle plugin configuration), generated code trong `build/src-gen/` [Từ source code]
+**Tệp nguồn:** `settings.gradle` (cấu hình trình cắm Gradle), mã được sinh trong `build/src-gen/` [Từ mã nguồn]
 
-Quy trình code generation là trái tim của Axelor's Model-Driven Development approach. Thay vì manually write và maintain hàng trăm entity classes với repetitive boilerplate code (getters/setters, equals/hashCode, JPA annotations), developers chỉ cần maintain domain XML files và Gradle plugin tự động generate production-ready Java code. Cơ chế này không chỉ tiết kiệm effort mà còn đảm bảo consistency - tất cả entities follow cùng patterns, coding standards, và best practices without relying on developer discipline.
+Quy trình sinh mã là trái tim của cách tiếp cận phát triển hướng mô hình (Model-Driven Development) trong Axelor. Thay vì viết và bảo trì thủ công hàng trăm lớp thực thể với mã khuôn mẫu lặp lại (getter/setter, equals/hashCode, chú thích JPA), lập trình viên chỉ cần bảo trì các tệp XML và trình cắm Gradle tự động sinh mã Java sẵn sàng cho môi trường sản xuất. Cơ chế này không chỉ tiết kiệm công sức mà còn đảm bảo tính nhất quán - tất cả thực thể tuân theo cùng các mẫu thiết kế, quy chuẩn mã, và cách thực hành tốt nhất mà không phụ thuộc vào kỷ luật của lập trình viên.
 
-Code generation thực hiện bởi một **Gradle plugin** được configure trong build system. Plugin này là part của Axelor framework core, chứa AST (Abstract Syntax Tree) parsers cho domain XML schema và code templates cho Java entity generation. Build process có một explicit step "generateCode" runs trước compilation - Gradle first parses tất cả domain XML files từ `src/main/resources/domains/`, validates against XSD schema để catch lỗi sớm, builds internal model representation, rồi generates Java source files vào `build/src-gen/` directory. Generated code then được compile cùng với hand-written code thành final JAR files.
+Quá trình sinh mã được thực hiện bởi một **trình cắm Gradle** (Gradle plugin) được cấu hình trong hệ thống xây dựng (build system). Trình cắm này là một phần của khung ứng dụng lõi Axelor, chứa bộ phân tích cú pháp cây trừu tượng (AST parser) cho lược đồ XML và các mẫu mã (template) cho việc sinh thực thể Java. Quy trình xây dựng có một bước rõ ràng "generateCode" chạy trước khi biên dịch - Gradle trước tiên phân tích tất cả tệp XML từ `src/main/resources/domains/`, kiểm tra dựa trên lược đồ XSD để bắt lỗi sớm, xây dựng biểu diễn mô hình nội bộ, rồi sinh các tệp mã Java vào thư mục `build/src-gen/`. Mã được sinh sau đó được biên dịch cùng với mã viết tay thành các tệp JAR cuối cùng.
 
-**Bằng chứng từ code - Gradle build task output:**
-```bash
-> Task :modules:axelor-open-suite:axelor-base:generateCode
-Generating code for module: axelor-base
-Processing domain: Address.xml
-Processing domain: Company.xml
-Processing domain: Partner.xml
-...
-Generated 127 entity classes
-Generated 127 repository classes
-```
+**Cấu trúc mã được sinh:**
+Các thực thể được sinh đặt trong gói được chỉ định trong thuộc tính `<module package="..."/>`. Mỗi khai báo `<entity>` sinh ra HAI lớp:
 
-**Giải thích output:** Log từ build process shows generator processing từng domain XML file và producing entity + repository classes. Con số 127 entities cho base module alone demonstrates scale: manually writing và maintaining này would be enormous effort. Mỗi lần developer modifies domain XML (add field, change constraint, etc.), running `./gradlew generateCode` regenerates affected classes, immediately reflecting changes without manual edits.
+1. **Lớp thực thể** - `{TênThựcThể}.java` trong gói `com.axelor.apps.{module}.db`
+2. **Lớp kho lưu trữ** - `{TênThựcThể}Repository.java` trong gói `com.axelor.apps.{module}.db.repo`
 
-**Generated code structure:**
-Generated entities placed trong package specified trong `<module package="..."/>` attribute. Mỗi `<entity>` declaration produces TWO classes:
+Mẫu thiết kế này phân tách mô hình dữ liệu (thực thể) khỏi tầng truy cập dữ liệu (kho lưu trữ), tuân theo mẫu Kho lưu trữ (Repository Pattern) và khuyến khích phân tầng đúng cách. Lớp thực thể kế thừa `AuditableModel` (lớp cơ sở cung cấp các trường id, version, createdBy, updatedBy, createdOn, updatedOn) và chứa tất cả khai báo trường, getter/setter, triển khai equals/hashCode. Lớp kho lưu trữ chứa phương thức tìm kiếm, tiện ích DSL truy vấn, và hằng số (nếu có trong extra-code).
 
-1. **Entity class** - `{EntityName}.java` trong package `com.axelor.apps.{module}.db`
-2. **Repository class** - `{EntityName}Repository.java` trong package `com.axelor.apps.{module}.db.repo`
-
-Pattern này separates data model (entity) from data access layer (repository), following Repository Pattern và encouraging proper layering. Entity classes extend `AuditableModel` (base class providing id, version, createdBy, updatedBy, createdOn, updatedOn fields) và contain all field declarations, getters/setters, equals/hashCode implementations. Repository classes contain finder methods, Query DSL utilities, và constants (nếu có trong extra-code).
-
-**Bằng chứng từ code - Generated entity class structure:**
+**Bằng chứng từ mã nguồn - Cấu trúc lớp thực thể được sinh:**
 ```java
 package com.axelor.apps.base.db;
 
@@ -678,7 +588,6 @@ public class Company extends AuditableModel {
   @JoinColumn(name = "currency")
   private Currency currency;
 
-  // Getters and setters
   public String getCode() { return code; }
   public void setCode(String code) { this.code = code; }
 
@@ -703,11 +612,9 @@ public class Company extends AuditableModel {
 }
 ```
 
-**Giải thích code:** Generated entity là standard JPA entity với all necessary annotations. `@Entity` marks class as JPA entity, `@Table` specifies database table name (following UPPER_CASE convention). Field declarations map XML field definitions: `<string name="code" unique="true" required="true">` becomes `@Column(name = "code", unique = true, nullable = false) private String code;`. Relationship field `currency` has `@ManyToOne` annotation với `fetch = FetchType.LAZY` - Axelor defaults to lazy loading for performance.
+**Giải thích mã nguồn:** Thực thể được sinh là thực thể JPA chuẩn với tất cả chú thích cần thiết. `@Entity` đánh dấu lớp là thực thể JPA, `@Table` chỉ định tên bảng cơ sở dữ liệu (theo quy ước CHỮ_HOA). Khai báo trường ánh xạ từ định nghĩa XML: `<string name="code" unique="true" required="true">` thành `@Column(name = "code", unique = true, nullable = false) private String code;`. Trường quan hệ `currency` có chú thích `@ManyToOne` với `fetch = FetchType.LAZY` - Axelor mặc định tải lười để tối ưu hiệu năng. Các phương thức `equals()` và `hashCode()` chỉ dùng trường ID - mẫu JPA chuẩn tránh vấn đề với tập hợp được ủy nhiệm (proxied collection) và thực thể đã tách rời (detached entity).
 
-Getters/setters follow JavaBeans conventions. `equals()` và `hashCode()` implementations use only ID field - standard JPA pattern avoiding issues với proxied collections và detached entities. Nếu domain XML có `equalsInclude="true"` trên fields, generator includes those fields trong equals/hashCode instead.
-
-**Bằng chứng từ code - Generated repository class:**
+**Bằng chứng từ mã nguồn - Lớp kho lưu trữ được sinh:**
 ```java
 package com.axelor.apps.base.db.repo;
 
@@ -721,7 +628,6 @@ public class ProductRepository extends JpaRepository<Product> {
     super(Product.class);
   }
 
-  // Finder methods from domain XML
   public Product findByCode(String code) {
     return Query.of(Product.class)
       .filter("self.code = :code")
@@ -729,74 +635,27 @@ public class ProductRepository extends JpaRepository<Product> {
       .fetchOne();
   }
 
-  public Product findByName(String name) {
-    return Query.of(Product.class)
-      .filter("self.name = :name")
-      .bind("name", name)
-      .fetchOne();
-  }
-
-  // Constants from extra-code
   public static final String PRODUCT_TYPE_SERVICE = "service";
   public static final String PRODUCT_TYPE_STORABLE = "storable";
 }
 ```
 
-**Giải thích code:** Generated repository extends `JpaRepository<T>` base class providing CRUD operations (save, find, remove, all). Constructor calls super với entity class type. Finder methods declared trong domain XML `<finder-method>` appear here as Query DSL calls. Constants từ `<extra-code>` sections injected at class level.
-
-Service layer code injects repository instances via dependency injection: `@Inject ProductRepository productRepo;` then calls `productRepo.findByCode("PROD001")`. Repository pattern isolates database access logic từ business logic, making services easier to test (can mock repositories) và maintain.
-
-**Generation triggers và incremental builds:** [Suy luận về build optimization]
-Gradle plugin likely implements incremental generation - chỉ regenerate entities whose domain XML files changed since last build. Mechanism checks file timestamps: if `Product.xml` modified more recently than `Product.java`, regenerate, otherwise skip. Incremental builds critical cho large codebases với hundreds of entities - full regeneration mỗi lần would waste minutes. However, changes to shared configuration (XSD schema changes, generator version upgrades) require full regeneration of tất cả entities.
-
-**Customization và hand-written code preservation:**
-Critical question: nếu developer needs add custom methods to entity classes, nhưng entities are generated, modifications sẽ bị overwrite next generation? Axelor solves này via "custom repository" pattern: generated repository là base class, developers create subclass với custom methods. Ví dụ: `ProductRepository` (generated) extended by `ProductBaseRepository` (hand-written) containing business logic. Service layer injects custom repository, not generated one.
+**Giải thích mã nguồn:** Kho lưu trữ được sinh kế thừa lớp cơ sở `JpaRepository<T>` cung cấp các thao tác CRUD (lưu, tìm, xóa, tất cả). Hàm tạo gọi super với kiểu lớp thực thể. Phương thức tìm kiếm khai báo trong XML `<finder-method>` xuất hiện ở đây dưới dạng lời gọi DSL truy vấn. Hằng số từ các phần `<extra-code>` được đưa vào ở cấp lớp. Tầng dịch vụ tiêm đối tượng kho lưu trữ qua cơ chế tiêm phụ thuộc: `@Inject ProductRepository productRepo;` rồi gọi `productRepo.findByCode("PROD001")`.
 
 ---
 
-### 10. REPOSITORY PATTERN: TWO-TIER ARCHITECTURE (GENERATED + CUSTOM)
+### 10. MẪU KHO LƯU TRỮ: KIẾN TRÚC HAI TẦNG (SINH TỰ ĐỘNG + TÙY CHỈNH)
 
-**File nguồn:** Generated `ProductRepository.java`, custom `ProductBaseRepository.java` [Từ source code]
+**Tệp nguồn:** `ProductRepository.java` được sinh, `ProductBaseRepository.java` tùy chỉnh [Từ mã nguồn]
 
-Axelor implements a sophisticated two-tier repository pattern separating generated data access code từ custom business logic. Tier 1 là **generated repositories** chứa finder methods và basic CRUD từ domain XML definitions - these files regenerated mỗi build và không nên edit manually. Tier 2 là **custom repositories** - hand-written classes extending generated repositories, containing complex queries, business validation, calculated fields, và integration logic. Pattern này elegantly solves code generation's fundamental challenge: how to preserve customizations khi regenerating code.
+Axelor triển khai một mẫu kho lưu trữ hai tầng tinh vi, phân tách mã truy cập dữ liệu được sinh tự động khỏi logic nghiệp vụ tùy chỉnh. Tầng 1 là **kho lưu trữ được sinh** chứa phương thức tìm kiếm và CRUD cơ bản từ định nghĩa XML - các tệp này được sinh lại mỗi lần xây dựng và không nên sửa thủ công. Tầng 2 là **kho lưu trữ tùy chỉnh** - các lớp viết tay kế thừa kho lưu trữ được sinh, chứa truy vấn phức tạp, kiểm tra hợp lệ nghiệp vụ, trường tính toán, và logic tích hợp. Mẫu thiết kế này giải quyết một cách tinh tế thách thức cốt lõi của sinh mã tự động: làm thế nào để bảo toàn các tùy chỉnh khi sinh lại mã.
 
-Naming convention rõ ràng distinguish hai tiers: generated repositories named `{Entity}Repository` (ví dụ: `ProductRepository`), custom repositories named `{Entity}BaseRepository` hoặc `{Entity}ManagementRepository` (ví dụ: `ProductBaseRepository`). "Base" suffix có thể confusing (normally "base" nghĩa là parent class) nhưng trong Axelor context, "Base" refers to base module hoặc baseline functionality. Dependency injection framework configured để inject custom repository instance khi code requests repository interface - service layer không aware of tier distinction.
+Quy ước đặt tên phân biệt rõ hai tầng: kho lưu trữ được sinh có tên `{ThựcThể}Repository` (ví dụ: `ProductRepository`), kho lưu trữ tùy chỉnh có tên `{ThựcThể}BaseRepository` hoặc `{ThựcThể}ManagementRepository` (ví dụ: `ProductBaseRepository`). Khung tiêm phụ thuộc (dependency injection) được cấu hình để tiêm đối tượng kho lưu trữ tùy chỉnh khi mã yêu cầu giao diện kho lưu trữ - tầng dịch vụ không cần biết về sự phân biệt giữa hai tầng.
 
-**Bằng chứng từ code - Generated repository (Tier 1):**
+**Bằng chứng từ mã nguồn - Kho lưu trữ tùy chỉnh (Tầng 2):**
 ```java
-// File: build/src-gen/.../db/repo/ProductRepository.java
-// AUTO-GENERATED - DO NOT EDIT
-package com.axelor.apps.base.db.repo;
-
-import com.axelor.apps.base.db.Product;
-import com.axelor.db.JpaRepository;
-import com.axelor.db.Query;
-
-public class ProductRepository extends JpaRepository<Product> {
-
-  public ProductRepository() {
-    super(Product.class);
-  }
-
-  public Product findByCode(String code) {
-    return Query.of(Product.class)
-      .filter("self.code = :code")
-      .bind("code", code)
-      .fetchOne();
-  }
-
-  public static final int SALE_SUPPLY_FROM_STOCK = 1;
-  public static final int SALE_SUPPLY_PURCHASE = 2;
-  public static final int SALE_SUPPLY_PRODUCE = 3;
-}
-```
-
-**Giải thích code:** Generated repository trong `build/src-gen/` directory - location itself signals "generated, do not edit". Comment header `AUTO-GENERATED - DO NOT EDIT` reinforces message. Class chứa only declarative code từ XML: finder methods với straightforward Query DSL, constants từ extra-code. No complex business logic, no external service dependencies - pure data access.
-
-**Bằng chứng từ code - Custom repository (Tier 2):**
-```java
-// File: src/main/java/.../db/repo/ProductBaseRepository.java
-// HAND-WRITTEN - safe to edit
+// Tệp: src/main/java/.../db/repo/ProductBaseRepository.java
+// VIẾT TAY - an toàn để sửa
 package com.axelor.apps.base.db.repo;
 
 import com.axelor.apps.base.db.Product;
@@ -811,24 +670,24 @@ public class ProductBaseRepository extends ProductRepository {
 
   @Override
   public Product save(Product product) {
-    // Custom validation before save
+    // Kiểm tra hợp lệ tùy chỉnh trước khi lưu
     if (product.getCode() == null || product.getCode().isEmpty()) {
       throw new PersistenceException("Product code is required");
     }
 
-    // Call service to compute derived fields
+    // Gọi dịch vụ để tính các trường dẫn xuất
     productService.computeSalePrice(product);
 
-    // Call parent save (actual persistence)
+    // Gọi save của lớp cha (thực hiện lưu vào CSDL)
     return super.save(product);
   }
 
   public Product copy(Product product, boolean deep) {
     Product copy = super.copy(product, deep);
 
-    // Custom copy logic
-    copy.setCode(null); // Force user to enter new code
-    copy.setStatusSelect(STATUS_DRAFT); // Reset to draft status
+    // Logic sao chép tùy chỉnh
+    copy.setCode(null); // Buộc người dùng nhập mã mới
+    copy.setStatusSelect(STATUS_DRAFT); // Đặt lại về trạng thái nháp
 
     return copy;
   }
@@ -843,52 +702,45 @@ public class ProductBaseRepository extends ProductRepository {
 }
 ```
 
-**Giải thích code:** Custom repository trong `src/main/java/` (source directory cho hand-written code) extends generated `ProductRepository`, inheriting all finder methods và constants. Class có thể inject services via `@Inject` annotation - generated repositories không có dependencies để keep them simple, nhưng custom repositories có thể have complex dependency graphs.
+**Giải thích mã nguồn:** Kho lưu trữ tùy chỉnh nằm trong thư mục `src/main/java/` (thư mục mã viết tay) và kế thừa `ProductRepository` được sinh, thừa hưởng tất cả phương thức tìm kiếm và hằng số. Lớp có thể tiêm dịch vụ qua chú thích `@Inject` - kho lưu trữ được sinh không có phụ thuộc để giữ chúng đơn giản, nhưng kho lưu trữ tùy chỉnh có thể có đồ thị phụ thuộc phức tạp.
 
-Override của `save()` method demonstrates validation + derived field computation pattern. Before calling `super.save()` (which performs actual database INSERT/UPDATE), custom logic validates required fields và calls service to compute dependent values. This ensures business rules enforced consistently regardless of how product saved (web UI, API, batch job). Alternative approach would scatter validation across controllers/services - centralizing trong repository is cleaner.
+Phương thức `save()` được ghi đè minh họa mẫu kiểm tra hợp lệ + tính toán trường dẫn xuất. Trước khi gọi `super.save()` (thực hiện INSERT/UPDATE thực tế vào cơ sở dữ liệu), logic tùy chỉnh kiểm tra các trường bắt buộc và gọi dịch vụ để tính các giá trị phụ thuộc. Điều này đảm bảo quy tắc nghiệp vụ được áp dụng nhất quán bất kể sản phẩm được lưu bằng cách nào (giao diện web, API, tác vụ hàng loạt).
 
-Custom `copy()` method handles entity duplication với business logic. Simple copy would preserve code và status, causing constraint violations (code must be unique) và wrong business state (copy should start as draft). Custom logic resets these fields to safe defaults. Method `findExpiredProducts()` demonstrates complex query không thể express via declarative finder methods trong XML - requires multiple filters, date comparison, status filtering.
+Phương thức `copy()` tùy chỉnh xử lý sao chép thực thể với logic nghiệp vụ. Sao chép đơn giản sẽ giữ nguyên mã và trạng thái, gây vi phạm ràng buộc (mã phải duy nhất) và trạng thái nghiệp vụ sai (bản sao nên bắt đầu ở trạng thái nháp). Logic tùy chỉnh đặt lại các trường này về giá trị mặc định an toàn. Phương thức `findExpiredProducts()` minh họa truy vấn phức tạp không thể biểu diễn qua phương thức tìm kiếm khai báo trong XML - yêu cầu nhiều bộ lọc, so sánh ngày, lọc trạng thái.
 
-**Dependency injection binding:** [Suy luận về Guice configuration]
-Axelor must configure Guice DI container để inject custom repository khi code requests repository. Likely có binding module:
+**Ràng buộc tiêm phụ thuộc:** [Suy luận về cấu hình Guice]
+Axelor phải cấu hình bộ chứa Guice DI để tiêm kho lưu trữ tùy chỉnh khi mã yêu cầu kho lưu trữ:
 ```java
 bind(ProductRepository.class).to(ProductBaseRepository.class);
 ```
-This tells Guice: khi component requests `ProductRepository`, inject instance of `ProductBaseRepository` instead. Services can inject `ProductRepository` (interface/base class) không cần know về custom implementation - dependency inversion principle.
+Lệnh này nói với Guice: khi thành phần yêu cầu `ProductRepository`, hãy tiêm đối tượng `ProductBaseRepository` thay thế. Các dịch vụ có thể tiêm `ProductRepository` (giao diện/lớp cơ sở) mà không cần biết về triển khai tùy chỉnh - nguyên tắc đảo ngược phụ thuộc (dependency inversion principle).
 
-**Benefits của two-tier pattern:** [Suy luận về architectural advantages]
-
-1. **Separation of concerns:** Generated code pure data access, custom code business logic
-2. **Upgrade safety:** Framework upgrades regenerate tier 1 without touching tier 2 custom code
-3. **Consistency:** All repositories have same basic structure (tier 1), custom logic additive
-4. **Testability:** Can test tier 2 logic by mocking tier 1 operations
-5. **Discoverability:** Developers know where to look - simple queries in generated, complex logic in custom
-
-**Trade-offs:**
-1. **Complexity:** Two files per entity instead of one, có thể confuse new developers
-2. **Indirection:** Call stack deeper (service → custom repo → generated repo → JPA), harder debugging
-3. **Inconsistent customization:** Some entities có custom repos, some don't - no uniform pattern
-4. **Generated repo limitations:** Cannot customize generated finder methods (fixed Query DSL patterns)
+**Lợi ích của mẫu hai tầng:**
+1. **Phân tách mối quan tâm:** Mã được sinh chỉ truy cập dữ liệu thuần túy, mã tùy chỉnh chứa logic nghiệp vụ
+2. **An toàn khi nâng cấp:** Nâng cấp khung ứng dụng sinh lại tầng 1 mà không ảnh hưởng tầng 2
+3. **Nhất quán:** Tất cả kho lưu trữ có cùng cấu trúc cơ bản (tầng 1), logic tùy chỉnh là phần bổ sung
+4. **Khả năng kiểm thử:** Có thể kiểm thử logic tầng 2 bằng cách giả lập (mock) thao tác tầng 1
+5. **Dễ tìm kiếm:** Lập trình viên biết tìm ở đâu - truy vấn đơn giản ở kho được sinh, logic phức tạp ở kho tùy chỉnh
 
 ---
 
-### 11. QUERY PATTERNS VÀ AXELOR QUERY DSL
+### 11. CÁC MẪU TRUY VẤN VÀ DSL TRUY VẤN AXELOR
 
-**File nguồn:** Custom repository implementations, service layer code [Từ source code repositories]
+**Tệp nguồn:** Các lớp kho lưu trữ tùy chỉnh, mã tầng dịch vụ [Từ mã nguồn kho lưu trữ]
 
-Axelor cung cấp proprietary Query DSL built on top of JPA Criteria API, offering fluent interface cho constructing type-safe queries. DSL này abstraction away Hibernate's verbose Criteria API và JPQL string queries, providing developer-friendly syntax với compile-time safety. Pattern chung là `Query.of(EntityClass.class).filter(...).bind(...).fetch()` - declarative style minimizing boilerplate và reducing risk của SQL injection (all parameters properly escaped).
+Axelor cung cấp DSL truy vấn (Query DSL) riêng được xây dựng trên nền tảng API tiêu chí (Criteria API) của JPA, mang lại giao diện nối chuỗi liền mạch (fluent interface) để xây dựng truy vấn an toàn về kiểu dữ liệu (type-safe). DSL này trừu tượng hóa API tiêu chí dài dòng của Hibernate và các truy vấn chuỗi JPQL, cung cấp cú pháp thân thiện với lập trình viên, đồng thời đảm bảo an toàn tại thời điểm biên dịch. Mẫu chung là `Query.of(LớpThựcThể.class).filter(...).bind(...).fetch()` - phong cách khai báo giảm thiểu mã khuôn mẫu và giảm nguy cơ tấn công chèn SQL (SQL injection) vì tất cả tham số được thoát ký tự (escape) đúng cách.
 
-Query DSL có một số distinctive features: filter strings use `self` alias referring to queried entity (borrowed from JPQL conventions), named parameters (`:paramName`) instead of positional (`?1`), method chaining cho composability, và support cho pagination, ordering, và fetch modes. Builder pattern means queries constructed incrementally - có thể pass query object between methods, add filters conditionally, reuse base queries với different parameters.
+DSL truy vấn có một số tính năng đặc biệt: chuỗi bộ lọc dùng bí danh `self` tham chiếu đến thực thể được truy vấn (mượn từ quy ước JPQL), tham số đặt tên (`:tenThamSo`) thay vì tham số vị trí (`?1`), nối chuỗi phương thức (method chaining) cho khả năng tổ hợp, và hỗ trợ phân trang, sắp xếp, và chế độ tải dữ liệu. Mẫu xây dựng (builder pattern) cho phép truy vấn được xây dựng dần dần - có thể truyền đối tượng truy vấn giữa các phương thức, thêm bộ lọc có điều kiện, tái sử dụng truy vấn gốc với các tham số khác nhau.
 
-**Bằng chứng từ code - Basic Query DSL patterns:**
+**Bằng chứng từ mã nguồn - Các mẫu DSL truy vấn cơ bản:**
 ```java
-// Simple single-filter query
+// Truy vấn đơn giản với một bộ lọc
 Product product = Query.of(Product.class)
   .filter("self.code = :code")
   .bind("code", "PROD001")
   .fetchOne();
 
-// Multiple filters (AND logic)
+// Nhiều bộ lọc (logic AND)
 List<Product> products = Query.of(Product.class)
   .filter("self.productCategory = :category")
   .filter("self.salePrice > :minPrice")
@@ -896,23 +748,23 @@ List<Product> products = Query.of(Product.class)
   .bind("minPrice", 100.0)
   .fetch();
 
-// Ordering and pagination
+// Sắp xếp và phân trang
 List<Product> products = Query.of(Product.class)
   .filter("self.statusSelect = :status")
   .bind("status", ProductRepository.STATUS_ACTIVE)
-  .order("-createdOn") // Descending order (minus prefix)
-  .fetchLimit(20, 0); // Limit 20, offset 0
+  .order("-createdOn") // Giảm dần (dấu trừ phía trước)
+  .fetchLimit(20, 0); // Giới hạn 20, bắt đầu từ 0
 ```
 
-**Giải thích code:** Query construction starts với `Query.of(Product.class)` establishing entity type (for type safety). Filter method adds WHERE clauses - multiple filter calls ANDed together (không có explicit AND keyword needed). String `"self.code = :code"` is JPQL fragment where `self` refers to Product entity và `:code` is named parameter placeholder.
+**Giải thích mã nguồn:** Việc xây dựng truy vấn bắt đầu với `Query.of(Product.class)` thiết lập kiểu thực thể (đảm bảo an toàn kiểu). Phương thức filter thêm mệnh đề WHERE - nhiều lời gọi filter được nối bằng AND (không cần từ khóa AND rõ ràng). Chuỗi `"self.code = :code"` là đoạn JPQL trong đó `self` tham chiếu đến thực thể Product và `:code` là chỗ giữ chỗ (placeholder) cho tham số đặt tên.
 
-Bind method supplies parameter values - names must match placeholders. Named parameters superior to positional vì: (1) readable - `bind("code", value)` clearer than `bind(1, value)`, (2) refactor-safe - can reorder filters without breaking parameter positions, (3) reusability - can bind same parameter multiple times trong complex queries.
+Phương thức bind cung cấp giá trị tham số - tên phải khớp với chỗ giữ chỗ. Tham số đặt tên ưu việt hơn tham số vị trí vì: (1) dễ đọc - `bind("code", value)` rõ ràng hơn `bind(1, value)`, (2) an toàn khi tái cấu trúc - có thể sắp xếp lại bộ lọc mà không làm hỏng vị trí tham số, (3) tái sử dụng - có thể ràng buộc cùng tham số nhiều lần trong truy vấn phức tạp.
 
-Order method với minus prefix (`"-createdOn"`) specifies descending sort - convention borrowed from Django ORM. Without minus, default ascending. Method `fetchLimit(limit, offset)` implements pagination - crucial cho large result sets, prevents loading thousands of records into memory. Parameters map to SQL `LIMIT` và `OFFSET` clauses.
+Phương thức order với dấu trừ (`"-createdOn"`) chỉ định sắp xếp giảm dần - quy ước mượn từ Django ORM. Không có dấu trừ thì mặc định tăng dần. Phương thức `fetchLimit(limit, offset)` triển khai phân trang - rất quan trọng cho tập kết quả lớn, ngăn tải hàng nghìn bản ghi vào bộ nhớ. Các tham số ánh xạ tới mệnh đề `LIMIT` và `OFFSET` trong SQL.
 
-**Complex queries với joins và subqueries:**
+**Truy vấn phức tạp với phép nối và truy vấn con:**
 ```java
-// Explicit join query
+// Truy vấn nối rõ ràng
 List<SaleOrderLine> lines = Query.of(SaleOrderLine.class)
   .filter("self.saleOrder.company = :company")
   .filter("self.saleOrder.statusSelect = :status")
@@ -920,24 +772,16 @@ List<SaleOrderLine> lines = Query.of(SaleOrderLine.class)
   .bind("status", SaleOrder.STATUS_CONFIRMED)
   .fetch();
 
-// Count query
+// Truy vấn đếm
 long count = Query.of(Product.class)
   .filter("self.productCategory = :category")
   .bind("category", category)
   .count();
-
-// EXISTS-style query checking relationships
-boolean hasOrders = Query.of(SaleOrder.class)
-  .filter("self.clientPartner = :partner")
-  .bind("partner", partner)
-  .count() > 0;
 ```
 
-**Giải thích code:** Filter `"self.saleOrder.company = :company"` demonstrates path expressions - DSL automatically performs joins when traversing relationships. Behind scenes, generates SQL JOIN between sale_order_line và sale_order tables. Developers không cần explicitly declare joins - cleaner syntax, though less control over join types (LEFT vs INNER) và fetch strategies.
+**Giải thích mã nguồn:** Bộ lọc `"self.saleOrder.company = :company"` minh họa biểu thức đường dẫn (path expression) - DSL tự động thực hiện phép nối khi duyệt qua quan hệ. Bên trong, sinh câu SQL JOIN giữa bảng sale_order_line và sale_order. Lập trình viên không cần khai báo phép nối rõ ràng - cú pháp gọn gàng hơn, mặc dù ít quyền kiểm soát hơn về loại phép nối (LEFT hay INNER) và chiến lược tải dữ liệu.
 
-Count queries call `count()` instead of `fetch()` - returns total matching records without loading entities. Efficient cho checking existence (`count() > 0`) hoặc showing total records in paginated views. EXISTS-style query common pattern - checking whether any records exist matching criteria.
-
-**Dynamic query building:**
+**Xây dựng truy vấn động:**
 ```java
 Query<Product> query = Query.of(Product.class);
 
@@ -959,456 +803,285 @@ if (searchText != null && !searchText.isEmpty()) {
 List<Product> results = query.fetch();
 ```
 
-**Giải thích code:** Query object mutable - mỗi filter/bind call returns same query instance (or new instance, depending on implementation), allowing incremental construction. Pattern này powerful cho search forms với optional filters - chỉ add filters when parameters provided, avoiding complex conditional SQL string concatenation. Code clean và maintainable compared to building JPQL strings: `String jpql = "SELECT p FROM Product p WHERE 1=1"; if (category != null) jpql += " AND p.category = :category"; ...` (antipattern).
+**Giải thích mã nguồn:** Đối tượng Query có thể thay đổi - mỗi lời gọi filter/bind trả về cùng hoặc đối tượng mới, cho phép xây dựng dần dần. Mẫu thiết kế này rất hiệu quả cho biểu mẫu tìm kiếm với bộ lọc tùy chọn - chỉ thêm bộ lọc khi tham số được cung cấp, tránh phải nối chuỗi SQL có điều kiện phức tạp. Mã sạch và dễ bảo trì hơn so với xây dựng chuỗi JPQL: `String jpql = "SELECT p FROM Product p WHERE 1=1"; if (category != null) jpql += " AND p.category = :category"; ...` (cách làm xấu cần tránh).
 
-**Limitations của Query DSL:** [Suy luận về missing features]
+**Hạn chế của DSL truy vấn:** [Suy luận về các tính năng thiếu]
+DSL truy vấn đáp ứng các trường hợp phổ biến nhưng các tình huống phức tạp có thể cần JPQL thuần hoặc SQL gốc (native SQL):
+- **Phép nối phức tạp:** Không thể chỉ định loại phép nối (LEFT JOIN, RIGHT JOIN, OUTER JOIN)
+- **Phép tổng hợp:** Không hỗ trợ tích hợp cho GROUP BY, HAVING, các hàm tổng hợp (SUM, AVG, MAX)
+- **Truy vấn con:** Không thể nhúng truy vấn con trong bộ lọc (ví dụ: WHERE id IN (SELECT ...))
+- **Truy vấn hợp nhất:** Không thể UNION nhiều truy vấn
+- **Phép chiếu tùy chỉnh:** Luôn lấy toàn bộ thực thể, không thể SELECT các cột cụ thể
 
-Query DSL covers common cases nhưng complex scenarios may require raw JPQL hoặc native SQL:
-- **Complex joins:** Cannot specify join types (LEFT JOIN, RIGHT JOIN, OUTER JOIN) - DSL uses defaults
-- **Aggregations:** No built-in support cho GROUP BY, HAVING, aggregate functions (SUM, AVG, MAX)
-- **Subqueries:** Cannot embed subqueries trong filters (ví dụ: WHERE id IN (SELECT ...))
-- **Union queries:** Cannot UNION multiple queries
-- **Custom projections:** Always fetches entire entities, cannot SELECT specific columns (DTO projections)
-
-For these scenarios, Axelor allows executing raw JPQL:
+Cho các tình huống này, Axelor cho phép thực thi JPQL thuần hoặc SQL gốc:
 ```java
-String jpql = "SELECT p.name, SUM(ol.qty) FROM Product p JOIN OrderLine ol ON ol.product = p GROUP BY p.name";
-List<Object[]> results = JPA.em().createQuery(jpql).getResultList();
-```
-
-Hoặc native SQL:
-```java
-String sql = "SELECT * FROM product WHERE code ~* :regex"; // PostgreSQL regex
+String sql = "SELECT * FROM product WHERE code ~* :regex"; // Biểu thức chính quy PostgreSQL
 Query query = JPA.em().createNativeQuery(sql, Product.class);
 query.setParameter("regex", "^PROD-.*");
 List<Product> results = query.getResultList();
 ```
 
-Trade-off: raw queries more powerful nhưng lose type safety, more verbose, và database-specific (portability issues).
+Đánh đổi: truy vấn thuần mạnh mẽ hơn nhưng mất tính an toàn kiểu, dài dòng hơn, và phụ thuộc cơ sở dữ liệu cụ thể (vấn đề khả năng di chuyển).
 
 ---
 
-### 12. JSON FIELDS VÀ CUSTOM FIELDS MECHANISM
+### 12. TRƯỜNG JSON VÀ CƠ CHẾ TRƯỜNG TÙY CHỈNH
 
-**File nguồn:** Partner.xml, SaleOrder.xml, analysis of Axelor Studio integration [Từ source code và suy luận]
+**Tệp nguồn:** Partner.xml, SaleOrder.xml, phân tích tích hợp Axelor Studio [Từ mã nguồn và suy luận]
 
-JSON fields trong Axelor serve một use case rất specific: enabling business users to add custom fields to entities through Axelor Studio (no-code tool) mà không cần developer intervention và không cần database migrations. Đây là classic tension trong enterprise software - balance giữa structure (rigid schemas ensuring data integrity) versus flexibility (business users muốn customize without waiting for IT). Axelor's solution là hybrid: core fields strongly typed trong schema, custom fields loosely typed trong JSON blob.
+Trường JSON trong Axelor phục vụ một trường hợp sử dụng rất cụ thể: cho phép người dùng nghiệp vụ thêm trường tùy chỉnh vào thực thể thông qua Axelor Studio (công cụ không cần viết mã) mà không cần sự can thiệp của lập trình viên và không cần di trú cơ sở dữ liệu (database migration). Đây là sự căng thẳng kinh điển trong phần mềm doanh nghiệp - cân bằng giữa cấu trúc (lược đồ cứng đảm bảo toàn vẹn dữ liệu) và tính linh hoạt (người dùng nghiệp vụ muốn tùy chỉnh mà không cần chờ bộ phận kỹ thuật). Giải pháp của Axelor là kết hợp: các trường lõi có kiểu mạnh trong lược đồ, các trường tùy chỉnh có kiểu lỏng trong khối JSON.
 
-Cơ chế hoạt động như sau: entity definition includes một string field với `json="true"` attribute, ví dụ `<string name="attrs" json="true"/>`. Database column type vẫn là TEXT hoặc VARCHAR (tùy database), nhưng Axelor framework intercepts getters/setters để serialize/deserialize JSON. Application code không làm việc với raw JSON string - instead works với `Map<String, Object>` abstraction. Axelor Studio UI cho phép business users define custom fields (name, type, label, default value, validation rules) và stores metadata trong `meta_json_field` table, while actual field values stored trong JSON column của entity records.
+Cơ chế hoạt động như sau: định nghĩa thực thể bao gồm một trường chuỗi với thuộc tính `json="true"`, ví dụ `<string name="attrs" json="true"/>`. Kiểu cột cơ sở dữ liệu vẫn là TEXT hoặc VARCHAR (tùy cơ sở dữ liệu), nhưng khung ứng dụng Axelor chặn các phương thức getter/setter để nối tiếp hóa/giải nối tiếp hóa JSON. Mã ứng dụng không làm việc với chuỗi JSON thô - thay vào đó làm việc với kiểu trừu tượng `Map<String, Object>`. Giao diện Axelor Studio cho phép người dùng nghiệp vụ định nghĩa trường tùy chỉnh (tên, kiểu, nhãn, giá trị mặc định, quy tắc kiểm tra) và lưu siêu dữ liệu (metadata) trong bảng `meta_json_field`, trong khi giá trị thực tế của trường được lưu trong cột JSON của bản ghi thực thể.
 
-**Bằng chứng từ code - JSON field declaration:**
+**Bằng chứng từ mã nguồn - Khai báo trường JSON:**
 ```xml
-<!-- In Partner.xml -->
+<!-- Trong Partner.xml -->
 <string name="attrs" title="Custom attributes" json="true"/>
 
-<!-- In SaleOrder.xml -->
+<!-- Trong SaleOrder.xml -->
 <string name="partnerAttrs" title="Fields" json="true"/>
 ```
 
-**Giải thích code:** Field `attrs` typically used name cho custom attributes JSON field. Title "Custom attributes" suggests field không meant for direct editing bởi developers - instead managed through UI tools. Second example `partnerAttrs` có thể store custom fields specific to partner relationships on sale orders - ví dụ: custom partner preferences, special pricing agreements, delivery instructions mà sales team needs capture nhưng không generic enough to warrant dedicated fields.
-
-**Runtime usage của JSON fields:**
+**Sử dụng trường JSON trong mã thực thi:**
 ```java
-// Reading JSON field (deserialized to Map)
+// Đọc trường JSON (giải nối tiếp hóa thành Map)
 Product product = productRepo.find(123L);
-Map<String, Object> attrs = product.getAttrs(); // Framework deserializes JSON string to Map
+Map<String, Object> attrs = product.getAttrs();
 
 String customField1 = (String) attrs.get("customField1");
 Boolean isSpecial = (Boolean) attrs.get("specialProduct");
 Integer loyaltyPoints = (Integer) attrs.get("loyaltyPoints");
 
-// Writing JSON field
-attrs.put("customField1", "new value");
+// Ghi trường JSON
+attrs.put("customField1", "giá trị mới");
 attrs.put("newCustomField", 42);
-product.setAttrs(attrs); // Framework will serialize Map to JSON string on save
+product.setAttrs(attrs);
 productRepo.save(product);
 ```
 
-**Giải thích code:** Framework provides convenient Map interface hiding JSON complexity. Developers không manually call JSON libraries - getters return Map, setters accept Map. Downside: no type safety - casting required (`(String) attrs.get(...)`), runtime ClassCastException risk nếu types wrong. Alternative design would be type-safe DTO classes, nhưng then couldn't support truly dynamic fields.
+**Giải thích mã nguồn:** Khung ứng dụng cung cấp giao diện Map tiện lợi che giấu sự phức tạp của JSON. Lập trình viên không cần gọi thủ công thư viện JSON - getter trả về Map, setter nhận Map. Nhược điểm: không có tính an toàn kiểu - phải ép kiểu (`(String) attrs.get(...)`) nên có nguy cơ lỗi ClassCastException lúc chạy nếu kiểu sai.
 
-**Database storage format:**
+**Định dạng lưu trữ trong cơ sở dữ liệu:**
 ```sql
--- Sample data from partner table
+-- Dữ liệu mẫu từ bảng partner
 SELECT id, name, attrs FROM partner WHERE id = 123;
 
--- Result:
+-- Kết quả:
 -- id  | name          | attrs
 -- 123 | Acme Corp     | {"customField1": "value", "vatExempt": true, "loyaltyPoints": 1500}
 ```
 
-**Giải thích:** JSON stored as text string trong database. Modern databases (PostgreSQL 9.2+, MySQL 5.7+) có native JSON types supporting indexing và querying, nhưng Axelor sử dụng TEXT column for portability. Consequence: cannot efficiently query custom fields. Query như `SELECT * FROM partner WHERE attrs->>'loyaltyPoints' > 1000` theoretically possible trong PostgreSQL nhưng slow (full table scan) và không cross-database compatible.
+**Giải thích:** JSON được lưu dưới dạng chuỗi văn bản trong cơ sở dữ liệu. Các cơ sở dữ liệu hiện đại (PostgreSQL 9.2+, MySQL 5.7+) có kiểu JSON gốc hỗ trợ đánh chỉ mục và truy vấn, nhưng Axelor sử dụng cột TEXT để đảm bảo khả năng di chuyển giữa các hệ quản trị. Hệ quả: không thể truy vấn hiệu quả các trường tùy chỉnh.
 
-**Metadata storage trong MetaJsonField:**
+**Lưu trữ siêu dữ liệu trong MetaJsonField:**
 ```sql
--- meta_json_field table structure (inferred)
+-- Cấu trúc bảng meta_json_field (suy luận)
 CREATE TABLE meta_json_field (
   id BIGINT PRIMARY KEY,
-  model VARCHAR(255),      -- Target entity class (com.axelor.apps.base.db.Partner)
-  model_field VARCHAR(255), -- JSON field name (attrs)
-  name VARCHAR(255),        -- Custom field name (loyaltyPoints)
-  type VARCHAR(50),         -- Field type (integer, string, boolean, decimal, date)
-  title VARCHAR(255),       -- Display label (Loyalty Points)
-  default_value TEXT,       -- Default value for new records
-  required BOOLEAN,         -- Validation: is field required?
-  min_value DECIMAL,        -- Validation: minimum for numeric fields
-  max_value DECIMAL,        -- Validation: maximum for numeric fields
-  selection TEXT,           -- For enum-like fields, JSON array of options
+  model VARCHAR(255),       -- Lớp thực thể đích (com.axelor.apps.base.db.Partner)
+  model_field VARCHAR(255),  -- Tên trường JSON (attrs)
+  name VARCHAR(255),         -- Tên trường tùy chỉnh (loyaltyPoints)
+  type VARCHAR(50),          -- Kiểu trường (integer, string, boolean, decimal, date)
+  title VARCHAR(255),        -- Nhãn hiển thị (Điểm thưởng)
+  default_value TEXT,        -- Giá trị mặc định cho bản ghi mới
+  required BOOLEAN,          -- Kiểm tra hợp lệ: trường có bắt buộc?
   ...
 );
 ```
 
-**Giải thích:** Metadata table describes structure của custom fields. Khi Axelor Studio user creates custom field "Loyalty Points" (integer) on Partner entity, row inserted: `{model: "Partner", model_field: "attrs", name: "loyaltyPoints", type: "integer", title: "Loyalty Points"}`. UI rendering code queries metadata to know which custom fields display trong forms, their types for appropriate widgets (text input vs checkbox vs date picker), validation rules to enforce.
+**Giải thích:** Bảng siêu dữ liệu mô tả cấu trúc của các trường tùy chỉnh. Khi người dùng Axelor Studio tạo trường tùy chỉnh "Điểm thưởng" (kiểu số nguyên) trên thực thể Partner, một dòng được chèn vào bảng này. Mã hiển thị giao diện truy vấn siêu dữ liệu để biết hiển thị trường tùy chỉnh nào trong biểu mẫu, kiểu dữ liệu của chúng để chọn thành phần giao diện phù hợp (ô nhập văn bản, hộp chọn, bộ chọn ngày), và quy tắc kiểm tra cần áp dụng.
 
-**Benefits của JSON field approach:**
+**Lợi ích của cách tiếp cận trường JSON:**
+1. **Tùy chỉnh không cần dừng hệ thống:** Thêm trường mà không cần ALTER TABLE, không khóa cơ sở dữ liệu, không cần triển khai lại
+2. **Thân thiện với đa thuê bao (multi-tenancy):** Các thuê bao khác nhau có thể có trường tùy chỉnh khác nhau trong cùng cơ sở dữ liệu
+3. **Tạo mẫu nhanh:** Người dùng nghiệp vụ có thể thử nghiệm ý tưởng nhanh chóng, xóa trường dễ dàng nếu không hữu ích
 
-1. **Zero-downtime customization:** Add fields without ALTER TABLE, no database locks, no deployment
-2. **Multi-tenancy friendly:** Different tenants can have different custom fields trong same database
-3. **Rapid prototyping:** Business users can test ideas quickly, delete fields easily if not useful
-4. **Schema evolution:** No migration scripts to maintain, no version conflicts
-
-**Drawbacks:**
-
-1. **Query performance:** Cannot index custom fields, filtering/sorting requires full table scans
-2. **Data integrity:** No foreign key constraints, check constraints, or type enforcement at database level
-3. **Reporting challenges:** BI tools và SQL reporting queries cannot easily access JSON fields
-4. **Storage overhead:** JSON format verbose (stores field names repeatedly), TEXT columns không compressed efficiently
-5. **Type safety:** Runtime type errors, no compile-time checking
-6. **Complex relationships:** Cannot define many-to-one, one-to-many relationships with custom fields (only primitives và strings)
-
-**When to use JSON fields vs proper schema fields:** [Suy luận về design decisions]
-
-Use JSON fields when:
-- Field used by small subset of users/companies (không universal)
-- Field temporary/experimental (có thể removed later)
-- Requirements change frequently (business process still evolving)
-- Field purely for display/notes (never queried or aggregated)
-
-Use proper schema fields when:
-- Field universal across all users (everyone needs it)
-- Field critical for queries/reports (need filtering, sorting, indexing)
-- Field involved trong relationships (foreign keys)
-- Field has complex validation or business logic
-- Field must maintain referential integrity
+**Nhược điểm:**
+1. **Hiệu năng truy vấn:** Không thể đánh chỉ mục trường tùy chỉnh, lọc/sắp xếp yêu cầu quét toàn bộ bảng
+2. **Toàn vẹn dữ liệu:** Không có ràng buộc khóa ngoại, ràng buộc kiểm tra, hoặc kiểm tra kiểu ở cấp cơ sở dữ liệu
+3. **Thách thức báo cáo:** Các công cụ phân tích nghiệp vụ (BI) và truy vấn SQL báo cáo không dễ truy cập trường JSON
+4. **An toàn kiểu:** Lỗi kiểu xảy ra lúc chạy, không có kiểm tra tại thời điểm biên dịch
+5. **Quan hệ phức tạp:** Không thể định nghĩa quan hệ nhiều-một, một-nhiều với trường tùy chỉnh (chỉ hỗ trợ kiểu nguyên thủy và chuỗi)
 
 ---
 
-### 13. HIBERNATE DDL STRATEGY VÀ DATABASE SCHEMA MANAGEMENT
+### 13. CHIẾN LƯỢC DDL CỦA HIBERNATE VÀ QUẢN LÝ LƯỢC ĐỒ CƠ SỞ DỮ LIỆU
 
-**File nguồn:** `src/main/resources/axelor-config.properties` [Từ source code]
+**Tệp nguồn:** `src/main/resources/axelor-config.properties` [Từ mã nguồn]
 
-Database schema management là một trong những most critical decisions trong application architecture - how to handle schema evolution (adding tables, changing columns, migrating data) across development, testing, staging, và production environments. Axelor adopts một approach khác biệt với most modern Java applications: **Hibernate automatic DDL generation** thay vì migration tools như Flyway hoặc Liquibase. Configuration này found trong axelor-config.properties file với key `hibernate.hbm2ddl.auto`.
+Quản lý lược đồ cơ sở dữ liệu (database schema management) là một trong những quyết định quan trọng nhất trong kiến trúc ứng dụng - cách xử lý việc phát triển lược đồ (thêm bảng, thay đổi cột, di trú dữ liệu) qua các môi trường phát triển, kiểm thử, dàn dựng (staging), và sản xuất (production). Axelor áp dụng một cách tiếp cận khác biệt so với hầu hết ứng dụng Java hiện đại: **sinh DDL tự động của Hibernate** thay vì công cụ di trú như Flyway hoặc Liquibase. Cấu hình này được tìm thấy trong tệp axelor-config.properties với khóa `hibernate.hbm2ddl.auto`.
 
-**Bằng chứng từ code - Hibernate DDL configuration:**
+**Bằng chứng từ mã nguồn - Cấu hình DDL Hibernate:**
 ```properties
-# Database settings
+# Cài đặt cơ sở dữ liệu
 db.default.driver = org.postgresql.Driver
 db.default.ddl = update
 db.default.url = jdbc:postgresql://localhost:5432/axelor_erp_db
 db.default.user = axelor
 db.default.password = axelor
 
-# Hibernate settings
+# Cài đặt Hibernate
 hibernate.hbm2ddl.auto = update
 hibernate.show_sql = false
 hibernate.format_sql = true
 ```
 
-**Giải thích code:** Property `hibernate.hbm2ddl.auto = update` instructs Hibernate to automatically sync database schema với JPA entity definitions mỗi khi application starts. Value "update" means: (1) check current database schema, (2) compare với entity mappings, (3) execute ALTER TABLE statements to add missing tables/columns, (4) NEVER drop existing tables/columns. Shorthand `db.default.ddl = update` equivalent - Axelor config parser translates này thành hibernate.hbm2ddl.auto.
+**Giải thích mã nguồn:** Thuộc tính `hibernate.hbm2ddl.auto = update` chỉ thị Hibernate tự động đồng bộ lược đồ cơ sở dữ liệu với các định nghĩa thực thể JPA mỗi khi ứng dụng khởi động. Giá trị "update" nghĩa là: (1) kiểm tra lược đồ hiện tại, (2) so sánh với ánh xạ thực thể, (3) thực thi câu lệnh ALTER TABLE để thêm bảng/cột thiếu, (4) KHÔNG BAO GIỜ xóa bảng/cột hiện có. Cài đặt `hibernate.show_sql = false` tắt ghi nhật ký câu lệnh SQL ra bảng điều khiển (sẽ cực kỳ dài dòng với hàng nghìn truy vấn).
 
-Setting `hibernate.show_sql = false` disables SQL statement logging to console (would be extremely verbose với thousands of queries). Setting `hibernate.format_sql = true` formats SQL output với indentation và line breaks when logging enabled (for debugging purposes).
+**Các tùy chọn hibernate.hbm2ddl.auto và ý nghĩa:**
 
-**Hibernate hbm2ddl.auto options và implications:**
+| Giá trị | Hành vi | Trường hợp sử dụng | Rủi ro |
+|---------|---------|---------------------|--------|
+| `create` | XÓA tất cả bảng, rồi TẠO từ đầu | Phát triển cục bộ, kiểm thử tự động | **MẤT TOÀN BỘ DỮ LIỆU** - không bao giờ dùng trên production |
+| `create-drop` | TẠO khi khởi động, XÓA khi tắt | Kiểm thử tích hợp (bắt đầu sạch mỗi lần) | **MẤT TOÀN BỘ DỮ LIỆU** - không bao giờ dùng trên production |
+| `update` | SỬA bảng cho khớp thực thể, không bao giờ XÓA | Phát triển, môi trường dàn dựng | Trôi lược đồ, không hoàn tác, không đổi tên cột |
+| `validate` | KIỂM TRA lược đồ khớp thực thể, ném ngoại lệ nếu không | Production (sau khi di trú thủ công) | Ứng dụng không khởi động được nếu lược đồ không khớp |
+| `none` | Không làm gì, giả định lược đồ đã đúng | Production (với công cụ di trú) | Lập trình viên phải quản lý lược đồ thủ công |
 
-| Value | Behavior | Use Case | Risks |
-|-------|----------|----------|-------|
-| `create` | DROP all tables, then CREATE from scratch | Local development, automated tests | **DESTROYS ALL DATA** - never use in production |
-| `create-drop` | CREATE on startup, DROP on shutdown | Integration tests (clean slate each run) | **DESTROYS ALL DATA** - never use in production |
-| `update` | ALTER tables to match entities, never DROP | Development, staging environments | Schema drift, no rollback, cannot rename columns |
-| `validate` | Check schema matches entities, throw exception if not | Production (after manual migration) | Application won't start if schema doesn't match |
-| `none` | Do nothing, assume schema already correct | Production (with migration tools) | Developer must manage schema manually |
+**Tại sao Axelor chọn chiến lược "update":** [Suy luận về lý do thiết kế]
 
-**Why Axelor chose "update" strategy:** [Suy luận về design rationale]
+Axelor nhắm đến ứng dụng nghiệp vụ nơi lược đồ phát triển thường xuyên - thêm trường tùy chỉnh (qua Studio), cài đặt mô-đun mới (với thực thể mới), nâng cấp phiên bản khung ứng dụng (bảng lõi mới). Chế độ "update" mang lại sự tiện lợi: lập trình viên sửa XML, chạy ứng dụng, lược đồ tự động cập nhật - không cần viết tập lệnh DDL thủ công. Cho môi trường phát triển và dàn dựng, đây là cải thiện năng suất đáng kể.
 
-Axelor targets business applications where schema evolves frequently - adding custom fields (via Studio), installing new modules (with new entities), upgrading framework versions (new core tables). "Update" mode provides convenience: developers modify domain XML, run application, schema automatically updates - no manual DDL scripts. Cho development và staging environments, this extreme productivity boost outweighs risks.
+Tuy nhiên, "update" có những hạn chế nghiêm trọng cho môi trường sản xuất:
 
-However, "update" has serious limitations for production:
+1. **Không thể hoàn tác:** Không thể quay lại thay đổi lược đồ nếu triển khai thất bại
+2. **Không thể đổi tên cột:** Hibernate thấy cột cũ thiếu + cột mới thiếu → thêm cột mới, giữ cột cũ (dữ liệu trùng lặp)
+3. **Không thể thay đổi kiểu cột:** Câu lệnh ALTER COLUMN TYPE nguy hiểm (nguy cơ mất dữ liệu), Hibernate thận trọng không thử
+4. **Không di trú dữ liệu:** Lược đồ thay đổi nhưng dữ liệu hiện có không được chuyển đổi
+5. **Không phát hiện trường bị xóa:** Hibernate chỉ thêm, không bao giờ xóa - chế độ "update" không bao giờ xóa cột ngay cả khi đã bị xóa khỏi thực thể
 
-1. **No rollback capability:** Cannot undo schema changes if deploy fails
-2. **Cannot rename columns:** Hibernate sees old column missing + new column missing → adds new column, leaves old column (data duplication)
-3. **Cannot change column types:** ALTER COLUMN TYPE statements dangerous (data loss risk), Hibernate conservative không attempts
-4. **No data migration:** Schema changed nhưng existing data not transformed - ví dụ: adding NOT NULL column leaves existing rows với NULL
-5. **Cannot detect deleted fields:** Hibernate only adds, never removes - "update" mode never drops columns even when removed từ entity
-
-**Best practices cho production:** [Suy luận từ industry standards]
-
-Production environments should use `hibernate.hbm2ddl.auto = validate` hoặc `none` combined với migration tools:
-
-```properties
-# Production configuration
-hibernate.hbm2ddl.auto = validate  # or none
-```
-
-Then use Flyway hoặc Liquibase to manage migrations:
-```sql
--- V1__initial_schema.sql
-CREATE TABLE base_product (...);
-
--- V2__add_product_barcode.sql
-ALTER TABLE base_product ADD COLUMN barcode VARCHAR(255);
-
--- V3__rename_product_code.sql
-ALTER TABLE base_product RENAME COLUMN code TO product_code;
-UPDATE base_product SET product_code = code WHERE product_code IS NULL;
-ALTER TABLE base_product DROP COLUMN code;
-```
-
-Migration tools provide:
-- Version control cho schema changes (each migration numbered/named)
-- Rollback capability (can undo migrations trong controlled manner)
-- Data transformations (UPDATE statements moving data between old/new columns)
-- Environment consistency (same migrations applied to dev/test/staging/prod)
-- Audit trail (migration history table shows what ran when)
-
-**Axelor documentation warning:** [Suy luận - likely có warning trong docs]
-
-Axelor documentation likely warns: "hbm2ddl.auto=update suitable for development only. Production systems must use validate mode with manual migrations." However, many Axelor users có thể ignore warning (seduced by convenience) và run update mode trong production - causing eventual schema issues when complex changes needed.
+**Cách thực hành tốt cho môi trường sản xuất:** [Suy luận từ tiêu chuẩn ngành]
+Môi trường sản xuất nên dùng `hibernate.hbm2ddl.auto = validate` hoặc `none` kết hợp với công cụ di trú như Flyway hoặc Liquibase. Các công cụ di trú cung cấp: quản lý phiên bản cho thay đổi lược đồ (mỗi tập lệnh được đánh số/đặt tên), khả năng hoàn tác (có thể quay lại di trú theo cách có kiểm soát), chuyển đổi dữ liệu (câu lệnh UPDATE di chuyển dữ liệu giữa cột cũ/mới), nhất quán môi trường (cùng tập lệnh di trú áp dụng cho phát triển/kiểm thử/dàn dựng/sản xuất), và dấu vết kiểm toán (bảng lịch sử di trú cho biết tập lệnh nào đã chạy khi nào). Tuy nhiên, mã nguồn Axelor **không bao gồm** Flyway hay Liquibase.
 
 ---
 
-### 14. GENERATED CODE LOCATION VÀ BUILD INTEGRATION
+### 14. VỊ TRÍ MÃ ĐƯỢC SINH VÀ TÍCH HỢP VỚI HỆ THỐNG XÂY DỰNG
 
-**File nguồn:** Gradle build scripts, analysis of build output directories [Từ source code]
+**Tệp nguồn:** Các tập lệnh xây dựng Gradle, phân tích thư mục đầu ra xây dựng [Từ mã nguồn]
 
-Understanding where generated code lives và how it integrates vào build process crucial cho debugging, version control, và collaboration. Axelor follows Gradle conventions với một số customizations: generated code placed trong `build/` directory (gitignored, ephemeral), clearly separated từ hand-written code trong `src/` directory (version controlled, permanent).
+Hiểu rõ mã được sinh nằm ở đâu và cách tích hợp vào quy trình xây dựng rất quan trọng cho việc gỡ lỗi, quản lý phiên bản, và cộng tác. Axelor tuân theo quy ước Gradle với một số tùy chỉnh: mã được sinh đặt trong thư mục `build/` (bị bỏ qua bởi git, tạm thời), phân tách rõ ràng khỏi mã viết tay trong thư mục `src/` (được quản lý phiên bản, lâu dài).
 
-**Directory structure pattern:**
+**Mẫu cấu trúc thư mục:**
 ```
 modules/axelor-open-suite/axelor-base/
 ├── src/
 │   ├── main/
-│   │   ├── java/              # Hand-written code
+│   │   ├── java/              # Mã viết tay
 │   │   │   └── com/axelor/apps/base/
-│   │   │       ├── service/   # Business logic services
-│   │   │       ├── web/       # Controllers
-│   │   │       └── db/repo/   # Custom repositories (Tier 2)
+│   │   │       ├── service/   # Dịch vụ logic nghiệp vụ
+│   │   │       ├── web/       # Bộ điều khiển
+│   │   │       └── db/repo/   # Kho lưu trữ tùy chỉnh (Tầng 2)
 │   │   └── resources/
-│   │       ├── domains/       # Domain XML files (source for generation)
-│   │       └── views/         # View XML files
-│   └── test/                  # Unit tests
+│   │       ├── domains/       # Tệp XML định nghĩa (nguồn cho sinh mã)
+│   │       └── views/         # Tệp XML giao diện
+│   └── test/                  # Kiểm thử đơn vị
 └── build/
     ├── src-gen/
-    │   └── java/              # Generated code (DO NOT EDIT)
+    │   └── java/              # Mã được sinh (KHÔNG SỬA)
     │       └── com/axelor/apps/base/db/
-    │           ├── Product.java              # Generated entity
+    │           ├── Product.java              # Thực thể được sinh
     │           ├── Company.java
-    │           ├── Partner.java
     │           └── repo/
-    │               ├── ProductRepository.java    # Generated repo (Tier 1)
-    │               ├── CompanyRepository.java
-    │               └── PartnerRepository.java
-    ├── classes/               # Compiled .class files (generated + hand-written)
-    └── libs/                  # Final JAR output
+    │               ├── ProductRepository.java    # Kho sinh (Tầng 1)
+    │               └── CompanyRepository.java
+    ├── classes/               # Tệp .class đã biên dịch
+    └── libs/                  # Tệp JAR đầu ra
 ```
 
-**Giải thích structure:** Clear separation maintains sanity: developers work trong `src/`, generators output to `build/`. IDE configuration must include both source sets: main source set (`src/main/java`) + generated source set (`build/src-gen/java`) - otherwise generated classes won't resolve during compilation. Version control gitignore `build/` directory entirely - generated code never committed (would cause merge conflicts, waste repository space, create confusion về source of truth).
+**Giải thích cấu trúc:** Sự phân tách rõ ràng giữ mọi thứ có trật tự: lập trình viên làm việc trong `src/`, bộ sinh xuất ra `build/`. Cấu hình IDE phải bao gồm cả hai tập nguồn: tập nguồn chính (`src/main/java`) + tập nguồn được sinh (`build/src-gen/java`) - nếu không, các lớp được sinh sẽ không được nhận diện trong quá trình biên dịch. Hệ thống quản lý phiên bản bỏ qua toàn bộ thư mục `build/` - mã được sinh không bao giờ được commit (sẽ gây xung đột hợp nhất, lãng phí dung lượng kho, gây nhầm lẫn về nguồn sự thật).
 
-**Gradle source set configuration:**
-```gradle
-// In module's build.gradle
-sourceSets {
-  main {
-    java {
-      srcDirs = ['src/main/java', 'build/src-gen/java']
-    }
-    resources {
-      srcDirs = ['src/main/resources']
-    }
-  }
-}
+Phụ thuộc `compileJava.dependsOn generateCode` đảm bảo việc sinh mã luôn chạy trước khi biên dịch - rất quan trọng vì biên dịch mã viết tay (dịch vụ, bộ điều khiển) tham chiếu đến thực thể được sinh, biên dịch sẽ thất bại nếu thực thể chưa được sinh. Thứ tự xây dựng: clean → generateCode → compileJava → processResources → classes → jar.
 
-// Code generation task
-task generateCode {
-  description = 'Generate JPA entities from domain XML'
-  group = 'build'
-
-  inputs.dir 'src/main/resources/domains'
-  outputs.dir 'build/src-gen/java'
-
-  doLast {
-    // Invoke Axelor code generator
-    // Parse domain XML files
-    // Generate entity và repository classes
-  }
-}
-
-// Compilation depends on code generation
-compileJava.dependsOn generateCode
-```
-
-**Giải thích code:** Gradle sourceSet configuration adds `build/src-gen/java` as additional source directory, meaning javac compiler sẽ compile both hand-written và generated code together. Task `generateCode` defined với inputs (domain XML files) và outputs (generated Java files) - Gradle uses này for incremental builds (skip generation nếu inputs unchanged).
-
-Dependency `compileJava.dependsOn generateCode` ensures generation always runs before compilation - critical vì compiling hand-written code (services, controllers) references generated entities, compilation would fail nếu entities not generated yet. Build order: clean → generateCode → compileJava → processResources → classes → jar.
-
-**IDE integration challenges:** [Suy luận về developer experience]
-
-Developers using IntelliJ IDEA hoặc Eclipse must configure IDE to recognize generated sources:
-
-**IntelliJ IDEA:**
-- Import Gradle project (IDE auto-configures source sets)
-- Verify: Right-click `build/src-gen/java` → "Mark Directory as" → "Generated Sources Root" (blue folder icon)
-- IDE then provides autocomplete, navigation, và refactoring cho generated classes
-
-**Eclipse:**
-- Eclipse slower to detect generated sources
-- May need manually add `build/src-gen/java` to build path
-- Project Properties → Java Build Path → Source → Add Folder
-
-**Common pitfall:** Developers modify generated classes (find bug, make quick fix) forgetting edits sẽ be lost next build. Prevention: generator adds `// AUTO-GENERATED - DO NOT EDIT` header comment, IDE plugins có thể highlight generated files differently (read-only, grey background), code review process should catch changes to `build/` directory.
-
-**Build clean implications:**
-```bash
-./gradlew clean  # Deletes entire build/ directory including generated code
-./gradlew build  # Regenerates everything from scratch
-```
-
-Clean build takes longer (must regenerate all entities) nhưng ensures consistency - occasionally necessary khi generator version changes or domain XML refactored significantly. Incremental builds (without clean) faster nhưng có risk stale generated code nếu generator logic changed.
+**Cạm bẫy phổ biến:** Lập trình viên sửa trực tiếp lớp được sinh (tìm lỗi, sửa nhanh) quên rằng các sửa đổi sẽ bị mất lần xây dựng tiếp theo. Cách phòng ngừa: bộ sinh thêm chú thích đầu tệp `// TỰ ĐỘNG SINH - KHÔNG SỬA`, và quy trình rà soát mã (code review) nên phát hiện các thay đổi trong thư mục `build/`.
 
 ---
 
-### 15. NHỮNG ĐIỀU KHÔNG TÌM THẤY TRONG SOURCE CODE
+### 15. NHỮNG ĐIỀU KHÔNG TÌM THẤY TRONG MÃ NGUỒN
 
-Sau quá trình phân tích sâu domain XML files, generated code, và configuration, một số database/ORM features phổ biến trong enterprise applications **KHÔNG** xuất hiện trong Axelor codebase. Việc ghi nhận những "absent features" quan trọng vì: (1) giúp đặt expectations đúng về platform capabilities, (2) identify gaps có thể cần workarounds, (3) understand architectural philosophy (what Axelor deliberately chose not to include).
+Sau quá trình phân tích sâu các tệp XML, mã được sinh, và cấu hình, một số tính năng cơ sở dữ liệu/ORM phổ biến trong ứng dụng doanh nghiệp **KHÔNG** xuất hiện trong mã nguồn Axelor. Việc ghi nhận những "tính năng vắng mặt" quan trọng vì: (1) giúp đặt kỳ vọng đúng về khả năng nền tảng, (2) xác định các khoảng trống có thể cần giải pháp thay thế, (3) hiểu triết lý kiến trúc (những gì Axelor cố ý không đưa vào).
 
-**1. Database migration tools (Flyway, Liquibase)** [Không tìm thấy]
+**1. Công cụ di trú cơ sở dữ liệu (Flyway, Liquibase)** [Không tìm thấy]
+Không có phụ thuộc hoặc cấu hình cho Flyway (`org.flywaydb`) hoặc Liquibase (`org.liquibase`) trong tệp xây dựng. Không có thư mục tập lệnh di trú (`db/migration/`, `liquibase/changelogs/`). Axelor dựa hoàn toàn vào DDL tự động của Hibernate, như đã xác nhận từ cấu hình `hibernate.hbm2ddl.auto=update`.
 
-Không có dependencies hoặc configuration cho Flyway (`org.flywaydb`) hoặc Liquibase (`org.liquibase`) trong build files. Không có migration scripts directory (`db/migration/`, `liquibase/changelogs/`). Axelor relies exclusively on Hibernate auto-DDL, as confirmed từ `hibernate.hbm2ddl.auto=update` config. Implication: developers must manually manage complex schema changes (column renames, type changes, data migrations) thay vì version-controlled migration scripts.
+**2. Hỗ trợ nhiều nhà cung cấp cơ sở dữ liệu** [Không rõ ràng]
+Tệp cấu hình chỉ hiển thị PostgreSQL (`org.postgresql.Driver`, URL JDBC dành riêng cho PostgreSQL). Không tìm thấy hồ sơ (profile) hoặc cấu hình cho MySQL, Oracle, SQL Server. Tệp XML trừu tượng hóa sự khác biệt giữa các cơ sở dữ liệu (không có kiểu dữ liệu riêng cho từng nhà cung cấp), gợi ý hỗ trợ đa cơ sở dữ liệu khả thi về mặt kỹ thuật, nhưng không có bằng chứng về kiểm thử/chứng nhận với cơ sở dữ liệu khác.
 
-**2. Multi-database vendor support** [Không rõ ràng]
+**3. Phân mảnh cơ sở dữ liệu (Database sharding)** [Không tìm thấy]
+Không có cấu hình cho phân mảnh (chia dữ liệu qua nhiều cơ sở dữ liệu). Định nghĩa nguồn dữ liệu duy nhất (`db.default.*`) gợi ý một thể hiện cơ sở dữ liệu duy nhất.
 
-Configuration files show PostgreSQL exclusively (`org.postgresql.Driver`, PostgreSQL-specific JDBC URL). Không tìm thấy profiles hoặc configs cho MySQL, Oracle, SQL Server. Axelor domain XML abstracts database differences (không có vendor-specific data types), suggesting multi-database support possible về mặt kỹ thuật, nhưng không có evidence của testing/certification with other databases. Likely PostgreSQL-only trong practice, mặc dù Hibernate theoretically supports others.
+**4. Xóa mềm (Soft delete)** [Không tìm thấy trong tệp XML]
+Không có trường `deleted` hoặc `archived` dạng boolean phổ quát trong lớp thực thể cơ sở. Không có chú thích `@Where(clause = "deleted = false")` trong mã được sinh. Một số thực thể có thể triển khai xóa mềm thủ công với trường trạng thái (`STATUS_ARCHIVED = 9`) nhưng không có hỗ trợ ở cấp khung ứng dụng.
 
-**3. Database sharding / horizontal partitioning** [Không tìm thấy]
+**5. Khóa lạc quan với phiên bản (Optimistic locking)** [Có thể có nhưng không rõ]
+Lớp cơ sở `AuditableModel` có trường `version` gợi ý hỗ trợ khóa lạc quan (chú thích JPA @Version). Nhưng không thấy xử lý phiên bản rõ ràng trong tệp XML hoặc mã kho lưu trữ.
 
-Không có configuration cho database sharding (splitting data across multiple databases). Single datasource definition (`db.default.*`) suggests single database instance. Enterprise deployments với terabytes of data có thể need sharding, nhưng Axelor không có built-in support - would require custom implementation outside framework.
+**6. Cấu hình nhóm kết nối cơ sở dữ liệu (Connection pooling)** [Có nhưng tối thiểu]
+Tệp cấu hình đề cập HikariCP (nhóm kết nối tiêu chuẩn ngành) nhưng không có tham số tinh chỉnh: kích thước nhóm, thời gian chờ, truy vấn kiểm tra, phát hiện rò rỉ. Sử dụng giá trị mặc định (có thể tối đa 10 kết nối).
 
-**4. Soft deletes / logical deletion** [Không tìm thấy trong domain XML]
+**7. Bản sao đọc (Read replica)** [Không tìm thấy]
+Định nghĩa nguồn dữ liệu duy nhất, không có phân tách đọc/ghi. Tất cả truy vấn đều truy cập cơ sở dữ liệu chính.
 
-Không có universal `deleted` hoặc `archived` boolean field trong base entity class. Không có `@Where(clause = "deleted = false")` annotations trong generated code. Some entities có thể implement soft deletes manually với status fields (`STATUS_ARCHIVED = 9`) nhưng không có framework-level support. Hard DELETE statements remove records permanently - potential compliance issue cho regulated industries requiring data retention.
+**8. Khóa chính tổ hợp (Composite primary key)** [Không tìm thấy]
+Tất cả thực thể dùng khóa chính thay thế (surrogate) duy nhất (`id BIGINT`). Không có mẫu `@IdClass` hoặc `@EmbeddedId`.
 
-**5. Optimistic locking with versioning** [Có thể có nhưng không rõ]
+**9. Chiến lược kế thừa (Inheritance strategy)** [Không rõ]
+JPA hỗ trợ ba chiến lược kế thừa: SINGLE_TABLE, JOINED, TABLE_PER_CLASS. Tệp XML của Axelor không cung cấp cấu hình kế thừa - không thấy phần tử `<inheritance>` hoặc cài đặt bộ phân biệt (discriminator).
 
-Base class `AuditableModel` có field `version` suggesting optimistic locking support (JPA @Version annotation). Nhưng không thấy explicit version handling trong domain XML hoặc repository code. Nếu có, Hibernate automatically increments version on updates và throws OptimisticLockException nếu concurrent modification detected. Absence of explicit configuration suggests feature may be present nhưng underdocumented.
-
-**6. Database connection pooling configuration** [Có nhưng minimal]
-
-Config file mentions HikariCP (industry-standard connection pool) nhưng không có tuning parameters: pool size, timeout, validation query, leak detection. Uses defaults (likely 10 connections maximum). Production systems typically need tune pool size based on workload - absence of config suggests Axelor assumes defaults sufficient or expects users customize externally.
-
-**7. Read replicas / master-slave replication** [Không tìm thấy]
-
-Single datasource definition, không có read/write splitting. High-traffic applications often use master for writes, replicas for reads, reducing master database load. Axelor không có built-in support - all queries hit primary database. Could implement externally với database proxy (pgpool, ProxySQL) nhưng application-level support (transaction routing) would be custom.
-
-**8. Composite primary keys** [Không tìm thấy]
-
-Tất cả entities use single surrogate primary key (`id BIGINT`). Không có `@IdClass` hoặc `@EmbeddedId` patterns cho composite keys. Business documents với natural composite keys (company + documentNumber) must use unique constraints instead of primary keys. Implication: cannot enforce uniqueness at primary key level, must rely on unique constraints (subtle behavioral differences).
-
-**9. Inheritance strategies beyond SINGLE_TABLE** [Không rõ]
-
-JPA supports ba inheritance strategies: SINGLE_TABLE (all subclasses trong one table với discriminator column), JOINED (each subclass trong separate table joined to parent), TABLE_PER_CLASS (each concrete class trong own table, no joins). Axelor domain XML không expose inheritance configuration - không thấy `<inheritance>` element hoặc discriminator settings. Likely doesn't support entity inheritance at all, or uses framework defaults (SINGLE_TABLE).
-
-**10. Stored procedures / database functions** [Không tìm thấy]
-
-Không có `@NamedStoredProcedureQuery` annotations hoặc XML equivalents. Business logic entirely trong Java/Groovy service layer, không có database-layer logic. Contrast với traditional enterprise apps heavily using stored procedures - Axelor philosophy clearly favors application-tier logic for portability và testability.
+**10. Thủ tục lưu sẵn (Stored procedure)** [Không tìm thấy]
+Không có chú thích `@NamedStoredProcedureQuery` hoặc tương đương XML. Logic nghiệp vụ hoàn toàn ở tầng Java/Groovy, không có logic ở tầng cơ sở dữ liệu. Triết lý của Axelor rõ ràng ưu tiên logic tầng ứng dụng vì lý do khả năng di chuyển và kiểm thử.
 
 ---
 
 ### 16. CÂU HỎI MỞ VÀ ĐIỂM CẦN NGHIÊN CỨU THÊM
 
-Analysis của domain XML và generated code reveals comprehensive picture của Axelor's database architecture, nhưng một số questions remain requiring deeper investigation hoặc documentation review:
+Phân tích tệp XML và mã được sinh cho bức tranh toàn diện về kiến trúc cơ sở dữ liệu của Axelor, nhưng một số câu hỏi vẫn cần điều tra sâu hơn hoặc xem tài liệu:
 
-**1. Entity lifecycle callbacks execution order**
+1. **Thứ tự thực thi hồi gọi vòng đời thực thể:** Khi thực thể có nhiều hồi gọi (@PrePersist, @PreUpdate, @PostLoad) cộng bộ lắng nghe thực thể cộng theo dõi kiểm toán, thứ tự thực thi chính xác là gì?
 
-When entity có multiple callbacks (@PrePersist, @PreUpdate, @PostLoad) plus entity listeners plus audit tracking, what is exact execution order? Does tracking happen before or after custom listeners? Understanding order critical cho debugging unexpected behavior khi multiple layers modify entities.
+2. **Quản lý giao dịch và mức cô lập:** Không thấy cấu hình giao dịch rõ ràng. Mức cô lập mặc định (READ_COMMITTED hay REPEATABLE_READ)? Giao dịch được phân ranh giới thế nào (cấp phương thức @Transactional, lập trình, khai báo)?
 
-**2. Transaction management và isolation levels**
+3. **Chi tiết chiến lược bộ đệm:** Cấu hình cho thấy chế độ bộ đệm chia sẻ (shared cache) nhưng không thấy cấu hình nhà cung cấp bộ đệm. Triển khai bộ đệm nào (EHCache, Infinispan, Redis)? Chính sách đào thải bộ đệm?
 
-Không thấy explicit transaction configuration trong analyzed files. Questions: Default isolation level (READ_COMMITTED, REPEATABLE_READ)? How are transactions demarcated (method-level @Transactional, programmatic, declarative)? Rollback behavior on exceptions? Connection pooling transaction handling? These architectural decisions impact concurrency và data consistency.
+4. **Chiến lược tải lười so với tải ngay:** Thực thể được sinh dùng `@ManyToOne(fetch = FetchType.LAZY)` mặc định, nhưng có tình huống nào cấu hình tải ngay? Khung ứng dụng có cung cấp mẫu OpenSessionInView không?
 
-**3. Caching strategy details**
+5. **Xử lý hàng loạt:** Mã nguồn cho thấy thao tác CRUD từng thực thể, nhưng Axelor xử lý chèn/cập nhật hàng loạt (hàng nghìn bản ghi) thế nào?
 
-Config shows `hibernate.cache.use_second_level_cache = ENABLE_SELECTIVE` nhưng không thấy cache provider configuration. Questions: Which cache implementation (EHCache, Infinispan, Redis)? Cache eviction policies (LRU, LFU, TTL)? Cache warming strategies? Cache invalidation across cluster nodes (nếu multi-instance deployment)? Distributed cache synchronization?
-
-**4. Lazy loading vs eager loading strategies**
-
-Generated entities use `@ManyToOne(fetch = FetchType.LAZY)` by default, nhưng are there scenarios where eager loading configured? How does application handle LazyInitializationException when entities detached? Does framework provide OpenSessionInView pattern or similar mechanism? Understanding fetch strategies critical cho performance tuning.
-
-**5. Batch processing và bulk operations**
-
-Codebase shows individual entity CRUD operations, nhưng how does Axelor handle batch inserts/updates (thousands of records)? Does framework provide batch APIs beyond standard Hibernate batch processing? Are there utilities for bulk operations optimized for performance (bypassing entity lifecycle overhead)?
-
-**6. Custom field validation rules**
-
-JSON fields (custom fields) có metadata trong MetaJsonField table including validation rules. Questions: How are validations enforced? Client-side only (JavaScript validation) or server-side? What validation types supported (regex, ranges, required, cross-field validation)? Can business users define custom validation logic without coding?
-
-**7. Multi-tenancy implementation details**
-
-Config và code suggest multi-company support, nhưng technical implementation unclear. Questions: Row-level security (filter by company_id) or schema-per-tenant? How are queries automatically filtered to current user's company? Can super-admin users see across all companies? Performance implications của row-level filtering on large tables?
-
-**8. Database view support**
-
-JPA supports mapping entities to database views (read-only) instead of tables. Does Axelor domain XML support này? Use cases: complex denormalized views cho reporting, legacy database integration. If not supported, are there workarounds (native queries, custom DTO mappings)?
-
-**9. Groovy script execution context**
-
-Domain XML allows embedding Groovy scripts trong computed fields, listeners, etc. Questions: How are scripts compiled (runtime vs compile-time)? Performance implications? Security sandboxing (prevent malicious scripts)? Access to services và dependency injection from scripts? Script debugging support?
-
-**10. Schema evolution in production**
-
-When upgrading Axelor version or installing new modules, how are schema changes managed safely? Is there testing process to preview schema changes before applying? Rollback procedures nếu upgrade fails? Downtime requirements for major schema changes?
-
-These questions represent areas where documentation review, further code exploration, hoặc direct testing would be valuable cho comprehensive understanding.
+6. **Triển khai đa thuê bao (Multi-tenancy):** Cấu hình và mã gợi ý hỗ trợ đa công ty, nhưng triển khai kỹ thuật chưa rõ. Bảo mật cấp dòng (lọc theo company_id) hay lược đồ riêng theo thuê bao?
 
 ---
 
-## TÓM TẮT KIẾN TRÚC DATABASE & MODEL
+## TÓM TẮT KIẾN TRÚC CƠ SỞ DỮ LIỆU VÀ MÔ HÌNH DỮ LIỆU
 
-Sau quá trình phân tích chi tiết từ source code, có thể tóm lược Axelor's database và model architecture qua những điểm chính sau:
+Sau quá trình phân tích chi tiết từ mã nguồn, có thể tóm lược kiến trúc cơ sở dữ liệu và mô hình dữ liệu của Axelor qua những điểm chính sau:
 
-### Paradigm: Model-Driven Development (MDD)
+### Mô hình phát triển: Phát triển hướng mô hình (Model-Driven Development)
 
-Axelor áp dụng XML-driven development approach - domain XML files là single source of truth, Gradle plugin generates JPA entities và repositories automatically. Paradigm này shifts effort từ writing boilerplate code sang declarative modeling, dramatically improving productivity và consistency nhưng requiring developer mindset change (think in terms of abstract models rather than concrete code).
+Axelor áp dụng cách tiếp cận phát triển dựa trên XML - tệp XML định nghĩa thực thể là nguồn sự thật duy nhất, trình cắm Gradle sinh tự động thực thể JPA và kho lưu trữ. Mô hình này chuyển nỗ lực từ việc viết mã khuôn mẫu sang mô hình hóa khai báo, cải thiện đáng kể năng suất và tính nhất quán.
 
-### Entity Definition & Code Generation
+### Định nghĩa thực thể và Sinh mã
 
-Domain XML (`domains/*.xml`) define entities với rich metadata: fields (types, constraints, behaviors), relationships (many-to-one, one-to-many, many-to-many, one-to-one), computed fields (transient, formula), tracking (audit logs), listeners (lifecycle hooks), finders (declarative queries). Generator produces two-tier repository pattern: generated repositories (tier 1) với basic CRUD + finders, custom repositories (tier 2) với business logic. Generated code placed trong `build/src-gen/`, clearly separated từ hand-written code trong `src/main/`.
+Tệp XML (`domains/*.xml`) định nghĩa thực thể với siêu dữ liệu phong phú: trường (kiểu, ràng buộc, hành vi), quan hệ (nhiều-một, một-nhiều, nhiều-nhiều, một-một), trường tính toán (tạm thời, công thức), theo dõi (nhật ký kiểm toán), bộ lắng nghe (móc nối vòng đời), phương thức tìm kiếm (truy vấn khai báo). Bộ sinh tạo mẫu kho lưu trữ hai tầng: kho sinh (tầng 1) với CRUD cơ bản + phương thức tìm, kho tùy chỉnh (tầng 2) với logic nghiệp vụ.
 
-### Database Schema Management
+### Quản lý lược đồ cơ sở dữ liệu
 
-Hibernate automatic DDL (`hibernate.hbm2ddl.auto=update`) manages schema - convenient cho development (automatic sync) nhưng risky cho production (no rollback, cannot rename columns, no data migrations). Production environments should use `validate` mode với migration tools (Flyway/Liquibase), though Axelor codebase doesn't include these. PostgreSQL là primary database, multi-vendor support unclear.
+DDL tự động Hibernate (`hibernate.hbm2ddl.auto=update`) quản lý lược đồ - tiện lợi cho phát triển (đồng bộ tự động) nhưng rủi ro cho sản xuất (không hoàn tác, không đổi tên cột, không di trú dữ liệu). Môi trường sản xuất nên dùng chế độ `validate` với công cụ di trú (Flyway/Liquibase), mặc dù mã nguồn Axelor không bao gồm các công cụ này. PostgreSQL là cơ sở dữ liệu chính.
 
-### Relationship Mapping & Constraints
+### Mẫu truy vấn
 
-Full JPA relationship support: many-to-one (foreign keys), one-to-many (reverse collections), many-to-many (join tables), one-to-one (unique FK). Constraints declared trong XML: unique (single/composite), required (NOT NULL), indexes (automatic on FKs unless disabled). Lazy loading default cho performance, though fetch strategies không fully configurable trong XML.
+DSL truy vấn Axelor cung cấp giao diện nối chuỗi bọc API tiêu chí Hibernate: `Query.of(ThựcThể.class).filter().bind().fetch()`. Hỗ trợ tham số đặt tên, biểu thức đường dẫn (nối tự động), sắp xếp, phân trang. Đáp ứng các trường hợp phổ biến (truy vấn bằng, lọc cơ bản) nhưng tình huống phức tạp (tổng hợp, truy vấn con, hợp nhất) cần JPQL/SQL thuần.
 
-### Query Patterns
+### Triết lý kiến trúc
 
-Axelor Query DSL provides fluent interface wrapping Hibernate Criteria API: `Query.of(Entity.class).filter().bind().fetch()`. Named parameters, path expressions (automatic joins), ordering, pagination. Covers common cases (equality queries, basic filtering) nhưng complex scenarios (aggregations, subqueries, unions) require raw JPQL/SQL. Declarative finder methods trong XML generate query methods trong repositories.
-
-### Extensibility Features
-
-**Extra-code blocks:** Embed Java constants/methods directly trong domain XML, appearing trong generated entities/repositories. Primary use: constants for integer selection fields (status codes, type codes). **Entity listeners:** JPA lifecycle hooks (prePersist, preUpdate, postLoad) για custom logic. **Audit tracking:** Built-in change history via `<track>` element, logging field changes với user/timestamp for compliance (GDPR). **JSON fields:** Support dynamic custom fields added via Axelor Studio without schema changes - flexibility vs performance trade-off.
-
-### Architecture Philosophy
-
-Axelor prioritizes **developer productivity** (minimal boilerplate, automatic generation, declarative configuration) và **business user empowerment** (custom fields, no-code tools) over **database performance optimization** (limited index control, no sharding, no read replicas) và **advanced ORM features** (no inheritance strategies, no composite keys, no soft deletes). Suitable cho small-to-medium deployments (hundreds of users, millions of records) nơi development speed more critical than extreme scale. Large deployments (thousands of concurrent users, billions of records) có thể need custom optimizations beyond framework capabilities.
+Axelor ưu tiên **năng suất lập trình viên** (ít mã khuôn mẫu, sinh tự động, cấu hình khai báo) và **trao quyền người dùng nghiệp vụ** (trường tùy chỉnh, công cụ không cần viết mã) hơn là **tối ưu hiệu năng cơ sở dữ liệu** (kiểm soát chỉ mục hạn chế, không phân mảnh, không bản sao đọc) và **tính năng ORM nâng cao** (không chiến lược kế thừa, không khóa tổ hợp, không xóa mềm). Phù hợp cho triển khai vừa và nhỏ (hàng trăm người dùng, hàng triệu bản ghi) nơi tốc độ phát triển quan trọng hơn khả năng mở rộng cực đại.
 
 ---
 
-**Tổng số dòng code đã phân tích:**
-- Domain XML files: ~15 files, ~3,000 lines total
-- Generated entity code: ~10 files reviewed, representative sample
-- Configuration files: axelor-config.properties, build.gradle
+**Tổng số dòng mã đã phân tích:**
+- Tệp XML định nghĩa: ~15 tệp, ~3.000 dòng tổng cộng
+- Mã thực thể được sinh: ~10 tệp đã xem xét, mẫu đại diện
+- Tệp cấu hình: axelor-config.properties, build.gradle
 
-**Nguồn:** Tất cả findings từ direct source code analysis, supplemented với suy luận based on JPA/Hibernate standard behaviors và common enterprise application patterns.
+**Nguồn:** Tất cả phát hiện từ phân tích trực tiếp mã nguồn, bổ sung bằng suy luận dựa trên hành vi chuẩn của JPA/Hibernate và các mẫu ứng dụng doanh nghiệp phổ biến.
 
 ---
 
